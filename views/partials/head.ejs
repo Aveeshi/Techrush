@@ -1,0 +1,78 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title><%= typeof title !== 'undefined' ? title : 'Clubbing' %></title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg: '#0a0a0a',
+          panel: '#111111',
+          line: '#242424',
+          lime: '#d7ff2b',
+          muted: '#8a8a8a',
+        },
+        fontFamily: {
+          display: ['"Archivo Black"', 'sans-serif'],
+          sans: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+      },
+    },
+  }
+</script>
+<style>
+  body { background-color: #0a0a0a; }
+  .btn-lime {
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-lime:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px #d7ff2b, 0 8px 24px -8px rgba(215,255,43,.5);
+  }
+  .btn-outline:hover {
+    background-color: #ffffff0d;
+  }
+  .stat-card, .event-card {
+    transition: border-color .15s ease, background-color .15s ease;
+  }
+  .stat-card:hover, .event-card:hover {
+    border-color: #d7ff2b55;
+    background-color: #ffffff05;
+  }
+
+  /* Chip-style multiselect: a plain checkbox visually hidden, its label
+     styled as a pill, toggling appearance via :checked — no JS needed
+     for the visual state. Used for skills / event interests / clubs on
+     signup, and reusable anywhere else a multiselect tag picker is needed. */
+  .chip-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .chip-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid #242424;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    color: #8a8a8a;
+    cursor: pointer;
+    transition: all .15s ease;
+    user-select: none;
+  }
+  .chip-input:checked + .chip-label {
+    background-color: #d7ff2b;
+    border-color: #d7ff2b;
+    color: #0a0a0a;
+    font-weight: 600;
+  }
+  .chip-label:hover {
+    border-color: #d7ff2b55;
+  }
+</style>

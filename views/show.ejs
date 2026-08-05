@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: event.title }) %>
+</head>
+<body class="font-sans text-white antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
+    <a href="/events" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-white transition-colors">← BACK TO EVENTS</a>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mt-6 text-sm">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <div class="mt-6 mb-8">
+      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+        <%= (event.event_type_name || 'EVENT').toUpperCase() %>
+      </span>
+      <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= event.title %></h1>
+      <p class="text-muted">Organized by <span class="text-white"><%= event.club_name %></span></p>
+    </div>
+
+    <% if (event.banner_url) { %>
+      <img src="<%= event.banner_url %>" alt="" class="w-full h-72 object-cover rounded-lg border border-line mb-8" />
+    <% } %>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="stat-card border border-line rounded-lg p-5">
+        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">WHEN</span>
+        <p class="mt-2 text-sm">
+          <%= new Date(event.start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %>
+        </p>
+      </div>
+      <div class="stat-card border border-line rounded-lg p-5">
+        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">WHERE</span>
+        <p class="mt-2 text-sm"><%= event.venue || 'TBA' %></p>
+      </div>
+      <div class="stat-card border border-line rounded-lg p-5">
+        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">VISIBILITY</span>
+        <p class="mt-2 text-sm"><%= event.visibility === 'club_only' ? 'Club members only' : 'Public' %></p>
+      </div>
+    </div>
+
+    <div class="mb-10">
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">ABOUT THIS EVENT</h2>
+      <p class="text-white leading-relaxed whitespace-pre-line"><%= event.description || 'No description provided.' %></p>
+    </div>
+
+    <!-- Registration -->
+    <div class="border-t border-line pt-8">
+      <% if (!user) { %>
+        <p class="text-muted mb-4">Log in as a student to register for this event.</p>
+        <a href="/auth/login" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+          Log in to register
+        </a>
+
+      <% } else if (user.type === 'organizer') { %>
+        <% if (user.club_id === event.club_id) { %>
+          <a href="/events/<%= event.id %>/scan" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+            Scan attendee QR codes
+          </a>
+        <% } else { %>
+          <p class="text-muted">Organizer accounts don't register for events.</p>
+        <% } %>
+
+      <% } else if (registration) { %>
+        <div class="border border-lime/40 bg-lime/5 rounded-md px-5 py-4">
+          <p class="text-lime font-semibold">
+            You're registered as <%= registration.registration_type === 'volunteer' ? 'a volunteer' : 'an attendee' %>.
+          </p>
+          <p class="text-muted text-sm mt-1">Status: <%= registration.status %></p>
+
+          <% if (typeof qrImage !== 'undefined' && qrImage) { %>
+            <div class="mt-5 pt-5 border-t border-lime/20 flex flex-col items-start gap-3">
+              <p class="font-mono text-[11px] tracking-[0.15em] text-muted">YOUR CHECK-IN CODE</p>
+              <img src="<%= qrImage %>" alt="Your event QR code" class="w-48 h-48 rounded-md border border-line bg-white p-2" />
+              <p class="text-muted text-xs max-w-sm">
+                Show this at the entrance. The organizer scans it once to check you in, and again to check you out.
+              </p>
+            </div>
+          <% } %>
+        </div>
+
+      <% } else { %>
+        <div class="flex flex-wrap gap-4">
+          <form action="/events/<%= event.id %>/register" method="POST">
+            <input type="hidden" name="registrationType" value="attendee" />
+            <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+              Register as attendee
+            </button>
+          </form>
+
+          <% if (canVolunteer) { %>
+            <form action="/events/<%= event.id %>/register" method="POST">
+              <input type="hidden" name="registrationType" value="volunteer" />
+              <button type="submit" class="btn-outline border border-line font-semibold px-6 py-3.5 rounded-md">
+                Volunteer now
+              </button>
+            </form>
+          <% } %>
+        </div>
+
+        <% if (!canVolunteer) { %>
+          <p class="text-muted text-xs mt-4">
+            Volunteering is open to <%= event.club_name %> members. Join the club to unlock this option.
+          </p>
+        <% } %>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

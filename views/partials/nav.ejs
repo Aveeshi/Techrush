@@ -1,0 +1,74 @@
+<%
+/*
+  `user` comes from res.locals.user, set once by app-level middleware
+  (see the note at the bottom of this file) — every template gets it
+  automatically, no per-route wiring needed. user is null if logged out,
+  otherwise the full req.user object including .type ('student'|'organizer').
+*/
+%>
+
+<!-- NAVBAR -->
+<header class="border-b border-line">
+  <nav class="max-w-[1400px] mx-auto flex items-center justify-between px-8 py-5">
+    <a href="/events" class="flex items-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="shrink-0">
+        <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#d7ff2b"/>
+      </svg>
+      <span class="font-display text-lg tracking-tight">CLUBBING</span>
+    </a>
+
+    <div class="hidden md:flex items-center gap-8">
+      <a href="/events" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
+        EVENTS
+      </a>
+
+      <% if (user && user.type === 'student') { %>
+        <a href="/my-events" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
+          MY EVENTS
+        </a>
+        <a href="/my-tasks" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
+          MY TASKS
+        </a>
+      <% } else if (user && user.type === 'organizer') { %>
+        <a href="/club-events" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
+          CLUB EVENTS
+        </a>
+        <a href="/my-club" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
+          MY CLUB
+        </a>
+      <% } %>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <% if (!user) { %>
+        <a href="/auth/login" class="btn-outline text-sm font-semibold px-5 py-2.5 border border-line rounded-md">
+          Login
+        </a>
+        <a href="/auth/signup" class="btn-lime text-sm font-semibold px-5 py-2.5 bg-lime text-black rounded-md">
+          Signup
+        </a>
+      <% } else { %>
+        <a href="/account" class="btn-outline text-sm font-semibold px-5 py-2.5 border border-line rounded-md">
+          <%= user.type === 'organizer' ? user.name : 'My Account' %>
+        </a>
+        <form action="/auth/logout" method="POST" class="inline">
+          <button type="submit" class="text-xs tracking-[0.1em] text-muted hover:text-white transition-colors">
+            LOGOUT
+          </button>
+        </form>
+      <% } %>
+    </div>
+  </nav>
+</header>
+
+<%#
+  Wire res.locals.user once, app-wide, so every template (including this
+  partial) can reference `user` with zero per-route boilerplate:
+
+    app.use((req, res, next) => {
+      res.locals.user = req.user || null;
+      next();
+    });
+
+  Place this AFTER passport's session middleware and BEFORE your routers.
+%>

@@ -1,0 +1,40 @@
+{
+  "name": "techrush",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tailwind": "tailwindcss -i ./views/input.css -o ./public/output",
+    "dev": "nodemon app.js & npm run tailwind"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
+    "connect-pg-simple": "^10.0.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.4.2",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "express-validator": "^7.3.2",
+    "html5-qrcode": "^2.3.8",
+    "m": "^1.10.0",
+    "multer": "^2.2.0",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemon": "^3.1.14",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "pg": "^8.22.0",
+    "qrcode": "^1.5.4",
+    "slugify": "^1.6.9",
+    "tailwindcss": "^4.3.3",
+    "uuid": "^14.0.1"
+  }
+}

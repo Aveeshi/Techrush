@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Upcoming Events' }) %>
+</head>
+<body class="font-sans text-white antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="w-6 h-px bg-lime"></span>
+      <span class="font-mono text-xs tracking-[0.2em] text-lime">// PUBLIC · EVENT INDEX</span>
+    </div>
+    <h1 class="font-display text-5xl mb-12">Upcoming events</h1>
+
+    <% if (events.length === 0) { %>
+      <p class="text-muted">No events published yet — check back soon.</p>
+    <% } %>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <% events.forEach(function(event) { %>
+        <a href="/events/<%= event.id %>" class="event-card block border border-line rounded-lg overflow-hidden">
+          <div class="h-44 bg-panel">
+            <% if (event.banner_url) { %>
+              <img src="<%= event.banner_url %>" alt="" class="w-full h-full object-cover" />
+            <% } %>
+          </div>
+          <div class="p-6">
+            <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+              <%= (event.event_type_name || 'EVENT').toUpperCase() %>
+            </span>
+            <h3 class="font-display text-xl mb-1"><%= event.title %></h3>
+            <p class="text-muted text-sm mb-4"><%= event.club_name %></p>
+
+            <div class="space-y-1.5 text-sm text-muted mb-5">
+              <div class="flex items-center gap-2">
+                <span class="font-mono">📅</span>
+                <%= new Date(event.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %>
+              </div>
+              <% if (event.venue) { %>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono">📍</span>
+                  <%= event.venue %>
+                </div>
+              <% } %>
+            </div>
+
+            <span class="font-mono text-xs tracking-[0.1em] text-lime">
+              VIEW &amp; REGISTER →
+            </span>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </main>
+</body>
+</html>

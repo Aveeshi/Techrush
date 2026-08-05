@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: "Clubbing — Run your event like a command center" }) %>
+  <style>
+    .stat-card {
+      transition: border-color .15s ease, background-color .15s ease;
+    }
+    .stat-card:hover {
+      border-color: #d7ff2b55;
+      background-color: #ffffff05;
+    }
+  </style>
+</head>
+<body class="font-sans text-white antialiased">
+
+  <%- include('partials/nav') %>
+
+  <!-- HERO -->
+  <main class="max-w-[1400px] mx-auto px-8 pt-20 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-16 items-start">
+
+      <!-- LEFT: COPY -->
+      <div>
+        <div class="flex items-center gap-3 mb-6">
+          <span class="w-6 h-px bg-lime"></span>
+          <span class="font-mono text-xs tracking-[0.2em] text-lime">001 — EVENT OPS OS</span>
+        </div>
+
+        <h1 class="font-display text-5xl sm:text-6xl lg:text-[64px] leading-[1.05] tracking-tight mb-8">
+          Got an event?<br />
+          <span class="text-lime">We're here to help</span> organize!
+        </h1>
+
+        <p class="text-muted text-lg leading-relaxed max-w-xl mb-10">
+          Ditch the spreadsheets and WhatsApp groups. Clubbing gives organizers,
+          volunteers, and attendees a shared brain — QR check-ins, live analytics,
+          task boards, and AI predictions in one place.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-4">
+          <a href="/auth/signup" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+            Signup
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </a>
+          <a href="/events" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-6 py-3.5 rounded-md">
+            Browse events
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT: STATS -->
+      <div class="grid grid-cols-2 gap-4 w-full">
+        <div class="stat-card border border-line rounded-lg p-6">
+          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">CLUBS</span>
+          <div class="font-display text-3xl text-lime mt-3">128</div>
+          <p class="text-muted text-sm mt-2">number of clubs</p>
+        </div>
+
+        <div class="stat-card border border-line rounded-lg p-6">
+          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">EVENTS</span>
+          <div class="font-display text-3xl text-lime mt-3">642</div>
+          <p class="text-muted text-sm mt-2">number of events</p>
+        </div>
+
+        <div class="stat-card border border-line rounded-lg p-6">
+          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">PEOPLE</span>
+          <div class="font-display text-3xl text-lime mt-3">14.2k</div>
+          <p class="text-muted text-sm mt-2">number of participants</p>
+        </div>
+
+        <div class="stat-card border border-line rounded-lg p-6">
+          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">CREW</span>
+          <div class="font-display text-3xl text-lime mt-3">890</div>
+          <p class="text-muted text-sm mt-2">number of volunteers</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</body>
+</html>

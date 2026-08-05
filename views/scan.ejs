@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Scan · ' + event.title }) %>
+  <script src="/vendor/html5-qrcode.min.js"></script>
+</head>
+<body class="font-sans text-white antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-xl mx-auto px-8 pt-16 pb-20">
+    <a href="/events/<%= event.id %>" class="text-muted text-xs font-mono tracking-[0.15em] hover:text-white transition-colors">← BACK TO EVENT</a>
+
+    <div class="mt-6 mb-8">
+      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+        CHECK-IN SCANNER
+      </span>
+      <h1 class="font-display text-3xl mb-2"><%= event.title %></h1>
+      <p class="text-muted text-sm">Scan an attendee's QR once to check them in, scan the same code again to check them out.</p>
+    </div>
+
+    <!-- Result banner: hidden until the first scan, then reused for every scan after -->
+    <div id="result" class="hidden border rounded-md px-5 py-4 mb-6"></div>
+
+    <div id="reader" class="rounded-lg overflow-hidden border border-line"></div>
+
+    <p id="camera-error" class="hidden text-red-400 text-sm mt-4"></p>
+  </main>
+
+  <script>
+    const eventId = '<%= event.id %>';
+    const resultBox = document.getElementById('result');
+    const cameraError = document.getElementById('camera-error');
+
+    // Once a code is decoded we stop feeding new decodes to the handler
+    // for a moment — html5-qrcode fires on every video frame, and without
+    // this the same physical scan would fire the check-in/out toggle
+    // multiple times in a row before the attendee even moves the phone away.
+    let processing = false;
+
+    function showResult({ ok, text }) {
+      resultBox.classList.remove('hidden', 'border-lime/40', 'bg-lime/5', 'text-lime', 'border-red-500', 'bg-red-500/10', 'text-red-400');
+      if (ok) {
+        resultBox.classList.add('border-lime/40', 'bg-lime/5', 'text-lime');
+      } else {
+        resultBox.classList.add('border-red-500', 'bg-red-500/10', 'text-red-400');
+      }
+      resultBox.textContent = text;
+    }
+
+    async function onScanSuccess(decodedText) {
+      if (processing) return;
+      processing = true;
+
+      try {
+        const res = await fetch(`/events/${eventId}/checkin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: decodedText }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showResult({ ok: false, text: data.error || 'Scan failed' });
+        } else {
+          const verb = data.action === 'check_in' ? 'Checked in' : 'Checked out';
+          showResult({ ok: true, text: `✅ ${verb}: ${data.student.name} (${data.registrationType})` });
+        }
+      } catch (err) {
+        showResult({ ok: false, text: 'Network error — try again' });
+      } finally {
+        // Small cooldown so the attendee has time to move the QR code away
+        // before the same frame can be decoded and processed a second time.
+        setTimeout(() => { processing = false; }, 2000);
+      }
+    }
+
+    const scanner = new Html5Qrcode('reader');
+    scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: 250 },
+      onScanSuccess,
+      () => {} // per-frame "no code found" callback — expected constantly, ignore
+    ).catch((err) => {
+      cameraError.classList.remove('hidden');
+      cameraError.textContent = 'Could not access camera: ' + err;
+    });
+  </script>
+</body>
+</html>
