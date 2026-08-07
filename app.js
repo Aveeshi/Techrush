@@ -168,7 +168,9 @@ registerChatSocket(io);
 // without importing sockets/chatSocket.js directly.
 app.set('io', io);
 
-const PORT=9000;
-server.listen(PORT,()=>{
-    console.log(`Server running on address http://localhost:${PORT}`);
-})
+
+const PORT = process.env.PORT || 9000;
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
