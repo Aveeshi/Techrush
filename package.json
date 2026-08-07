@@ -8,7 +8,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",
-    "tailwind": "npx @tailwindcss/cli -i ./views/input.css -o ./public/output.css",
+    "tailwind": "node ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./input.css -o ./public/output.css",
     "build": "npm run tailwind",
     "start": "node app.js"
   },
