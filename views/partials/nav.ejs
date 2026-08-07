@@ -18,28 +18,43 @@
     </a>
 
     <div class="hidden md:flex items-center gap-8">
-      <a href="/events" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
+      <a href="/events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
         EVENTS
       </a>
 
       <% if (user && user.type === 'student') { %>
-        <a href="/my-events" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
-          MY EVENTS
+        <a href="/registered-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          REGISTERED EVENTS
         </a>
-        <a href="/my-tasks" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
-          MY TASKS
+        <!--
+          The old standalone "Teams" tab is gone — every student sees this
+          ONE tab instead, always (it now also covers "events/sub-events
+          I volunteer at", the old Teams tab's job for a non-head
+          student — see clubEventController.myEvents). isEventHead/
+          isTeamHead only control the role CHIPS elsewhere in this nav,
+          not this link's visibility.
+        -->
+        <a href="/my-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          MY EVENTS &amp; TEAMS
         </a>
       <% } else if (user && user.type === 'organizer') { %>
-        <a href="/club-events" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
-          CLUB EVENTS
+        <a href="/club" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          CLUB
         </a>
-        <a href="/my-club" class="text-xs tracking-[0.15em] text-muted hover:text-white transition-colors">
-          MY CLUB
+        <a href="/club-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          CLUB EVENTS
         </a>
       <% } %>
     </div>
 
     <div class="flex items-center gap-3">
+      <button
+        type="button"
+        id="theme-toggle"
+        aria-label="Toggle dark/light theme"
+        class="btn-outline text-sm px-3 py-2.5 border border-line rounded-md"
+      >🌓</button>
+
       <% if (!user) { %>
         <a href="/auth/login" class="btn-outline text-sm font-semibold px-5 py-2.5 border border-line rounded-md">
           Login
@@ -48,11 +63,22 @@
           Signup
         </a>
       <% } else { %>
-        <a href="/account" class="btn-outline text-sm font-semibold px-5 py-2.5 border border-line rounded-md">
+        <% if (user.type === 'student') { %>
+          <span data-role="isEventHead" class="nav-role-chip font-mono text-[10px] tracking-[0.1em] text-lime border border-lime rounded px-2 py-1 <%= isEventHead ? '' : 'nav-role-hidden' %>">
+            EVENT HEAD
+          </span>
+          <span data-role="isTeamHead" class="nav-role-chip font-mono text-[10px] tracking-[0.1em] text-lime border border-lime rounded px-2 py-1 <%= isTeamHead ? '' : 'nav-role-hidden' %>">
+            TEAM HEAD
+          </span>
+        <% } %>
+        <a href="/account" class="btn-outline flex items-center gap-2 text-sm font-semibold pl-2.5 pr-5 py-2 border border-line rounded-md">
+          <% if (user.type === 'student') { %>
+            <img src="<%= user.profile_photo_url || '/avatars/avatar-1.svg' %>" alt="" class="w-6 h-6 rounded-full object-cover" />
+          <% } %>
           <%= user.type === 'organizer' ? user.name : 'My Account' %>
         </a>
         <form action="/auth/logout" method="POST" class="inline">
-          <button type="submit" class="text-xs tracking-[0.1em] text-muted hover:text-white transition-colors">
+          <button type="submit" class="text-xs tracking-[0.1em] text-muted hover:text-fg transition-colors">
             LOGOUT
           </button>
         </form>
@@ -60,6 +86,32 @@
     </div>
   </nav>
 </header>
+
+<style>
+  .nav-role-hidden { display: none !important; }
+</style>
+
+<script>
+  // Theme toggle — flips document.documentElement.dataset.theme instantly
+  // (every utility class already reads the CSS variables in
+  // partials/head.ejs, so this alone re-themes the whole page with no
+  // reload) and persists the choice via POST /theme, which sets the
+  // `theme` cookie head.ejs's pre-paint script reads on the next visit.
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    fetch('/theme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme: next }),
+    }).catch(() => {});
+  });
+</script>
+
+<% if (user && user.type === 'student') { %>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/nav-live.js"></script>
+<% } %>
 
 <%#
   Wire res.locals.user once, app-wide, so every template (including this

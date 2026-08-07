@@ -84,6 +84,20 @@ class ClubMember {
     );
     return rows.length > 0;
   }
+
+  // Sub-event counterpart to canVolunteerForEvent — club ownership is
+  // inherited from the parent event, so this joins one hop further.
+  static async canVolunteerForSubEvent(studentId, subEventId) {
+    const { rows } = await pool.query(
+      `SELECT 1
+       FROM sub_events se
+       JOIN events e ON e.id = se.event_id
+       JOIN club_members cm ON cm.club_id = e.club_id
+       WHERE se.id = $1 AND cm.student_id = $2`,
+      [subEventId, studentId]
+    );
+    return rows.length > 0;
+  }
 }
 
 module.exports = ClubMember;

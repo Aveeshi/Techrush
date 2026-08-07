@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: event.title + ' · Teams' }) %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
+    <a href="<%= backUrl %>" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← MY EVENTS &amp; TEAMS</a>
+
+    <div class="mt-6 mb-12">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="w-6 h-px bg-lime"></span>
+        <span class="font-mono text-xs tracking-[0.2em] text-lime">// STUDENT · VOLUNTEER</span>
+      </div>
+      <h1 class="font-display text-5xl mb-2"><%= event.title %></h1>
+      <p class="text-muted">
+        You're on <%= teams.length %> team<%= teams.length === 1 ? '' : 's' %> for this event.
+        <% if (manageTeamsUrl) { %>
+          <a href="<%= manageTeamsUrl %>" class="text-lime hover:underline">Manage teams →</a>
+        <% } %>
+      </p>
+    </div>
+
+    <% if (teams.length === 0) { %>
+      <p class="text-muted">You're not volunteering on any team for this event.</p>
+    <% } %>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <% teams.forEach(function(team) { %>
+        <a href="/teams/<%= team.id %>" class="event-card block border border-line rounded-lg p-6">
+          <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+            TEAM
+          </span>
+          <h3 class="font-display text-xl mb-1"><%= team.name %></h3>
+
+          <% if (team.description) { %>
+            <p class="text-sm text-muted mb-5 line-clamp-2"><%= team.description %></p>
+          <% } %>
+
+          <span class="font-mono text-xs tracking-[0.1em] text-lime">
+            OPEN TEAM →
+          </span>
+        </a>
+      <% }); %>
+    </div>
+  </main>
+</body>
+</html>

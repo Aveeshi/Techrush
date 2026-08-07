@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%-
+    include('../partials/head', {
+      title: (mode === 'create' ? 'New ' : 'Edit ') + (containerType === 'sub_event' ? 'Sub-Event' : 'Event')
+    })
+  %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-2xl mx-auto px-8 pt-16 pb-20">
+    <a href="<%= parentEvent ? `/club-events/${parentEvent.id}` : '/club-events' %>"
+       class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">
+      ← BACK
+    </a>
+
+    <div class="mt-6 mb-10">
+      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+        <%= containerType === 'sub_event' ? 'SUB-EVENT' : 'EVENT' %>
+      </span>
+      <h1 class="font-display text-4xl mb-2">
+        <%= mode === 'create' ? 'Create' : 'Edit' %> <%= containerType === 'sub_event' ? 'sub-event' : 'event' %>
+      </h1>
+      <% if (parentEvent) { %>
+        <p class="text-muted">Under <span class="text-fg"><%= parentEvent.title %></span></p>
+      <% } %>
+    </div>
+
+    <% if (errors && errors.length > 0) { %>
+      <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mb-6 text-sm">
+        <ul class="list-disc list-inside space-y-1">
+          <% errors.forEach(function(error) { %><li><%= error %></li><% }); %>
+        </ul>
+      </div>
+    <% } %>
+
+    <%
+      const actionUrl = mode === 'create'
+        ? (containerType === 'sub_event' ? `/club-events/${parentEvent.id}/sub-events` : '/club-events')
+        : (containerType === 'sub_event' ? `/club-events/${parentEvent.id}/sub-events/${event.id}/edit` : `/club-events/${event.id}/edit`);
+      const val = (field) => (event && event[field] != null ? event[field] : '');
+    %>
+
+    <%
+      // Only the flagship event routes (POST /club-events and
+      // POST /club-events/:eventId/edit) have the Cloudinary upload
+      // middleware wired — sub-events don't get an image gallery (see
+      // the file inputs below, also gated on containerType === 'event').
+      // Submitting the sub-event form as multipart/form-data anyway would
+      // leave req.body undefined server-side, since express.urlencoded()/
+      // express.json() can't parse multipart bodies and nothing else on
+      // that route does either.
+    %>
+    <form action="<%= actionUrl %>" method="POST" <%- containerType === 'event' ? 'enctype="multipart/form-data"' : '' %> class="space-y-4">
+      <input type="text" name="title" placeholder="Title" value="<%= val('title') %>" required
+             class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+
+      <textarea name="description" placeholder="Description" rows="4"
+                class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime"><%= val('description') %></textarea>
+
+      <input type="text" name="venue" placeholder="Venue" value="<%= val('venue') %>"
+             class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">START</label>
+          <input type="datetime-local" name="startTime" required
+                 value="<%= event && event.start_time ? new Date(event.start_time).toISOString().slice(0,16) : '' %>"
+                 class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" />
+        </div>
+        <div>
+          <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">END</label>
+          <input type="datetime-local" name="endTime" required
+                 value="<%= event && event.end_time ? new Date(event.end_time).toISOString().slice(0,16) : '' %>"
+                 class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" />
+        </div>
+      </div>
+
+      <div>
+        <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">REGISTRATION DEADLINE (OPTIONAL)</label>
+        <input type="datetime-local" name="registrationDeadline"
+               value="<%= event && event.registration_deadline ? new Date(event.registration_deadline).toISOString().slice(0,16) : '' %>"
+               class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" />
+      </div>
+
+      <select name="eventTypeId"
+              class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime">
+        <option value="">Event type (optional)</option>
+        <% eventTypes.forEach(function(et) { %>
+          <option value="<%= et.id %>" <%= val('event_type_id') === et.id ? 'selected' : '' %>><%= et.name %></option>
+        <% }); %>
+      </select>
+
+      <input type="text" name="bannerUrl" placeholder="Or paste a banner image URL instead (optional)" value="<%= val('banner_url') %>"
+             class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+
+      <% if (containerType === 'event') { %>
+        <div class="border border-line rounded-lg p-5 space-y-4">
+          <div>
+            <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">PRIMARY IMAGE / THUMBNAIL</label>
+            <p class="text-muted text-xs mb-2">Shown on the event card in the events feed, and as the banner on the event page. Uploading a new one replaces the current thumbnail.</p>
+            <input type="file" name="primaryImage" accept="image/*"
+                   class="w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-lime file:text-black file:font-semibold file:cursor-pointer" />
+          </div>
+          <div>
+            <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">ADDITIONAL IMAGES (OPTIONAL)</label>
+            <p class="text-muted text-xs mb-2">More photos for the event page's gallery — pick as many as you like.</p>
+            <input type="file" name="additionalImages" accept="image/*" multiple
+                   class="w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:bg-panel file:border file:border-line file:text-fg file:cursor-pointer" />
+          </div>
+        </div>
+      <% } %>
+
+      <% if (containerType === 'event') { %>
+        <select name="visibility"
+                class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime">
+          <option value="public" <%= val('visibility') !== 'club_only' ? 'selected' : '' %>>Public</option>
+          <option value="club_only" <%= val('visibility') === 'club_only' ? 'selected' : '' %>>Club members only</option>
+        </select>
+      <% } %>
+
+      <% if (mode === 'create') { %>
+        <div class="border-t border-line pt-6 mt-6">
+          <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-3">EVENT HEAD</label>
+          <p class="text-muted text-xs mb-3">
+            Pick who runs this <%= containerType === 'sub_event' ? 'sub-event' : 'event' %> —
+            creates its teams, assigns team heads, edits its info, and assigns
+            tasks. You can pick yourself, since you're a club member too.
+          </p>
+          <input type="text" id="head-search" placeholder="Search club members…"
+                 class="w-full px-4 py-3 mb-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+          <div id="head-list" class="border border-line rounded-md max-h-56 overflow-y-auto divide-y divide-line">
+            <% members.forEach(function(m) { %>
+              <label class="head-option flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-white/5" data-name="<%= m.name.toLowerCase() %>">
+                <input type="radio" name="eventHeadStudentId" value="<%= m.id %>" class="accent-lime" />
+                <span class="text-sm"><%= m.name %></span>
+                <span class="text-muted text-xs ml-auto"><%= m.email %></span>
+              </label>
+            <% }); %>
+            <% if (members.length === 0) { %>
+              <p class="text-muted text-sm px-4 py-3">No club members yet — upload a roster from the Club tab first.</p>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+
+      <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md mt-4">
+        <%= mode === 'create' ? 'Create' : 'Save changes' %>
+      </button>
+    </form>
+  </main>
+
+  <script>
+    const searchInput = document.getElementById('head-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim().toLowerCase();
+        document.querySelectorAll('.head-option').forEach((el) => {
+          el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+        });
+      });
+    }
+  </script>
+</body>
+</html>

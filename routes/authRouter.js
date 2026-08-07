@@ -1,6 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const authController = require('../controllers/authController');
+const { makeUploader } = require('../utils/cloudinary');
 const {
   runSignupValidation,
   studentLoginValidation,
@@ -10,6 +11,12 @@ const {
 } = require('../validators/authValidators');
 
 const authRouter = express.Router();
+
+// Optional profile-photo upload on signup — a student who skips it gets a
+// random default avatar instead (see models/User.js). Organizer signups
+// don't have a photo field, but running this on the shared /signup route
+// is harmless (req.file is just undefined for that branch).
+const profilePhotoUpload = makeUploader('profile-photos').single('profilePhoto');
 
 /*
   Mounted at /auth in app.js — every path below is relative to that, so
@@ -28,7 +35,7 @@ authRouter.get('/signup', authController.signupPage);
 authRouter.get('/login', authController.loginPage);
 
 // --- Unified signup (student OR organizer, branches on typeOfUser) ---
-authRouter.post('/signup', runSignupValidation, authController.signup);
+authRouter.post('/signup', profilePhotoUpload, runSignupValidation, authController.signup);
 
 // --- Login ---
 authRouter.post('/student/login', studentLoginValidation, authController.studentLogin);
@@ -44,11 +51,12 @@ authRouter.get(
 
 // --- Choose role (Google signups only) ---
 authRouter.get('/choose-role', authController.chooseRolePage);
-authRouter.post('/choose-role/student', chooseRoleStudentValidation, authController.chooseRoleStudent);
+authRouter.post('/choose-role/student', profilePhotoUpload, chooseRoleStudentValidation, authController.chooseRoleStudent);
 authRouter.post('/choose-role/organizer', chooseRoleOrganizerValidation, authController.chooseRoleOrganizer);
 
 // --- Shared ---
 authRouter.post('/logout', authController.logout);
 authRouter.get('/me', authController.me);
+authRouter.get('/me-roles', authController.meRoles);
 
 module.exports = authRouter;

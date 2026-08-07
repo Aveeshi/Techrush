@@ -12,7 +12,7 @@
     }
   </style>
 </head>
-<body class="font-sans text-white antialiased">
+<body class="font-sans text-fg antialiased">
 
   <%- include('partials/nav') %>
 
@@ -39,12 +39,14 @@
         </p>
 
         <div class="flex flex-wrap items-center gap-4">
-          <a href="/auth/signup" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-            Signup
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M5 12h14M13 5l7 7-7 7"/>
-            </svg>
-          </a>
+          <% if (!user) { %>
+            <a href="/auth/signup" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+              Signup
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M13 5l7 7-7 7"/>
+              </svg>
+            </a>
+          <% } %>
           <a href="/events" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-6 py-3.5 rounded-md">
             Browse events
           </a>

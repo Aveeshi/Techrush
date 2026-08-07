@@ -100,6 +100,25 @@ class TaskAssignment {
     return rows;
   }
 
+  // Tasks assigned to a specific student, scoped to one team — this is the
+  // "my tasks" list on that team's page. Joins through groups since tasks
+  // attach to the group, not directly to the team (see Task.js).
+  static async findByStudentAndTeam(teamId, studentId) {
+    const { rows } = await pool.query(
+      `SELECT t.id, t.title, t.description, t.assigned_hours,
+              t.due_at, t.status AS task_status,
+              ta.status AS my_status, ta.attendance, ta.hours_logged,
+              ta.submitted_at, ta.verified_at
+       FROM task_assignments ta
+       JOIN tasks t ON t.id = ta.task_id
+       JOIN groups g ON g.id = t.group_id
+       WHERE g.team_id = $1 AND ta.student_id = $2
+       ORDER BY t.due_at ASC NULLS LAST`,
+      [teamId, studentId]
+    );
+    return rows;
+  }
+
   // Team head's checklist submission — bulk present/absent in one call.
   // studentIds should be just the ones being marked with this attendanceValue;
   // call twice (once for present, once for absent) from the route handler.
@@ -153,6 +172,45 @@ class TaskAssignment {
       throw new Error('Cannot verify: this student\'s task is not in completed state');
     }
     return rows[0];
+  }
+
+  // The team-head "mark complete" action — ONE step, replacing the old
+  // self-report -> verify pipeline entirely for tasks created after this
+  // feature: the head presses "mark complete" on a task, picks who
+  // actually showed up in a popup, and submits. Whoever's checked gets
+  // attendance='present' + the task's full assigned_hours credited +
+  // status='verified' immediately (no separate student action, no
+  // separate verify() call); everyone else assigned gets
+  // attendance='absent' and stays wherever their status already was.
+  // presentIds/absentIds together should cover every assignee — the
+  // caller (teamController.completeTask) derives absentIds as "assigned
+  // minus present".
+  static async markAttendanceAndVerify(taskId, { presentIds, absentIds }, assignedHours, verifierId, verifierType) {
+    if (!['team_head', 'organizer'].includes(verifierType)) {
+      throw new Error(`Invalid verifierType: ${verifierType}`);
+    }
+    if (presentIds.length) {
+      await pool.query(
+        `UPDATE task_assignments
+         SET attendance = 'present',
+             hours_logged = $3,
+             status = 'verified',
+             submitted_at = now(),
+             verified_by = $4,
+             verified_by_type = $5,
+             verified_at = now()
+         WHERE task_id = $1 AND student_id = ANY($2::uuid[])`,
+        [taskId, presentIds, assignedHours, verifierId, verifierType]
+      );
+    }
+    if (absentIds.length) {
+      await pool.query(
+        `UPDATE task_assignments
+         SET attendance = 'absent', marked_by = $3, marked_at = now()
+         WHERE task_id = $1 AND student_id = ANY($2::uuid[])`,
+        [taskId, absentIds, verifierId]
+      );
+    }
   }
 
   // Tasks stuck at 'completed' and never verified — for an organizer reminder job.

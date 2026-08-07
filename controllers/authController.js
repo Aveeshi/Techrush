@@ -3,9 +3,11 @@ const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Organizer = require('../models/Organizer');
 const ClubMember = require('../models/ClubMember');
+const ClubRoster = require('../models/ClubRoster');
 const SkillTag = require('../models/SkillTag');
-const Club = require('../models/Club');
 const EventType = require('../models/EventType');
+const EventHead = require('../models/EventHead');
+const Team = require('../models/Team');
 
 const COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -37,16 +39,20 @@ function clearAuthCookies(res) {
 }
 
 // Shared helper for the signup form's picker fields — every render of the
-// signup page needs these three lists regardless of whether it's a fresh
-// GET or a re-render after a validation error, so pulling this into one
-// place avoids fetching it three different ways.
+// signup page needs these lists regardless of whether it's a fresh GET or
+// a re-render after a validation error, so pulling this into one place
+// avoids fetching it three different ways. `openSlots` (via
+// Organizer.findOpenSlots) is what drives the organizer panel's club+role
+// picker — clubs with both President and VP already taken simply don't
+// appear. Students no longer pick clubs at all (see ClubRoster.js) so
+// there's no student-facing club list here anymore.
 async function getSignupPickerData() {
-  const [clubs, skillTags, eventTypes] = await Promise.all([
-    Club.findAll(),
+  const [openSlots, skillTags, eventTypes] = await Promise.all([
+    Organizer.findOpenSlots(),
     SkillTag.findAll(),
     EventType.findAll(),
   ]);
-  return { clubs, skillTags, eventTypes };
+  return { openSlots, skillTags, eventTypes };
 }
 
 const authController = {
@@ -90,7 +96,7 @@ const authController = {
     try {
       const {
         name, email, password, rollNumber, department, year, phone,
-        clubIds, skillTagIds, eventTypeInterestIds,
+        skillTagIds, eventTypeInterestIds,
       } = req.body;
 
       const existing = await User.findByEmail(email);
@@ -104,20 +110,27 @@ const authController = {
         });
       }
 
-      const student = await User.create({ name, email, password, rollNumber, department, year, phone });
+      const student = await User.create({
+        name, email, password, rollNumber, department, year, phone,
+        profilePhotoUrl: req.file?.path,
+      });
+
+      // No club checkboxes anymore — club membership is verified against
+      // whatever an organizer uploaded for their club's roster (see
+      // ClubRoster.js), matched by email, not self-declared here.
+      const rosterClubIds = await ClubRoster.findClubIdsForEmail(student.email);
+      if (rosterClubIds.length) {
+        await Promise.all(rosterClubIds.map((clubId) => ClubMember.join(clubId, student.id)));
+      }
 
       // Multi-select fields arrive as either an array (multiple checked)
       // or a single string (exactly one checked) depending on how the
       // browser serializes repeated checkbox names — normalize to an array.
       const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
-      const selectedClubs = toArray(clubIds);
       const selectedSkills = toArray(skillTagIds);
       const selectedInterests = toArray(eventTypeInterestIds);
 
-      if (selectedClubs.length) {
-        await Promise.all(selectedClubs.map((clubId) => ClubMember.join(clubId, student.id)));
-      }
       if (selectedSkills.length) {
         await SkillTag.setStudentSkills(student.id, selectedSkills);
       }
@@ -125,7 +138,7 @@ const authController = {
         await SkillTag.setStudentEventInterests(student.id, selectedInterests);
       }
 
-      req.login(student, (err) => {
+      req.login({ ...student, type: 'student' }, (err) => {
         if (err) return next(err);
         setAuthCookies(res, student, 'student');
         res.redirect('/events');
@@ -148,7 +161,7 @@ const authController = {
     }
 
     try {
-      const { name, email, password, clubId } = req.body;
+      const { name, email, password, clubId, role } = req.body;
 
       const existing = await Organizer.findByEmail(email);
       if (existing) {
@@ -161,9 +174,22 @@ const authController = {
         });
       }
 
-      const organizer = await Organizer.create({ name, email, password, clubId });
+      // Re-check server-side — never trust that the dropdown's options
+      // were still accurate by the time this POST arrived (someone else
+      // could've claimed the slot moments earlier).
+      if (!['president', 'vice_president'].includes(role) || !(await Organizer.isRoleOpen(clubId, role))) {
+        const pickerData = await getSignupPickerData();
+        return res.status(409).render('auth/signup', {
+          title: 'Sign Up',
+          errors: ['That club/role is no longer available — someone may have just claimed it.'],
+          oldInput: req.body,
+          ...pickerData,
+        });
+      }
 
-      req.login(organizer, (err) => {
+      const organizer = await Organizer.create({ name, email, password, clubId, role });
+
+      req.login({ ...organizer, type: 'organizer' }, (err) => {
         if (err) return next(err);
         setAuthCookies(res, organizer, 'organizer');
         res.redirect('/events');
@@ -268,7 +294,7 @@ const authController = {
     }
 
     try {
-      const { rollNumber, department, year, phone, clubIds, skillTagIds, eventTypeInterestIds } = req.body;
+      const { rollNumber, department, year, phone, skillTagIds, eventTypeInterestIds } = req.body;
 
       const student = await User.createFromGoogle({
         name: req.user.name,
@@ -278,16 +304,20 @@ const authController = {
         department,
         year,
         phone,
+        profilePhotoUrl: req.file?.path,
       });
 
+      // Same roster-verified auto-join as the plain signup path — see
+      // authController._studentSignup.
+      const rosterClubIds = await ClubRoster.findClubIdsForEmail(student.email);
+      if (rosterClubIds.length) {
+        await Promise.all(rosterClubIds.map((clubId) => ClubMember.join(clubId, student.id)));
+      }
+
       const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
-      const selectedClubs = toArray(clubIds);
       const selectedSkills = toArray(skillTagIds);
       const selectedInterests = toArray(eventTypeInterestIds);
 
-      if (selectedClubs.length) {
-        await Promise.all(selectedClubs.map((clubId) => ClubMember.join(clubId, student.id)));
-      }
       if (selectedSkills.length) {
         await SkillTag.setStudentSkills(student.id, selectedSkills);
       }
@@ -323,13 +353,25 @@ const authController = {
     }
 
     try {
-      const { clubId } = req.body;
+      const { clubId, role } = req.body;
+
+      if (!['president', 'vice_president'].includes(role) || !(await Organizer.isRoleOpen(clubId, role))) {
+        const pickerData = await getSignupPickerData();
+        return res.status(409).render('choose-role', {
+          title: 'Complete your profile',
+          pendingUser: req.user,
+          errors: ['That club/role is no longer available — someone may have just claimed it.'],
+          oldInput: req.body,
+          ...pickerData,
+        });
+      }
 
       const organizer = await Organizer.createFromGoogle({
         name: req.user.name,
         email: req.user.email,
         googleId: req.user.googleId,
         clubId,
+        role,
       });
 
       req.login({ ...organizer, type: 'organizer' }, (err) => {
@@ -362,6 +404,26 @@ const authController = {
       return res.status(401).json({ error: 'Not logged in' });
     }
     res.json({ user: req.user });
+  },
+
+  // GET /auth/me-roles — polled by the nav's client script right after a
+  // 'role:updated' socket event, so "Event Head"/"Team Head" chips and the
+  // "My Events"/"My Teams" links can appear without a full page reload.
+  // Mirrors the same isHeadOfAny lookups the app-level role-flag
+  // middleware already runs on every render (see app.js).
+  async meRoles(req, res, next) {
+    try {
+      if (!req.user || req.user.type !== 'student') {
+        return res.json({ isEventHead: false, isTeamHead: false });
+      }
+      const [isEventHead, isTeamHead] = await Promise.all([
+        EventHead.isHeadOfAny(req.user.id),
+        Team.isHeadOfAny(req.user.id),
+      ]);
+      res.json({ isEventHead, isTeamHead });
+    } catch (err) {
+      next(err);
+    }
   },
 };
 

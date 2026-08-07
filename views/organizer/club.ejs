@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: club.name + ' · Club' }) %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="w-6 h-px bg-lime"></span>
+      <span class="font-mono text-xs tracking-[0.2em] text-lime">// ORGANIZER · CLUB</span>
+    </div>
+
+    <% if (uploaded) { %>
+      <div class="border border-lime/40 bg-lime/5 text-lime px-4 py-3 rounded-md mb-6 text-sm">
+        Roster updated — <%= roster.length %> member<%= roster.length === 1 ? '' : 's' %> on file.
+      </div>
+    <% } %>
+
+    <div class="flex items-start gap-5 mb-10">
+      <div class="w-20 h-20 rounded-lg bg-panel border border-line shrink-0 overflow-hidden">
+        <% if (club.logo_url) { %>
+          <img src="<%= club.logo_url %>" alt="" class="w-full h-full object-cover" />
+        <% } %>
+      </div>
+      <div>
+        <h1 class="font-display text-4xl mb-2"><%= club.name %></h1>
+        <p class="text-muted leading-relaxed"><%= club.description || 'No description yet.' %></p>
+      </div>
+    </div>
+
+    <!-- Roster upload -->
+    <div class="border border-line rounded-lg p-6 mb-10">
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-1">MEMBER ROSTER</h2>
+      <p class="text-muted text-sm mb-4">
+        Upload an .xlsx with <span class="text-fg">Name</span> and
+        <span class="text-fg">Email</span> columns. Every upload
+        <span class="text-fg">replaces</span> the current roster — this is
+        what verifies who's actually allowed to join <%= club.name %> when
+        they sign up (no more self-declared club checkboxes).
+      </p>
+      <form action="/club/roster" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+        <input type="file" name="roster" accept=".xlsx,.xls" required
+               class="text-sm text-muted file:mr-3 file:py-2 file:px-4 file:rounded-md file:border file:border-line file:bg-panel file:text-fg file:text-sm file:font-medium file:cursor-pointer" />
+        <button type="submit" class="btn-lime bg-lime text-black font-semibold px-5 py-2.5 rounded-md text-sm">
+          Upload / replace roster
+        </button>
+      </form>
+    </div>
+
+    <!-- Members (from club_members — reconciled from the roster automatically) -->
+    <div>
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">
+        CLUB MEMBERS (<%= members.length %>)
+      </h2>
+      <% if (members.length === 0) { %>
+        <p class="text-muted text-sm">
+          No members yet — once you upload a roster, anyone on it with an
+          existing account joins automatically, and anyone who signs up
+          later using a rostered email joins on signup.
+        </p>
+      <% } else { %>
+        <div class="border border-line rounded-lg divide-y divide-line">
+          <% members.forEach(function(m) { %>
+            <div class="flex items-center justify-between px-5 py-3 text-sm">
+              <span><%= m.name %></span>
+              <span class="text-muted"><%= m.email %></span>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

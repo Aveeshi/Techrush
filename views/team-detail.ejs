@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: team.name + ' · Team' }) %>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
+    <a href="/teams" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK TO TEAMS</a>
+
+    <div class="mt-6 mb-10">
+      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+        TEAM
+      </span>
+      <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= team.name %></h1>
+      <% if (team.description) { %>
+        <p class="text-muted"><%= team.description %></p>
+      <% } %>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <!-- LEFT: my tasks -->
+      <section>
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">MY TASKS (<%= tasks.length %>)</h2>
+
+        <% if (tasks.length === 0) { %>
+          <p class="text-muted text-sm border border-line rounded-lg p-6">No tasks have been assigned to you on this team yet.</p>
+        <% } %>
+
+        <div class="space-y-4">
+          <% tasks.forEach(function(task, i) { %>
+            <button
+              type="button"
+              onclick="openTaskModal(<%= i %>)"
+              class="task-card w-full text-left border border-line rounded-lg p-5 hover:border-lime/55 hover:bg-white/5 transition-colors"
+            >
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <h3 class="font-display text-lg"><%= task.title %></h3>
+                <span class="shrink-0 font-mono text-[10px] tracking-[0.1em] uppercase border border-line rounded px-2 py-1 text-muted">
+                  <%= task.my_status %>
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
+                <span>⏱ <%= task.assigned_hours %>h</span>
+                <% if (task.due_at) { %>
+                  <span>📅 Due <%= new Date(task.due_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></span>
+                <% } %>
+                <span>👥 <%= task.assignees.length %> assigned</span>
+              </div>
+            </button>
+          <% }); %>
+        </div>
+      </section>
+
+      <!-- RIGHT: group chat -->
+      <section id="chat" class="border border-line rounded-lg flex flex-col h-[75vh]">
+        <div class="px-5 py-4 border-b border-line flex items-center justify-between">
+          <h2 class="font-mono text-xs tracking-[0.15em] text-muted">GROUP CHAT</h2>
+          <span id="chat-status" class="font-mono text-[10px] tracking-[0.1em] text-muted">CONNECTING…</span>
+        </div>
+
+        <div id="chat-messages" class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          <% messages.forEach(function(msg) { %>
+            <div class="chat-msg <%= msg.sender_id === user.id ? 'text-right' : '' %>">
+              <div class="text-[11px] font-mono text-muted mb-1">
+                <%= msg.sender_id === user.id ? 'You' : (msg.sender_name || 'Unknown') %>
+                · <%= new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) %>
+              </div>
+              <div class="inline-block max-w-[85%] rounded-lg px-4 py-2 text-sm <%= msg.sender_id === user.id ? 'bg-lime text-black' : 'bg-panel border border-line' %>">
+                <%= msg.content %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+
+        <form id="chat-form" action="/teams/<%= team.id %>/chat" method="POST" class="border-t border-line p-4 flex gap-3">
+          <input
+            type="text"
+            name="content"
+            id="chat-input"
+            placeholder="Message the team…"
+            required
+            autocomplete="off"
+            class="flex-1 bg-transparent border border-line rounded-md px-4 py-2.5 text-sm focus:outline-none focus:border-lime/55"
+          />
+          <button type="submit" class="btn-lime bg-lime text-black font-semibold px-5 py-2.5 rounded-md text-sm">
+            Send
+          </button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <!-- Task detail modal -->
+  <div id="task-modal" class="hidden fixed inset-0 z-50 items-center justify-center px-4">
+    <div class="absolute inset-0 bg-black/70" onclick="closeTaskModal()"></div>
+    <div class="relative border border-line bg-bg rounded-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto">
+      <button type="button" onclick="closeTaskModal()" class="absolute top-4 right-4 text-muted hover:text-fg text-sm">✕</button>
+      <div id="task-modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const currentUserId = '<%= user.id %>';
+    const tasks = <%- JSON.stringify(tasks) %>;
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str == null ? '' : str;
+      return div.innerHTML;
+    }
+
+    function openTaskModal(index) {
+      const task = tasks[index];
+      const modal = document.getElementById('task-modal');
+      const body = document.getElementById('task-modal-body');
+
+      const dueText = task.due_at
+        ? new Date(task.due_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+        : 'No due date set';
+
+      const assigneesHtml = task.assignees.map((a) => {
+        const you = a.student_id === currentUserId ? ' <span class="text-lime">(you)</span>' : '';
+        return `<li class="flex items-center justify-between text-sm border-b border-line/50 py-2 last:border-0">
+          <span>${escapeHtml(a.name)}${you}</span>
+          <span class="font-mono text-[10px] uppercase text-muted">${escapeHtml(a.status)}</span>
+        </li>`;
+      }).join('');
+
+      body.innerHTML = `
+        <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">TASK</span>
+        <h2 class="font-display text-2xl mb-4">${escapeHtml(task.title)}</h2>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="stat-card border border-line rounded-lg p-4">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-muted">DUE DATE</span>
+            <p class="mt-2 text-sm">${escapeHtml(dueText)}</p>
+          </div>
+          <div class="stat-card border border-line rounded-lg p-4">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-muted">HOURS ON COMPLETION</span>
+            <p class="mt-2 text-sm">${escapeHtml(task.assigned_hours)}h</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="font-mono text-xs tracking-[0.15em] text-muted mb-2">DESCRIPTION</h3>
+          <p class="text-sm leading-relaxed whitespace-pre-line">${escapeHtml(task.description) || 'No description provided.'}</p>
+        </div>
+
+        <div>
+          <h3 class="font-mono text-xs tracking-[0.15em] text-muted mb-2">ASSIGNED VOLUNTEERS (${task.assignees.length})</h3>
+          <ul>${assigneesHtml}</ul>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeTaskModal() {
+      const modal = document.getElementById('task-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // --- Chat: real-time via Socket.IO (see sockets/chatSocket.js) ---
+    const teamId = '<%= team.id %>';
+    const chatBox = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatStatus = document.getElementById('chat-status');
+
+    let lastSeenAt = <%- JSON.stringify(messages.length ? messages[messages.length - 1].created_at : null) %>;
+    let hasConnectedBefore = false;
+
+    function isAtBottom() {
+      return chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 40;
+    }
+
+    function appendMessage(msg) {
+      const mine = msg.sender_id === currentUserId;
+      const wrap = document.createElement('div');
+      wrap.className = 'chat-msg' + (mine ? ' text-right' : '');
+      wrap.innerHTML = `
+        <div class="text-[11px] font-mono text-muted mb-1">
+          ${mine ? 'You' : escapeHtml(msg.sender_name || 'Unknown')}
+          · ${new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+        </div>
+        <div class="inline-block max-w-[85%] rounded-lg px-4 py-2 text-sm ${mine ? 'bg-lime text-black' : 'bg-panel border border-line'}">
+          ${escapeHtml(msg.content)}
+        </div>
+      `;
+      const wasAtBottom = isAtBottom();
+      chatBox.appendChild(wrap);
+      if (msg.created_at > (lastSeenAt || '')) lastSeenAt = msg.created_at;
+      if (wasAtBottom || mine) chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Catches up on anything missed while disconnected (e.g. a dropped wifi
+    // connection) — not needed on the very first connect, since the page
+    // was just server-rendered with the full history.
+    async function catchUpMissedMessages() {
+      try {
+        const url = new URL(window.location.origin + `/teams/${teamId}/chat/messages`);
+        if (lastSeenAt) url.searchParams.set('after', lastSeenAt);
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        (data.messages || []).forEach(appendMessage);
+      } catch (err) {
+        // Silent — the next reconnect will just try again.
+      }
+    }
+
+    const socket = io({ withCredentials: true });
+
+    socket.on('connect', () => {
+      chatStatus.textContent = 'LIVE';
+      socket.emit('team:join', teamId, (res) => {
+        if (!res || !res.ok) {
+          chatStatus.textContent = 'ERROR';
+        }
+      });
+      if (hasConnectedBefore) catchUpMissedMessages();
+      hasConnectedBefore = true;
+    });
+
+    socket.on('disconnect', () => {
+      chatStatus.textContent = 'RECONNECTING…';
+    });
+
+    socket.on('connect_error', () => {
+      chatStatus.textContent = 'OFFLINE';
+    });
+
+    socket.on('team:message', (msg) => {
+      // Rooms are per-team, but guard anyway in case of any stray delivery.
+      if (msg.channel_id) appendMessage(msg);
+    });
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const content = chatInput.value.trim();
+      if (!content) return;
+
+      if (!socket.connected) {
+        // Socket's down — fall back to the plain POST route so the message
+        // still goes through (page will reload with it included).
+        chatForm.submit();
+        return;
+      }
+
+      socket.emit('team:message', { teamId, content }, (res) => {
+        if (!res || !res.ok) {
+          chatStatus.textContent = 'SEND FAILED';
+        }
+      });
+      chatInput.value = '';
+    });
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+  </script>
+</body>
+</html>

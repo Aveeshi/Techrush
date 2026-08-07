@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: team.name + ' · Manage' }) %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
+    <a href="javascript:history.back()" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK</a>
+
+    <div class="mt-6 mb-10">
+      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+        MANAGE TEAM
+      </span>
+      <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= team.name %></h1>
+      <% if (team.description) { %>
+        <p class="text-muted max-w-2xl mb-3"><%= team.description %></p>
+      <% } %>
+      <a href="/teams/<%= team.id %>#chat" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
+        VIEW TEAM CHAT →
+      </a>
+    </div>
+
+    <!-- Members + assign head -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+      <div>
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">MEMBERS (<%= members.length %>)</h2>
+        <% if (members.length === 0) { %>
+          <p class="text-muted text-sm">No volunteers on this team yet.</p>
+        <% } else { %>
+          <div class="border border-line rounded-lg divide-y divide-line">
+            <% members.forEach(function(m) { %>
+              <div class="px-4 py-3 flex items-center justify-between text-sm">
+                <span><%= m.name %></span>
+                <span class="text-muted text-xs"><%= m.email %></span>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <div>
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">TEAM HEAD<%= heads.length === 1 ? '' : 'S' %></h2>
+        <% if (heads.length > 0) { %>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <% heads.forEach(function(h) { %>
+              <span class="chip-label"><%= h.name %></span>
+            <% }); %>
+          </div>
+        <% } %>
+        <% if (members.length > 0) { %>
+          <form action="/teams/<%= team.id %>/head" method="POST" class="flex gap-2">
+            <select name="studentId" class="flex-1 px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime">
+              <% members.forEach(function(m) { %>
+                <option value="<%= m.id %>"><%= m.name %></option>
+              <% }); %>
+            </select>
+            <button type="submit" class="btn-outline border border-line px-4 py-2 rounded-md text-sm">Assign head</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- New task -->
+    <div class="mb-10 border border-line rounded-lg p-6">
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">NEW TASK</h2>
+      <form action="/teams/<%= team.id %>/tasks" method="POST">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+          <input type="text" name="title" placeholder="Task title" required
+                 class="px-3 py-2 bg-panel border border-line rounded-md text-fg placeholder-muted text-sm focus:outline-none focus:border-lime sm:col-span-2" />
+          <input type="number" step="0.5" name="assignedHours" placeholder="Hours" required
+                 class="px-3 py-2 bg-panel border border-line rounded-md text-fg placeholder-muted text-sm focus:outline-none focus:border-lime" />
+        </div>
+        <textarea name="description" placeholder="Description" rows="2"
+                  class="w-full px-3 py-2 mb-2 bg-panel border border-line rounded-md text-fg placeholder-muted text-sm focus:outline-none focus:border-lime"></textarea>
+        <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">DEADLINE</label>
+        <input type="datetime-local" name="dueAt"
+               class="w-full px-3 py-2 mb-3 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+
+        <div class="flex items-center gap-4 mb-3 text-sm">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="assignMode" value="whole_team" class="new-task-assign-mode accent-lime" checked />
+            Whole team
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="assignMode" value="specific" class="new-task-assign-mode accent-lime" />
+            Specific volunteers
+          </label>
+        </div>
+
+        <div id="new-task-specific-volunteers" class="hidden flex flex-wrap gap-3 mb-3">
+          <% members.forEach(function(m) { %>
+            <label class="flex items-center gap-1.5 text-xs">
+              <input type="checkbox" name="studentIds" value="<%= m.id %>" class="accent-lime" />
+              <%= m.name %>
+            </label>
+          <% }); %>
+        </div>
+
+        <button type="submit" class="btn-lime bg-lime text-black font-semibold px-4 py-2 rounded-md text-sm">
+          Create task
+        </button>
+      </form>
+    </div>
+
+    <!-- Incomplete tasks -->
+    <div class="mb-10">
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">INCOMPLETE TASKS (<%= incompleteTasks.length %>)</h2>
+      <% if (incompleteTasks.length === 0) { %>
+        <p class="text-muted text-sm">Nothing outstanding.</p>
+      <% } else { %>
+        <div class="space-y-4">
+          <% incompleteTasks.forEach(function(task) { %>
+            <div class="border border-line rounded-lg p-5">
+              <div class="flex items-start justify-between gap-4 mb-3">
+                <div>
+                  <h3 class="font-display text-lg"><%= task.title %></h3>
+                  <p class="text-muted text-xs mt-1">
+                    ⏱ <%= task.assigned_hours %>h
+                    <% if (task.due_at) { %> · Due <%= new Date(task.due_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %><% } %>
+                  </p>
+                </div>
+                <button type="button" onclick="openCompleteModal('<%= task.id %>')" class="btn-lime bg-lime text-black font-semibold px-4 py-2 rounded-md text-sm shrink-0">
+                  Mark complete
+                </button>
+              </div>
+              <% if (task.assignees.length === 0) { %>
+                <p class="text-muted text-xs">No one assigned yet.</p>
+              <% } else { %>
+                <div class="flex flex-wrap gap-2">
+                  <% task.assignees.forEach(function(a) { %>
+                    <span class="chip-label"><%= a.name %> · <%= a.status %></span>
+                  <% }); %>
+                </div>
+              <% } %>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Completed tasks -->
+    <div class="mb-10">
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">COMPLETED TASKS (<%= completedTasks.length %>)</h2>
+      <% if (completedTasks.length === 0) { %>
+        <p class="text-muted text-sm">No tasks completed yet.</p>
+      <% } else { %>
+        <div class="space-y-4">
+          <% completedTasks.forEach(function(task) { %>
+            <div class="border border-line rounded-lg p-5">
+              <h3 class="font-display text-lg mb-2"><%= task.title %></h3>
+              <div class="flex flex-wrap gap-2">
+                <% task.assignees.forEach(function(a) { %>
+                  <span class="chip-label">
+                    <%= a.name %> ·
+                    <%= a.attendance === 'present' ? `✅ ${a.hours_logged}h` : '❌ absent' %>
+                  </span>
+                <% }); %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <!-- "Who showed up?" modal -->
+  <div id="complete-modal" class="hidden fixed inset-0 z-50 items-center justify-center px-4">
+    <div class="absolute inset-0 bg-black/70" onclick="closeCompleteModal()"></div>
+    <div class="relative border border-line bg-bg rounded-lg max-w-md w-full p-6">
+      <button type="button" onclick="closeCompleteModal()" class="absolute top-4 right-4 text-muted hover:text-fg text-sm">✕</button>
+      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">WHO SHOWED UP?</span>
+      <p class="text-muted text-sm mb-4">Only the volunteers you check here get credited hours for this task — everyone else is marked absent.</p>
+      <form id="complete-form" method="POST">
+        <div id="complete-modal-checkboxes" class="space-y-2 mb-5 max-h-64 overflow-y-auto"></div>
+        <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3 rounded-md text-sm">
+          Confirm & credit hours
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.new-task-assign-mode').forEach((radio) => {
+      radio.addEventListener('change', () => {
+        document.getElementById('new-task-specific-volunteers').classList.toggle('hidden', radio.value !== 'specific' || !radio.checked);
+      });
+    });
+
+    const teamId = '<%= team.id %>';
+    const incompleteTasks = <%- JSON.stringify(incompleteTasks) %>;
+
+    function openCompleteModal(taskId) {
+      const task = incompleteTasks.find((t) => t.id === taskId);
+      if (!task) return;
+
+      document.getElementById('complete-form').action = `/teams/${teamId}/tasks/${taskId}/complete`;
+
+      const box = document.getElementById('complete-modal-checkboxes');
+      box.innerHTML = task.assignees.map((a) => `
+        <label class="flex items-center gap-3 border border-line rounded-md px-4 py-2.5 cursor-pointer hover:border-lime/55">
+          <input type="checkbox" name="presentStudentIds" value="${a.student_id}" class="accent-lime w-4 h-4" />
+          <span class="text-sm">${a.name}</span>
+        </label>
+      `).join('') || '<p class="text-muted text-sm">No one is assigned to this task.</p>';
+
+      const modal = document.getElementById('complete-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeCompleteModal() {
+      const modal = document.getElementById('complete-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  </script>
+</body>
+</html>

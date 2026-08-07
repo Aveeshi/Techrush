@@ -64,10 +64,12 @@ class AttendanceLog {
   // scans of the same code can't both read "not checked in yet" and both
   // insert a check_in.
   //
-  // eventId is passed in and checked against the registration's own event_id
-  // so a QR code issued for Event A can't be walked up to Event B's scanner
-  // and checked in there.
-  static async scanQrCode(qrCode, eventId, scannedBy) {
+  // container is { eventId } or { subEventId } — checked against the
+  // registration's own event_id/sub_event_id so a QR code issued for one
+  // container can't be walked up to a different container's scanner and
+  // checked in there.
+  static async scanQrCode(qrCode, container, scannedBy) {
+    const { eventId, subEventId } = container;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -85,7 +87,10 @@ class AttendanceLog {
       if (!registration) {
         throw new Error('QR_NOT_FOUND');
       }
-      if (registration.event_id !== eventId) {
+      const wrongContainer = eventId
+        ? registration.event_id !== eventId
+        : registration.sub_event_id !== subEventId;
+      if (wrongContainer) {
         throw new Error('WRONG_EVENT');
       }
       if (registration.status === 'cancelled') {
@@ -145,6 +150,24 @@ class AttendanceLog {
        WHERE er.event_id = $1
        GROUP BY er.registration_type`,
       [eventId]
+    );
+    return rows;
+  }
+
+  // Sub-event counterpart to getEventCounts.
+  static async getSubEventCounts(subEventId) {
+    const { rows } = await pool.query(
+      `SELECT er.registration_type,
+              COUNT(DISTINCT al.registration_id) FILTER (WHERE al.action = 'check_in') AS currently_checked_in
+       FROM event_registrations er
+       LEFT JOIN LATERAL (
+         SELECT action FROM attendance_logs
+         WHERE registration_id = er.id
+         ORDER BY scanned_at DESC LIMIT 1
+       ) al ON true
+       WHERE er.sub_event_id = $1
+       GROUP BY er.registration_type`,
+      [subEventId]
     );
     return rows;
   }

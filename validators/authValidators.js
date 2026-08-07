@@ -84,13 +84,16 @@ function uuidArrayCheck(fieldName, entityLabel) {
     });
 }
 
-// Optional — Google signup skips it, and a student might join zero clubs
-// at signup.
-const clubIdsCheck = uuidArrayCheck('clubIds', 'club');
-
 const clubIdCheck = check('clubId')
   .notEmpty().withMessage('clubId is required')
   .isUUID().withMessage('clubId must be a valid ID');
+
+// Organizer accounts are capped at one President + one Vice President per
+// club (see Organizer.js) — the actual open-slot re-check happens in the
+// controller (Organizer.isRoleOpen), this just validates the shape.
+const roleCheck = check('role')
+  .notEmpty().withMessage('role is required')
+  .isIn(['president', 'vice_president']).withMessage('role must be president or vice_president');
 
 // What a student would volunteer to DO (Python, Reel Making, Web Dev...)
 const skillTagIdsCheck = uuidArrayCheck('skillTagIds', 'skill');
@@ -115,7 +118,6 @@ const studentSignupValidation = [
   departmentCheck,
   yearCheck,
   phoneCheck,
-  clubIdsCheck,
   skillTagIdsCheck,
   eventTypeInterestIdsCheck,
 ];
@@ -142,13 +144,12 @@ const chooseRoleStudentValidation = [
   departmentCheck,
   yearCheck,
   phoneCheck,
-  clubIdsCheck,
   skillTagIdsCheck,
   eventTypeInterestIdsCheck,
 ];
 
 // POST /auth/signup (organizer branch) — name/email/password same rules
-// as student, but a single clubId instead of the array + skills/interests,
+// as student, but a clubId + role instead of the array + skills/interests,
 // since organizers don't have those two axes.
 const organizerSignupValidation = [
   nameCheck,
@@ -156,11 +157,13 @@ const organizerSignupValidation = [
   passwordCheck,
   passwordCopyCheck,
   clubIdCheck,
+  roleCheck,
 ];
 
 // POST /auth/choose-role/organizer
 const chooseRoleOrganizerValidation = [
   clubIdCheck,
+  roleCheck,
 ];
 
 /*
@@ -190,8 +193,7 @@ module.exports = {
   chooseRoleOrganizerValidation,
 
   // Individual checks — use these when a route needs only one or two
-  // fields (e.g. an edit-profile route that only touches phone/department,
-  // or a future join-more-clubs route that only needs clubIdsCheck).
+  // fields (e.g. an edit-profile route that only touches phone/department).
   // Pulling from here keeps every route using the exact same rule instead
   // of a route rewriting its own version that quietly drifts over time.
   nameCheck,
@@ -202,8 +204,8 @@ module.exports = {
   departmentCheck,
   yearCheck,
   phoneCheck,
-  clubIdsCheck,
   clubIdCheck,
+  roleCheck,
   skillTagIdsCheck,
   eventTypeInterestIdsCheck,
 };

@@ -7,7 +7,6 @@ const pool = require('../utils/db');
     title TEXT NOT NULL,
     description TEXT,
     assigned_hours NUMERIC(4,1) NOT NULL,
-    domain_tags TEXT[],
     status TEXT CHECK (status IN ('open','assigned','in_progress','submitted','verified')) DEFAULT 'open',
     created_by UUID,
     created_by_type TEXT CHECK (created_by_type IN ('organizer','team_head')),
@@ -29,13 +28,17 @@ const pool = require('../utils/db');
 */
 
 class Task {
-  static async create({ groupId, title, description, assignedHours, domainTags, createdBy, createdByType, dueAt }) {
+  // domainTags accepted for backwards-compat call sites but intentionally
+  // unused/dropped — the live tasks table has no domain_tags column (the
+  // schema comment above once described one that was never migrated in;
+  // see also the matching fix in TaskAssignment.findByStudentAndTeam).
+  static async create({ groupId, title, description, assignedHours, createdBy, createdByType, dueAt }) {
     const { rows } = await pool.query(
       `INSERT INTO tasks
-        (group_id, title, description, assigned_hours, domain_tags, created_by, created_by_type, due_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (group_id, title, description, assigned_hours, created_by, created_by_type, due_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [groupId, title, description, assignedHours, domainTags, createdBy, createdByType, dueAt]
+      [groupId, title, description, assignedHours, createdBy, createdByType, dueAt]
     );
     return rows[0];
   }

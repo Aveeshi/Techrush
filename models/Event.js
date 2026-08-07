@@ -29,6 +29,11 @@ const pool = require('../utils/db');
 */
 
 class Event {
+  // No auto-provisioned teams here — a fresh event starts with zero teams.
+  // clubEventController.createEvent creates exactly one default team
+  // (named after the event, headed by the event head if one's picked)
+  // right after this call returns; that's a controller-level concern
+  // since it needs eventHeadStudentId, which this model method never sees.
   static async create({ clubId, organizerId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, visibility = 'public', registrationDeadline }) {
     const { rows } = await pool.query(
       `INSERT INTO events
@@ -103,7 +108,12 @@ class Event {
     method, branching on whether studentId is present, rather than two
     near-duplicate JOIN queries drifting apart over time.
   */
-  static async findForFeedWithDetails(studentId = null, { limit = 20, offset = 0 } = {}) {
+  // `q` (optional) narrows to events whose title, venue, or club name
+  // contains the search term — case-insensitive substring match, which is
+  // plenty for the events feed's search box; no need for full-text search
+  // at this scale. Passed through as-is when absent ($4::text IS NULL
+  // short-circuits the ILIKE checks entirely).
+  static async findForFeedWithDetails(studentId = null, { limit = 20, offset = 0, q = null } = {}) {
     const { rows } = await pool.query(
       `SELECT e.*, et.name AS event_type_name, c.name AS club_name
        FROM events e
@@ -121,9 +131,15 @@ class Event {
              )
            )
          )
+         AND (
+           $4::text IS NULL
+           OR e.title ILIKE '%' || $4 || '%'
+           OR e.venue ILIKE '%' || $4 || '%'
+           OR c.name ILIKE '%' || $4 || '%'
+         )
        ORDER BY e.start_time ASC
        LIMIT $2 OFFSET $3`,
-      [studentId, limit, offset]
+      [studentId, limit, offset, q]
     );
     return rows;
   }
@@ -158,6 +174,28 @@ class Event {
       [clubId]
     );
     return rows;
+  }
+
+  // Organizer editing an event's own info from the Club Events dashboard —
+  // COALESCE means callers only need to pass whichever fields the edit
+  // form actually changed.
+  static async update(id, { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline }) {
+    const { rows } = await pool.query(
+      `UPDATE events
+       SET title = COALESCE($2, title),
+           description = COALESCE($3, description),
+           venue = COALESCE($4, venue),
+           start_time = COALESCE($5, start_time),
+           end_time = COALESCE($6, end_time),
+           banner_url = COALESCE($7, banner_url),
+           event_type_id = COALESCE($8, event_type_id),
+           visibility = COALESCE($9, visibility),
+           registration_deadline = COALESCE($10, registration_deadline)
+       WHERE id = $1
+       RETURNING *`,
+      [id, title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline]
+    );
+    return rows[0] || null;
   }
 
   static async updateStatus(id, status) {

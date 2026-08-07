@@ -1,6 +1,22 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title><%= typeof title !== 'undefined' ? title : 'Clubbing' %></title>
+
+<!--
+  Runs before Tailwind's CDN script so <html data-theme> is already set
+  by the time utility classes (which reference the CSS variables below)
+  get their first paint — no flash of the wrong theme. Priority: the
+  `theme` cookie (set by the toggle in nav.ejs, POST /theme) > the
+  visitor's OS preference > dark (this app's original look).
+-->
+<script>
+  (function () {
+    var match = document.cookie.match(/(?:^|; )theme=(dark|light)/);
+    var theme = match ? match[1] : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.dataset.theme = theme;
+  })();
+</script>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -9,11 +25,17 @@
     theme: {
       extend: {
         colors: {
-          bg: '#0a0a0a',
-          panel: '#111111',
-          line: '#242424',
+          // Every one of these resolves through the CSS variables defined
+          // in the <style> block below, which is what makes flipping
+          // [data-theme] on <html> re-theme every already-generated
+          // utility class (bg-panel, border-line, text-muted, ...)
+          // instantly, with no Tailwind re-compile and no per-view edits.
+          bg: 'var(--bg)',
+          panel: 'var(--panel)',
+          line: 'var(--line)',
           lime: '#d7ff2b',
-          muted: '#8a8a8a',
+          muted: 'var(--muted)',
+          fg: 'var(--fg)',
         },
         fontFamily: {
           display: ['"Archivo Black"', 'sans-serif'],
@@ -25,7 +47,40 @@
   }
 </script>
 <style>
-  body { background-color: #0a0a0a; }
+  :root, :root[data-theme="dark"] {
+    --bg: #0a0a0a;
+    --panel: #111111;
+    --line: #242424;
+    --muted: #8a8a8a;
+    --fg: #ffffff;
+    --hover-tint: rgba(255, 255, 255, 0.05);
+    --hover-tint-soft: rgba(255, 255, 255, 0.02);
+  }
+  :root[data-theme="light"] {
+    --bg: #fafafa;
+    --panel: #ffffff;
+    --line: #e2e2e2;
+    --muted: #6b6b6b;
+    --fg: #0a0a0a;
+    --hover-tint: rgba(0, 0, 0, 0.04);
+    --hover-tint-soft: rgba(0, 0, 0, 0.02);
+  }
+  /* Only a media-query fallback for the sliver of time before the
+     pre-paint script above runs (effectively never, but keeps this
+     honest if JS is disabled) — the script is the real source of truth. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --line: #e2e2e2;
+      --muted: #6b6b6b;
+      --fg: #0a0a0a;
+      --hover-tint: rgba(0, 0, 0, 0.04);
+      --hover-tint-soft: rgba(0, 0, 0, 0.02);
+    }
+  }
+
+  body { background-color: var(--bg); transition: background-color .15s ease, color .15s ease; }
   .btn-lime {
     transition: transform .15s ease, box-shadow .15s ease;
   }
@@ -34,14 +89,14 @@
     box-shadow: 0 0 0 1px #d7ff2b, 0 8px 24px -8px rgba(215,255,43,.5);
   }
   .btn-outline:hover {
-    background-color: #ffffff0d;
+    background-color: var(--hover-tint);
   }
   .stat-card, .event-card {
     transition: border-color .15s ease, background-color .15s ease;
   }
   .stat-card:hover, .event-card:hover {
     border-color: #d7ff2b55;
-    background-color: #ffffff05;
+    background-color: var(--hover-tint-soft);
   }
 
   /* Chip-style multiselect: a plain checkbox visually hidden, its label
@@ -58,10 +113,10 @@
     display: inline-flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    border: 1px solid #242424;
+    border: 1px solid var(--line);
     border-radius: 9999px;
     font-size: 0.8125rem;
-    color: #8a8a8a;
+    color: var(--muted);
     cursor: pointer;
     transition: all .15s ease;
     user-select: none;

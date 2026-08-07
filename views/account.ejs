@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'My Account' }) %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="w-6 h-px bg-lime"></span>
+      <span class="font-mono text-xs tracking-[0.2em] text-lime">// ACCOUNT</span>
+    </div>
+    <div class="flex items-center gap-6 mb-12">
+      <% if (user.type === 'student') { %>
+        <img src="<%= user.profile_photo_url || '/avatars/avatar-1.svg' %>" alt="" class="w-20 h-20 rounded-full border border-line object-cover" />
+      <% } %>
+      <h1 class="font-display text-5xl"><%= user.name %></h1>
+    </div>
+
+    <% if (user.type === 'student') { %>
+      <form action="/account/photo" method="POST" enctype="multipart/form-data" class="mb-10 flex items-center gap-3">
+        <input type="file" name="profilePhoto" accept="image/*" required
+               class="text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:bg-panel file:border file:border-line file:text-fg file:cursor-pointer" />
+        <button type="submit" class="btn-outline border border-line font-semibold px-4 py-2 rounded-md text-sm">
+          Change photo
+        </button>
+      </form>
+    <% } %>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+      <div class="stat-card border border-line rounded-lg p-5">
+        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">EMAIL</span>
+        <p class="mt-2 text-sm"><%= user.email %></p>
+      </div>
+      <div class="stat-card border border-line rounded-lg p-5">
+        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">ACCOUNT TYPE</span>
+        <p class="mt-2 text-sm capitalize"><%= user.type %></p>
+      </div>
+
+      <% if (user.type === 'student') { %>
+        <% if (user.roll_number) { %>
+          <div class="stat-card border border-line rounded-lg p-5">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-muted">ROLL NUMBER</span>
+            <p class="mt-2 text-sm"><%= user.roll_number %></p>
+          </div>
+        <% } %>
+        <% if (user.department) { %>
+          <div class="stat-card border border-line rounded-lg p-5">
+            <span class="font-mono text-[11px] tracking-[0.15em] text-muted">DEPARTMENT</span>
+            <p class="mt-2 text-sm"><%= user.department %><% if (user.year) { %> · Year <%= user.year %><% } %></p>
+          </div>
+        <% } %>
+        <div class="stat-card border border-line rounded-lg p-5">
+          <span class="font-mono text-[11px] tracking-[0.15em] text-muted">CREDITED HOURS</span>
+          <p class="mt-2 text-sm"><%= creditedHours %>h verified</p>
+        </div>
+      <% } %>
+
+      <% if (user.type === 'organizer') { %>
+        <div class="stat-card border border-line rounded-lg p-5">
+          <span class="font-mono text-[11px] tracking-[0.15em] text-muted">CLUB</span>
+          <p class="mt-2 text-sm"><%= clubName %></p>
+        </div>
+        <div class="stat-card border border-line rounded-lg p-5">
+          <span class="font-mono text-[11px] tracking-[0.15em] text-muted">ROLE</span>
+          <p class="mt-2 text-sm"><%= user.role === 'president' ? 'President' : 'Vice President' %></p>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (user.type === 'organizer') { %>
+      <div class="mb-10 border border-line rounded-lg p-6">
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">EDIT YOUR INFO</h2>
+        <form action="/account" method="POST" class="flex flex-col gap-4 max-w-sm">
+          <input type="text" name="name" value="<%= user.name %>" placeholder="Full name"
+                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
+          <input type="email" name="email" value="<%= user.email %>" placeholder="Email"
+                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
+          <button type="submit" class="btn-lime bg-lime text-black font-semibold px-5 py-3 rounded-md text-sm self-start">
+            Save changes
+          </button>
+        </form>
+      </div>
+
+      <div class="flex flex-wrap gap-4 mb-10">
+        <a href="/club" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
+          Club
+        </a>
+        <a href="/club-events" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
+          Club events
+        </a>
+      </div>
+    <% } %>
+
+    <% if (user.type === 'student') { %>
+      <div class="mb-10 border border-line rounded-lg p-6">
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">EDIT YOUR INFO</h2>
+        <form action="/account" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+          <input type="text" name="name" value="<%= user.name %>" placeholder="Full name" required
+                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime sm:col-span-2" />
+          <input type="text" name="rollNumber" value="<%= user.roll_number || '' %>" placeholder="Roll number"
+                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+          <input type="text" name="department" value="<%= user.department || '' %>" placeholder="Department"
+                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+          <input type="number" name="year" value="<%= user.year || '' %>" placeholder="Year"
+                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+          <input type="text" name="phone" value="<%= user.phone || '' %>" placeholder="Phone"
+                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+          <button type="submit" class="btn-lime bg-lime text-black font-semibold px-5 py-3 rounded-md text-sm self-start sm:col-span-2">
+            Save changes
+          </button>
+        </form>
+      </div>
+
+      <div class="mb-10">
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">MY CLUBS</h2>
+        <% if (clubs.length === 0) { %>
+          <p class="text-muted text-sm">You haven't joined any clubs yet.</p>
+        <% } else { %>
+          <div class="flex flex-wrap gap-2">
+            <% clubs.forEach(function(club) { %>
+              <span class="chip-label"><%= club.name %></span>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (hoursByClub.length > 0) { %>
+        <div class="mb-10">
+          <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">HOURS BY CLUB</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <% hoursByClub.forEach(function(hc) { %>
+              <div class="stat-card border border-line rounded-lg p-5">
+                <span class="font-mono text-[11px] tracking-[0.15em] text-muted"><%= hc.club_name.toUpperCase() %></span>
+                <p class="mt-2 text-sm"><%= hc.total_hours %>h verified</p>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-mono text-xs tracking-[0.15em] text-muted">MY HOURS</h2>
+          <span id="hours-live-status" class="font-mono text-[10px] tracking-[0.1em] text-muted"></span>
+        </div>
+        <% if (hoursBreakdown.length === 0) { %>
+          <p id="hours-empty" class="text-muted text-sm">No verified hours yet — they'll show up here as soon as a team head marks a task complete for you.</p>
+        <% } %>
+        <div class="border border-line rounded-lg overflow-hidden overflow-x-auto <%= hoursBreakdown.length === 0 ? 'hidden' : '' %>" id="hours-table-wrap">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-line text-left">
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">TASK</th>
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">TEAM</th>
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">CLUB</th>
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">HOURS</th>
+              </tr>
+            </thead>
+            <tbody id="hours-table-body">
+              <% hoursBreakdown.forEach(function(h) { %>
+                <tr class="border-b border-line last:border-b-0">
+                  <td class="px-4 py-3"><%= h.task_title %></td>
+                  <td class="px-4 py-3 text-muted"><%= h.team_name %></td>
+                  <td class="px-4 py-3 text-muted"><%= h.club_name %></td>
+                  <td class="px-4 py-3"><%= h.hours_logged %>h</td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-4">
+        <a href="/registered-events" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
+          Registered events
+        </a>
+        <a href="/teams" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
+          My teams
+        </a>
+      </div>
+    <% } %>
+
+    <form action="/auth/logout" method="POST" class="mt-12 border-t border-line pt-8">
+      <button type="submit" class="text-xs tracking-[0.1em] text-muted hover:text-fg transition-colors">
+        LOGOUT
+      </button>
+    </form>
+  </main>
+
+  <% if (user.type === 'student') { %>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // Live "My Hours" — the moment a team head marks a task complete for
+      // this student (see teamController.completeTask emitting
+      // 'hours:updated' to their own user:<id> room), re-fetch the fresh
+      // breakdown as JSON and prepend whatever's new — no page reload.
+      // partials/nav.ejs already loads socket.io.js/nav-live.js, but this
+      // page needs its own listener since the table only lives here.
+      (function () {
+        if (typeof io !== 'function') return;
+        const socket = io({ withCredentials: true });
+        const status = document.getElementById('hours-live-status');
+        const wrap = document.getElementById('hours-table-wrap');
+        const body = document.getElementById('hours-table-body');
+        const empty = document.getElementById('hours-empty');
+        let knownIds = new Set(<%- JSON.stringify(hoursBreakdown.map((h) => h.id)) %>);
+
+        socket.on('connect', () => { status.textContent = 'LIVE'; });
+        socket.on('disconnect', () => { status.textContent = ''; });
+
+        socket.on('hours:updated', async () => {
+          try {
+            const res = await fetch('/account/hours.json');
+            if (!res.ok) return;
+            const { hoursBreakdown: fresh } = await res.json();
+            const newRows = fresh.filter((h) => !knownIds.has(h.id));
+            if (!newRows.length) return;
+
+            newRows.forEach((h) => knownIds.add(h.id));
+            if (empty) empty.classList.add('hidden');
+            wrap.classList.remove('hidden');
+
+            newRows.forEach((h) => {
+              const tr = document.createElement('tr');
+              tr.className = 'border-b border-line last:border-b-0';
+              tr.innerHTML = `
+                <td class="px-4 py-3">${h.task_title}</td>
+                <td class="px-4 py-3 text-muted">${h.team_name}</td>
+                <td class="px-4 py-3 text-muted">${h.club_name}</td>
+                <td class="px-4 py-3">${h.hours_logged}h</td>
+              `;
+              body.insertBefore(tr, body.firstChild);
+            });
+          } catch (err) {
+            // Silent — the table just stays as it was until the next event/reload.
+          }
+        });
+      })();
+    </script>
+  <% } %>
+</body>
+</html>

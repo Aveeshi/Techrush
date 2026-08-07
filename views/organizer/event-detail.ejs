@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: event.title }) %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
+    <%
+      // Organizers manage every event in their club (/club-events), and a
+      // sub-event's page naturally breadcrumbs back to its parent event's
+      // page for them. A student got here from ONE place — the "My
+      // Events & Teams" card grid — no matter which role tag (event head,
+      // sub-event head, team head, volunteer) got them there, so their
+      // back button always returns to that same list, never to a parent
+      // event's management page they may not even have standalone access to.
+      const backUrl = user.type === 'organizer'
+        ? (parentEvent ? `/club-events/${parentEvent.id}` : '/club-events')
+        : '/my-events';
+      const backLabel = user.type === 'organizer'
+        ? (parentEvent ? parentEvent.title.toUpperCase() : 'CLUB EVENTS')
+        : 'MY EVENTS & TEAMS';
+    %>
+    <a href="<%= backUrl %>"
+       class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">
+      ← <%= backLabel %>
+    </a>
+
+    <div class="mt-6 mb-10 flex items-start justify-between gap-4">
+      <div>
+        <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+          <%= containerType === 'sub_event' ? 'SUB-EVENT' : 'EVENT' %> · <%= (event.status || 'draft').toUpperCase() %>
+        </span>
+        <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= event.title %></h1>
+        <p class="text-muted">
+          <%= new Date(event.start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %>
+          <% if (event.venue) { %> · <%= event.venue %><% } %>
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3 shrink-0">
+        <% if (user.type === 'organizer') { %>
+          <form action="<%= manageBasePath %>/publish" method="POST">
+            <button type="submit" class="btn-outline border border-line font-semibold px-5 py-2.5 rounded-md text-sm">
+              <%= event.status === 'published' ? 'Unpublish' : 'Publish' %>
+            </button>
+          </form>
+        <% } %>
+        <a href="<%= containerType === 'sub_event' ? `/events/${event.event_id}/sub-events/${event.id}/scan` : `/events/${event.id}/scan` %>"
+           class="btn-lime bg-lime text-black font-semibold px-5 py-2.5 rounded-md text-sm">
+          Scan attendee QR codes
+        </a>
+        <a href="<%= manageBasePath %>/edit" class="btn-outline border border-line font-semibold px-5 py-2.5 rounded-md text-sm">
+          Edit info
+        </a>
+      </div>
+    </div>
+
+    <% if (event.description) { %>
+      <p class="text-fg leading-relaxed whitespace-pre-line mb-10 max-w-2xl"><%= event.description %></p>
+    <% } %>
+
+    <% if (containerType === 'event') { %>
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-mono text-xs tracking-[0.15em] text-muted">SUB-EVENTS (<%= subEvents.length %>)</h2>
+          <a href="/club-events/<%= event.id %>/sub-events/new" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
+            + ADD SUB-EVENT
+          </a>
+        </div>
+        <% if (subEvents.length === 0) { %>
+          <p class="text-muted text-sm">No sub-events yet.</p>
+        <% } else { %>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <% subEvents.forEach(function(sub) { %>
+              <a href="/club-events/<%= event.id %>/sub-events/<%= sub.id %>" class="event-card block border border-line rounded-lg p-5">
+                <h3 class="font-display text-lg mb-1"><%= sub.title %></h3>
+                <p class="text-muted text-xs"><%= new Date(sub.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></p>
+              </a>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="mb-10">
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">EVENT HEAD<%= heads.length === 1 ? '' : 'S' %> (<%= heads.length %>)</h2>
+      <% if (heads.length === 0) { %>
+        <p class="text-muted text-sm">No event head assigned.</p>
+      <% } else { %>
+        <div class="flex flex-wrap gap-2">
+          <% heads.forEach(function(h) { %>
+            <span class="chip-label"><%= h.name %></span>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="mb-10">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted">TEAMS (<%= teams.length %>)</h2>
+      </div>
+
+      <% if (teams.length === 0) { %>
+        <p class="text-muted text-sm mb-6">No teams yet.</p>
+      <% } %>
+
+      <div class="space-y-6">
+        <% teams.forEach(function(team, i) { %>
+          <div class="border border-line rounded-lg p-5">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 class="font-display text-lg"><%= team.name %></h3>
+                <% if (team.description) { %><p class="text-muted text-xs mt-1"><%= team.description %></p><% } %>
+              </div>
+              <span class="font-mono text-[11px] tracking-[0.1em] text-muted shrink-0">
+                <%= team.members.length %> MEMBER<%= team.members.length === 1 ? '' : 'S' %>
+              </span>
+            </div>
+
+            <% if (team.heads.length > 0) { %>
+              <div class="flex flex-wrap gap-2 mb-4">
+                <% team.heads.forEach(function(h) { %>
+                  <span class="chip-label">Head: <%= h.name %></span>
+                <% }); %>
+              </div>
+            <% } %>
+
+            <div class="flex items-center gap-5">
+              <a href="/teams/<%= team.id %>/manage" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
+                MANAGE TEAM →
+              </a>
+              <a href="/teams/<%= team.id %>#chat" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
+                VIEW CHAT →
+              </a>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <form action="<%= manageBasePath %>/teams" method="POST" class="border border-line rounded-lg p-5 flex flex-wrap gap-3 items-end mt-6">
+        <div class="flex-1 min-w-[160px]">
+          <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">NEW TEAM NAME</label>
+          <input type="text" name="name" required
+                 class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+        </div>
+        <div class="flex-1 min-w-[160px]">
+          <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">DESCRIPTION (OPTIONAL)</label>
+          <input type="text" name="description"
+                 class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+        </div>
+        <button type="submit" class="btn-outline border border-line px-5 py-2.5 rounded-md text-sm">+ Add team</button>
+      </form>
+    </div>
+
+    <!-- Attendees -->
+    <div class="mb-10">
+      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">ATTENDEES (<%= attendees.length %>)</h2>
+      <% if (attendees.length === 0) { %>
+        <p class="text-muted text-sm">No one has registered as an attendee yet.</p>
+      <% } else { %>
+        <div class="border border-line rounded-lg overflow-hidden overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-line text-left">
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">NAME</th>
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">EMAIL</th>
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">CHECKED IN</th>
+                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">CHECKED OUT</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% attendees.forEach(function(a) { %>
+                <tr class="border-b border-line last:border-b-0">
+                  <td class="px-4 py-3"><%= a.name %></td>
+                  <td class="px-4 py-3 text-muted"><%= a.email %></td>
+                  <td class="px-4 py-3"><%= a.checked_in_at ? '✅ ' + new Date(a.checked_in_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—' %></td>
+                  <td class="px-4 py-3"><%= a.checked_out_at ? '✅ ' + new Date(a.checked_out_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—' %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

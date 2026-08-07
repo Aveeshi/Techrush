@@ -26,7 +26,7 @@
     #tab-organizer:checked ~ #organizer-panel { display: block; }
   </style>
 </head>
-<body class="font-sans text-white antialiased">
+<body class="font-sans text-fg antialiased">
   <%- include('../partials/nav') %>
 
   <main class="max-w-md mx-auto px-8 py-16">
@@ -47,7 +47,7 @@
     <% } %>
 
     <a href="/auth/google"
-       class="w-full flex items-center justify-center gap-3 border border-line rounded-md py-3 mb-6 bg-panel text-white font-medium hover:bg-white/5 transition-colors">
+       class="w-full flex items-center justify-center gap-3 border border-line rounded-md py-3 mb-6 bg-panel text-fg font-medium hover:bg-white/5 transition-colors">
       <svg width="18" height="18" viewBox="0 0 48 48">
         <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12
             s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24
@@ -81,9 +81,9 @@
       <form action="/auth/student/login" method="POST">
         <input type="email" name="email" placeholder="Email"
                value="<%= oldInput.email || '' %>"
-               class="w-full px-4 py-3 mb-4 bg-panel border border-line rounded-md text-white placeholder-muted focus:outline-none focus:border-lime" required />
+               class="w-full px-4 py-3 mb-4 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
         <input type="password" name="password" placeholder="Password"
-               class="w-full px-4 py-3 mb-6 bg-panel border border-line rounded-md text-white placeholder-muted focus:outline-none focus:border-lime" required />
+               class="w-full px-4 py-3 mb-6 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
         <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md">
           Log in as student
         </button>
@@ -94,9 +94,9 @@
       <form action="/auth/organizer/login" method="POST">
         <input type="email" name="email" placeholder="Email"
                value="<%= oldInput.email || '' %>"
-               class="w-full px-4 py-3 mb-4 bg-panel border border-line rounded-md text-white placeholder-muted focus:outline-none focus:border-lime" required />
+               class="w-full px-4 py-3 mb-4 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
         <input type="password" name="password" placeholder="Password"
-               class="w-full px-4 py-3 mb-6 bg-panel border border-line rounded-md text-white placeholder-muted focus:outline-none focus:border-lime" required />
+               class="w-full px-4 py-3 mb-6 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
         <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md">
           Log in as organizer
         </button>

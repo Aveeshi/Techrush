@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Volunteer · ' + event.title }) %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-2xl mx-auto px-8 pt-16 pb-20">
+    <a href="<%= backUrl %>" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK TO EVENT</a>
+
+    <div class="mt-6 mb-10">
+      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
+        VOLUNTEERING
+      </span>
+      <h1 class="font-display text-4xl mb-2"><%= event.title %></h1>
+      <p class="text-muted">Pick as many teams as you'd like to join. No approval needed — you're added instantly.</p>
+    </div>
+
+    <% if (teams.length === 0) { %>
+      <p class="text-muted">This event doesn't have any teams set up yet.</p>
+    <% } else { %>
+      <form action="<%= formAction %>" method="POST">
+        <div class="space-y-3 mb-8">
+          <% teams.forEach(function(team) { %>
+            <label class="flex items-start gap-4 border border-line rounded-lg p-5 cursor-pointer hover:border-lime/55 transition-colors">
+              <input
+                type="checkbox"
+                name="teamIds"
+                value="<%= team.id %>"
+                <%= team.joined ? 'checked' : '' %>
+                class="mt-1 shrink-0 accent-lime w-4 h-4"
+              />
+              <span>
+                <span class="block font-display text-lg"><%= team.name %></span>
+                <% if (team.description) { %>
+                  <span class="block text-muted text-sm mt-1"><%= team.description %></span>
+                <% } %>
+              </span>
+            </label>
+          <% }); %>
+        </div>
+
+        <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+          Save my teams
+        </button>
+      </form>
+    <% } %>
+  </main>
+</body>
+</html>

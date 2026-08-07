@@ -3,11 +3,11 @@
 <head>
   <%- include('partials/head', { title: event.title }) %>
 </head>
-<body class="font-sans text-white antialiased">
+<body class="font-sans text-fg antialiased">
   <%- include('partials/nav') %>
 
   <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
-    <a href="/events" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-white transition-colors">← BACK TO EVENTS</a>
+    <a href="/events" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK TO EVENTS</a>
 
     <% if (typeof error !== 'undefined' && error) { %>
       <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mt-6 text-sm">
@@ -20,10 +20,50 @@
         <%= (event.event_type_name || 'EVENT').toUpperCase() %>
       </span>
       <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= event.title %></h1>
-      <p class="text-muted">Organized by <span class="text-white"><%= event.club_name %></span></p>
+      <p class="text-muted">Organized by <span class="text-fg"><%= event.club_name %></span></p>
     </div>
 
-    <% if (event.banner_url) { %>
+    <%
+      // images (EventImage.findByEvent) is only passed on the normal
+      // showEvent render — the register() error-path re-renders don't
+      // re-fetch it, so fall back to an empty list there rather than
+      // crashing on an undefined local.
+      const gallery = typeof images !== 'undefined' ? images : [];
+    %>
+    <% if (gallery.length > 1) { %>
+      <!-- Multi-image carousel — plain JS, no library. One <img> per
+           gallery image (all in the DOM so no extra network round trips
+           mid-browse), toggled via .hidden; left/right buttons cycle an
+           index. Falls back to a single <img> below when there's 0 or 1
+           images. -->
+      <div id="event-carousel" class="relative w-full h-72 rounded-lg border border-line overflow-hidden mb-8 bg-panel">
+        <% gallery.forEach(function(img, i) { %>
+          <img src="<%= img.url %>" alt="" data-slide="<%= i %>" class="carousel-slide absolute inset-0 w-full h-full object-cover <%= i === 0 ? '' : 'hidden' %>" />
+        <% }); %>
+        <button type="button" onclick="moveCarousel(-1)" aria-label="Previous image"
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">‹</button>
+        <button type="button" onclick="moveCarousel(1)" aria-label="Next image"
+                class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">›</button>
+        <div class="absolute bottom-3 right-3 font-mono text-[11px] tracking-[0.1em] text-white bg-black/60 rounded px-2 py-1">
+          <span id="carousel-position">1</span> / <%= gallery.length %>
+        </div>
+      </div>
+      <script>
+        (function () {
+          const slides = document.querySelectorAll('#event-carousel .carousel-slide');
+          const positionEl = document.getElementById('carousel-position');
+          let current = 0;
+          window.moveCarousel = function (delta) {
+            slides[current].classList.add('hidden');
+            current = (current + delta + slides.length) % slides.length;
+            slides[current].classList.remove('hidden');
+            positionEl.textContent = current + 1;
+          };
+        })();
+      </script>
+    <% } else if (gallery.length === 1) { %>
+      <img src="<%= gallery[0].url %>" alt="" class="w-full h-72 object-cover rounded-lg border border-line mb-8" />
+    <% } else if (event.banner_url) { %>
       <img src="<%= event.banner_url %>" alt="" class="w-full h-72 object-cover rounded-lg border border-line mb-8" />
     <% } %>
 
@@ -46,22 +86,63 @@
 
     <div class="mb-10">
       <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">ABOUT THIS EVENT</h2>
-      <p class="text-white leading-relaxed whitespace-pre-line"><%= event.description || 'No description provided.' %></p>
+      <p class="text-fg leading-relaxed whitespace-pre-line"><%= event.description || 'No description provided.' %></p>
     </div>
+
+    <% if (typeof hasSubEvents !== 'undefined' && hasSubEvents) { %>
+      <!-- Sub-events -->
+      <div class="mb-10">
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">SUB-EVENTS</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <% subEvents.forEach(function(sub) { %>
+            <a href="/events/<%= event.id %>/sub-events/<%= sub.id %>" class="event-card block border border-line rounded-lg p-5 hover:border-lime/55 transition-colors">
+              <h3 class="font-display text-lg mb-2"><%= sub.title %></h3>
+              <div class="space-y-1.5 text-sm text-muted mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono">📅</span>
+                  <%= new Date(sub.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %>
+                </div>
+                <% if (sub.venue) { %>
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono">📍</span>
+                    <%= sub.venue %>
+                  </div>
+                <% } %>
+              </div>
+              <span class="font-mono text-xs tracking-[0.1em] text-lime">VIEW SUB-EVENT →</span>
+            </a>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
 
     <!-- Registration -->
     <div class="border-t border-line pt-8">
       <% if (!user) { %>
-        <p class="text-muted mb-4">Log in as a student to register for this event.</p>
+        <p class="text-muted mb-4">Log in as a student to <%= hasSubEvents ? 'volunteer for' : 'register for' %> this event.</p>
         <a href="/auth/login" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-          Log in to register
+          Log in
+        </a>
+
+      <% } else if (typeof isHead !== 'undefined' && isHead) { %>
+        <!-- This event's own head manages it — no register/volunteer
+             options for them, same as an organizer never registers for
+             their own club's event. -->
+        <p class="text-lime font-semibold mb-1">You're the event head for this event.</p>
+        <p class="text-muted text-sm mb-4">Manage its info, teams, and tasks from your dashboard instead of registering here.</p>
+        <a href="/club-events/<%= event.id %>" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-5 py-3 rounded-md text-sm">
+          Manage event →
         </a>
 
       <% } else if (user.type === 'organizer') { %>
         <% if (user.club_id === event.club_id) { %>
-          <a href="/events/<%= event.id %>/scan" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-            Scan attendee QR codes
-          </a>
+          <% if (!hasSubEvents) { %>
+            <a href="/events/<%= event.id %>/scan" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+              Scan attendee QR codes
+            </a>
+          <% } else { %>
+            <p class="text-muted">This event's attendees register per sub-event — scan from each sub-event's page.</p>
+          <% } %>
         <% } else { %>
           <p class="text-muted">Organizer accounts don't register for events.</p>
         <% } %>
@@ -73,7 +154,7 @@
           </p>
           <p class="text-muted text-sm mt-1">Status: <%= registration.status %></p>
 
-          <% if (typeof qrImage !== 'undefined' && qrImage) { %>
+          <% if (registration.registration_type === 'attendee' && typeof qrImage !== 'undefined' && qrImage) { %>
             <div class="mt-5 pt-5 border-t border-lime/20 flex flex-col items-start gap-3">
               <p class="font-mono text-[11px] tracking-[0.15em] text-muted">YOUR CHECK-IN CODE</p>
               <img src="<%= qrImage %>" alt="Your event QR code" class="w-48 h-48 rounded-md border border-line bg-white p-2" />
@@ -82,7 +163,35 @@
               </p>
             </div>
           <% } %>
+
+          <% if (registration.registration_type === 'volunteer') { %>
+            <div class="mt-5 pt-5 border-t border-lime/20">
+              <a href="/events/<%= event.id %>/volunteer-teams" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-5 py-3 rounded-md text-sm">
+                Manage which teams you're on →
+              </a>
+            </div>
+          <% } %>
         </div>
+
+      <% } else if (hasSubEvents) { %>
+        <!-- Flagship events with sub-events are volunteer-only at this level —
+             attendees register per sub-event instead (see the cards above). -->
+        <div class="flex flex-wrap gap-4">
+          <% if (canVolunteer) { %>
+            <form action="/events/<%= event.id %>/register" method="POST">
+              <input type="hidden" name="registrationType" value="volunteer" />
+              <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
+                Volunteer now
+              </button>
+            </form>
+          <% } %>
+        </div>
+
+        <% if (!canVolunteer) { %>
+          <p class="text-muted text-xs mt-4">
+            Volunteering is open to <%= event.club_name %> members. Join the club to unlock this option.
+          </p>
+        <% } %>
 
       <% } else { %>
         <div class="flex flex-wrap gap-4">
