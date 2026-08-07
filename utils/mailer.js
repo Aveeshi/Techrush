@@ -17,10 +17,21 @@ const nodemailer = require('nodemailer');
   which fails as ENETUNREACH before auth is even attempted. This never
   showed up locally because most home/ISP networks either have working
   IPv6 or fall back to IPv4 automatically; Render's network doesn't.
+
+  Explicit host/port 587 with STARTTLS (secure: false, requireTLS: true)
+  instead of the service:'gmail' shorthand's default port 465/implicit
+  TLS — some networks (Render's outbound included, going by the
+  connection timeouts we saw on 465) allow 587 through when 465 gets
+  silently dropped. connectionTimeout is set explicitly so a still-blocked
+  port fails fast instead of hanging for nodemailer's default 2 minutes.
 */
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  requireTLS: true,
   family: 4,
+  connectionTimeout: 15000,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_APP_PASSWORD,
