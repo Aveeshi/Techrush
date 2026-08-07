@@ -2,10 +2,10 @@ const passport = require('passport');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Organizer = require('../models/Organizer');
-const ClubMember = require('../models/ClubMember');
+const ClubMember = require('../models/Clubmember');
 const ClubRoster = require('../models/ClubRoster');
-const SkillTag = require('../models/SkillTag');
-const EventType = require('../models/EventType');
+const SkillTag = require('../models/Skilltag');
+const EventType = require('../models/Eventtype');
 const EventHead = require('../models/EventHead');
 const Team = require('../models/Team');
 

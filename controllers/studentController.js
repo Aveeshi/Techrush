@@ -1,6 +1,6 @@
 const User = require('../models/User');
-const EventRegistration = require('../models/EventRegistration');
-const ClubMember = require('../models/ClubMember');
+const EventRegistration = require('../models/Eventregistration');
+const ClubMember = require('../models/Clubmember');
 const Club = require('../models/Club');
 
 const studentController = {

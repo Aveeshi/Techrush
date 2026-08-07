@@ -10,8 +10,8 @@
 
 const pool = require('./utils/db');
 const Club = require('./models/Club');
-const EventType = require('./models/EventType');
-const SkillTag = require('./models/SkillTag');
+const EventType = require('./models/Eventtype');
+const SkillTag = require('./models/Skilltag');
 
 const CLUBS = [
   { name: 'Robotics Club', description: 'Builds and competes with robots' },

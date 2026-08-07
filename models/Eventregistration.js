@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../utils/db');
-const ClubMember = require('./ClubMember');
+const ClubMember = require('./Clubmember');
 
 /*
   CREATE TABLE event_registrations (
