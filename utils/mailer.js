@@ -1,4 +1,8 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+const GMAIL_SMTP_HOST = 'smtp.gmail.com';
+const GMAIL_SMTP_PORT = 587;
 
 /*
   One shared Gmail transport (App Password auth, not OAuth — simplest
@@ -12,31 +16,49 @@ const nodemailer = require('nodemailer');
   subEventController.js, which fire-and-forget with .catch(console.error)
   rather than awaiting inline in the request's success path).
 
-  family: 4 forces Node to connect over IPv4 — hosts like Render resolve
-  smtp.gmail.com's AAAA (IPv6) record but have no IPv6 egress route to it,
-  which fails as ENETUNREACH before auth is even attempted. This never
-  showed up locally because most home/ISP networks either have working
-  IPv6 or fall back to IPv4 automatically; Render's network doesn't.
+  Why the transport is built fresh per send instead of once at module
+  load, and why we resolve the IP ourselves:
 
-  Explicit host/port 587 with STARTTLS (secure: false, requireTLS: true)
-  instead of the service:'gmail' shorthand's default port 465/implicit
-  TLS — some networks (Render's outbound included, going by the
-  connection timeouts we saw on 465) allow 587 through when 465 gets
-  silently dropped. connectionTimeout is set explicitly so a still-blocked
-  port fails fast instead of hanging for nodemailer's default 2 minutes.
+  The installed nodemailer version's own hostname resolver (lib/shared/
+  resolveHostname) fetches BOTH smtp.gmail.com's A (IPv4) and AAAA (IPv6)
+  records, then picks which one to actually connect to at RANDOM
+  (`addresses[Math.floor(Math.random() * addresses.length)]`) — it never
+  reads a `family` option (that's not a thing this version supports,
+  despite `family` being a documented net.connect option elsewhere).
+  On a host with no IPv6 egress route (Render), that coin flip surfaces
+  as intermittent ENETUNREACH on the IPv6 picks and timeouts on the IPv4
+  picks, which looked like two different bugs but was one: nondeterministic
+  address selection outside our control.
+
+  The fix is to never hand nodemailer a hostname to resolve at all —
+  resolve smtp.gmail.com to an IPv4 address ourselves via dns.resolve4,
+  then pass that literal IP as `host`. nodemailer's resolver short-circuits
+  immediately when `host` is already an IP (net.isIP(host) => "nothing to
+  do here"), so the random picker never runs. `tls.servername` is set
+  explicitly to the real hostname so TLS certificate hostname verification
+  still succeeds — otherwise it'd try to match Gmail's cert against the
+  bare IP and fail.
+
+  Resolving fresh on every send (rather than caching one IP for the
+  process lifetime) costs one extra DNS lookup per registration email —
+  negligible — and avoids ever going stale if Gmail rotates its SMTP
+  frontend IPs.
 */
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  family: 4,
-  connectionTimeout: 15000,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASSWORD,
-  },
-});
+async function getTransporter() {
+  const [ip] = await dns.promises.resolve4(GMAIL_SMTP_HOST);
+  return nodemailer.createTransport({
+    host: ip,
+    port: GMAIL_SMTP_PORT,
+    secure: false,
+    requireTLS: true,
+    connectionTimeout: 15000,
+    tls: { servername: GMAIL_SMTP_HOST },
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_APP_PASSWORD,
+    },
+  });
+}
 
 // qrDataUrl (optional) — the same data:image/png;base64,... string
 // QRCode.toDataURL() already produces for attendee registrations, only
@@ -63,6 +85,7 @@ async function sendRegistrationEmail({ to, studentName, title, startTime, venue,
     `;
   }
 
+  const transporter = await getTransporter();
   await transporter.sendMail({
     from: `"Clubbing" <${process.env.EMAIL_USER}>`,
     to,
