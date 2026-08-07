@@ -6,7 +6,7 @@ const ClubMember = require('../models/Clubmember');
 const Team = require('../models/Team');
 const Group = require('../models/Group');
 const Task = require('../models/Task');
-const TaskAssignment = require('../models/TaskAssignment');
+const TaskAssignment = require('../models/Taskassignment');
 const EventRegistration = require('../models/Eventregistration');
 const EventImage = require('../models/EventImage');
 
