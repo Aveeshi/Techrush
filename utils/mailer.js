@@ -11,9 +11,16 @@ const nodemailer = require('nodemailer');
   registration itself (see call sites in eventController.js/
   subEventController.js, which fire-and-forget with .catch(console.error)
   rather than awaiting inline in the request's success path).
+
+  family: 4 forces Node to connect over IPv4 — hosts like Render resolve
+  smtp.gmail.com's AAAA (IPv6) record but have no IPv6 egress route to it,
+  which fails as ENETUNREACH before auth is even attempted. This never
+  showed up locally because most home/ISP networks either have working
+  IPv6 or fall back to IPv4 automatically; Render's network doesn't.
 */
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  family: 4,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_APP_PASSWORD,

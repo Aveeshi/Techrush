@@ -3,6 +3,19 @@ const Event = require('../models/Event');
 const SubEvent = require('../models/SubEvent');
 const EventHead = require('../models/EventHead');
 
+// Shared by requireTeamHead and canAccessTeam-adjacent checks: resolves the
+// club_id that owns a team, whichever container (event or sub-event) it
+// lives under — sub_events has no club_id column of its own, it's
+// inherited from the parent event (see SubEvent.findByIdWithDetails).
+async function clubIdForTeam(team) {
+  if (team.event_id) {
+    const event = await Event.findById(team.event_id);
+    return event?.club_id ?? null;
+  }
+  const subEvent = await SubEvent.findByIdWithDetails(team.sub_event_id);
+  return subEvent?.club_id ?? null;
+}
+
 // Blocks any unauthenticated request, regardless of type
 function requireAuth(req, res, next) {
   if (!req.isAuthenticated()) {
@@ -25,21 +38,23 @@ function requireOrganizer(req, res, next) {
   next();
 }
 
-// Use on any route where a student must be able to manage the team named
-// in req.params.teamId (creating/assigning tasks, marking attendance,
-// verifying hours, assigning a head). Passes for EITHER:
+// Use on any route where a student or organizer must be able to manage the
+// team named in req.params.teamId (creating/assigning tasks, marking
+// attendance, verifying hours, assigning a head). Passes for ANY of:
 //   - Team.isTeamHead(teamId, studentId) — the team's own head, OR
 //   - EventHead.isEventHead(...) on that team's own container (event or
-//     sub-event) — "an event head has all the authorities of team heads"
-// is exactly this OR, not a separate parallel permission system. For a
-// team under a sub-event, that container check is hierarchical (see
+//     sub-event) — "an event head has all the authorities of team heads", OR
+//   - the organizer of the club that owns the team's event/sub-event — the
+//     organizer sits above event heads in this same hierarchy, so they
+//     inherit every authority an event head (and therefore a team head) has.
+// For a team under a sub-event, the event-head check is hierarchical (see
 // EventHead.isEventHeadOfSubEvent) — the sub-event's own head OR its
 // parent event's head, so a main event head can manage every team under
 // every one of their sub-events too. Stashes the team row on req.team so
 // the controller doesn't need to re-fetch it.
 async function requireTeamHead(req, res, next) {
-  if (!req.isAuthenticated() || req.user.type !== 'student') {
-    return res.status(403).json({ error: 'Student account required' });
+  if (!req.isAuthenticated() || (req.user.type !== 'student' && req.user.type !== 'organizer')) {
+    return res.status(403).json({ error: 'Student or organizer account required' });
   }
   try {
     const { teamId } = req.params;
@@ -48,17 +63,24 @@ async function requireTeamHead(req, res, next) {
       return res.status(404).json({ error: 'Team not found' });
     }
 
-    const isHead = await Team.isTeamHead(teamId, req.user.id);
-    let isEventHead;
-    if (team.event_id) {
-      isEventHead = await EventHead.isEventHead({ eventId: team.event_id }, req.user.id);
+    let authorized = false;
+    if (req.user.type === 'organizer') {
+      const clubId = await clubIdForTeam(team);
+      authorized = !!clubId && req.user.club_id === clubId;
     } else {
-      const subEvent = await SubEvent.findById(team.sub_event_id);
-      isEventHead = subEvent ? await EventHead.isEventHeadOfSubEvent(subEvent, req.user.id) : false;
+      const isHead = await Team.isTeamHead(teamId, req.user.id);
+      let isEventHead;
+      if (team.event_id) {
+        isEventHead = await EventHead.isEventHead({ eventId: team.event_id }, req.user.id);
+      } else {
+        const subEvent = await SubEvent.findById(team.sub_event_id);
+        isEventHead = subEvent ? await EventHead.isEventHeadOfSubEvent(subEvent, req.user.id) : false;
+      }
+      authorized = isHead || isEventHead;
     }
 
-    if (!isHead && !isEventHead) {
-      return res.status(403).json({ error: 'Only this team\'s head (or its event head) can do that' });
+    if (!authorized) {
+      return res.status(403).json({ error: 'Only this team\'s head (or its event head/organizer) can do that' });
     }
 
     req.team = team;

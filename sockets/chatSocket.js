@@ -12,18 +12,20 @@ const Chat = require('../models/Chat');
   passport middleware used for normal HTTP requests, against the
   underlying handshake request — so socket.request.user is populated
   exactly like req.user is on any Express route. A socket with no
-  authenticated student is disconnected immediately, and every event
-  below re-checks Team.canAccessTeam() itself (never trusts that a prior
-  join succeeded, the same way route handlers never trust the frontend).
-  canAccessTeam is membership OR being the event head of the team's
-  container — an event head can open/post in every team's chat under
-  their event, not just ones they happen to be a literal member of.
+  authenticated student OR organizer is disconnected immediately, and
+  every event below re-checks Team.canAccessTeam() itself (never trusts
+  that a prior join succeeded, the same way route handlers never trust
+  the frontend). canAccessTeam is membership OR being the event head of
+  the team's container OR the organizer of the owning club — an event
+  head (or that organizer, above them in the same hierarchy) can
+  open/post in every team's chat under their event, not just ones they
+  happen to be a literal member of.
 */
 function registerChatSocket(io) {
   io.on('connection', (socket) => {
     const user = socket.request.user;
 
-    if (!user || user.type !== 'student') {
+    if (!user || (user.type !== 'student' && user.type !== 'organizer')) {
       socket.disconnect(true);
       return;
     }
@@ -39,7 +41,7 @@ function registerChatSocket(io) {
     socket.on('team:join', async (teamId, ack) => {
       try {
         if (typeof teamId !== 'string') return;
-        const canAccess = await Team.canAccessTeam(teamId, user.id);
+        const canAccess = await Team.canAccessTeam(teamId, user);
         if (!canAccess) {
           if (typeof ack === 'function') ack({ ok: false, error: 'Not a member of this team' });
           return;
@@ -59,7 +61,7 @@ function registerChatSocket(io) {
       try {
         if (!teamId || typeof content !== 'string' || !content.trim()) return;
 
-        const canAccess = await Team.canAccessTeam(teamId, user.id);
+        const canAccess = await Team.canAccessTeam(teamId, user);
         if (!canAccess) {
           if (typeof ack === 'function') ack({ ok: false, error: 'Not a member of this team' });
           return;
@@ -70,7 +72,7 @@ function registerChatSocket(io) {
           channelId: channel.id,
           channelType: 'team_official',
           senderId: user.id,
-          senderType: 'student',
+          senderType: user.type,
           content: content.trim(),
         });
 

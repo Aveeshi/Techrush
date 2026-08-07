@@ -1,6 +1,7 @@
 const pool = require('../utils/db');
 const EventHead = require('./EventHead');
 const SubEvent = require('./SubEvent');
+const Event = require('./Event');
 
 /*
   CREATE TABLE teams (
@@ -188,15 +189,28 @@ class Team {
   // isEventHeadOfSubEvent) — a MAIN event head gets chat access to every
   // team under every one of their sub-events too, not just their own
   // flagship's teams.
-  static async canAccessTeam(teamId, studentId) {
-    if (await Team.isMember(teamId, studentId)) return true;
+  //
+  // Takes the full { id, type, club_id } user, not just a student id — the
+  // organizer who owns the team's club sits at the TOP of this hierarchy
+  // (organizer > event head > team head), so they get the same access an
+  // event head does, just scoped by club rather than by event-head row.
+  static async canAccessTeam(teamId, user) {
     const team = await Team.findById(teamId);
     if (!team) return false;
+
+    if (user.type === 'organizer') {
+      const clubId = team.event_id
+        ? (await Event.findById(team.event_id))?.club_id
+        : (await SubEvent.findByIdWithDetails(team.sub_event_id))?.club_id;
+      return !!clubId && user.club_id === clubId;
+    }
+
+    if (await Team.isMember(teamId, user.id)) return true;
     if (team.event_id) {
-      return EventHead.isEventHead({ eventId: team.event_id }, studentId);
+      return EventHead.isEventHead({ eventId: team.event_id }, user.id);
     }
     const subEvent = await SubEvent.findById(team.sub_event_id);
-    return subEvent ? EventHead.isEventHeadOfSubEvent(subEvent, studentId) : false;
+    return subEvent ? EventHead.isEventHeadOfSubEvent(subEvent, user.id) : false;
   }
 
   // Every team a student volunteers on, across every event — powers the

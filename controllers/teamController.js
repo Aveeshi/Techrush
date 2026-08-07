@@ -65,10 +65,13 @@ const teamController = {
   // on Team.canAccessTeam — actual team_members membership OR being the
   // event head of this team's container, not just being logged in — a
   // student can't browse another team's chat by guessing its id, but an
-  // event head CAN open every team under their event, chat included.
+  // event head (or the organizer who owns the club) CAN open every team
+  // under their event, chat included. An organizer has no personal task
+  // assignments, so their left-hand "my tasks" list is simply empty —
+  // they're here for the chat/oversight, not to be assigned work.
   async teamDetail(req, res, next) {
     try {
-      if (!req.user || req.user.type !== 'student') {
+      if (!req.user || (req.user.type !== 'student' && req.user.type !== 'organizer')) {
         return res.redirect('/auth/login');
       }
 
@@ -78,12 +81,14 @@ const teamController = {
         return res.status(404).render('not-found');
       }
 
-      const canAccess = await Team.canAccessTeam(teamId, req.user.id);
+      const canAccess = await Team.canAccessTeam(teamId, req.user);
       if (!canAccess) {
         return res.status(403).send("You're not a member of this team");
       }
 
-      const myTasks = await TaskAssignment.findByStudentAndTeam(teamId, req.user.id);
+      const myTasks = req.user.type === 'student'
+        ? await TaskAssignment.findByStudentAndTeam(teamId, req.user.id)
+        : [];
 
       // For each of my tasks, pull the full assignee roster so the "who
       // else is on this" popup doesn't need a separate round trip per click.
@@ -110,16 +115,16 @@ const teamController = {
 
   // POST /teams/:teamId/chat
   // Posts one message to the team's official group chat, then redirects
-  // back — any team member (or this team's event head — see
+  // back — any team member (or this team's event head/organizer — see
   // Team.canAccessTeam) may post (see Chat.js).
   async postChatMessage(req, res, next) {
     try {
-      if (!req.user || req.user.type !== 'student') {
+      if (!req.user || (req.user.type !== 'student' && req.user.type !== 'organizer')) {
         return res.redirect('/auth/login');
       }
 
       const { teamId } = req.params;
-      const canAccess = await Team.canAccessTeam(teamId, req.user.id);
+      const canAccess = await Team.canAccessTeam(teamId, req.user);
       if (!canAccess) {
         return res.status(403).send("You're not a member of this team");
       }
@@ -131,7 +136,7 @@ const teamController = {
           channelId: channel.id,
           channelType: 'team_official',
           senderId: req.user.id,
-          senderType: 'student',
+          senderType: req.user.type,
           content: content.trim(),
         });
       }
@@ -147,12 +152,12 @@ const teamController = {
   // full page reload. `after` is optional; omit it for the full backlog.
   async chatMessagesJson(req, res, next) {
     try {
-      if (!req.user || req.user.type !== 'student') {
+      if (!req.user || (req.user.type !== 'student' && req.user.type !== 'organizer')) {
         return res.status(401).json({ error: 'Login required' });
       }
 
       const { teamId } = req.params;
-      const canAccess = await Team.canAccessTeam(teamId, req.user.id);
+      const canAccess = await Team.canAccessTeam(teamId, req.user);
       if (!canAccess) {
         return res.status(403).json({ error: "Not a member of this team" });
       }
@@ -232,7 +237,7 @@ const teamController = {
         assignedHours,
         domainTags: null,
         createdBy: req.user.id,
-        createdByType: 'team_head',
+        createdByType: req.user.type === 'organizer' ? 'organizer' : 'team_head',
         dueAt: dueAt || null,
       });
 
@@ -278,7 +283,7 @@ const teamController = {
         { presentIds, absentIds },
         task.assigned_hours,
         req.user.id,
-        'team_head'
+        req.user.type === 'organizer' ? 'organizer' : 'team_head'
       );
       await Task.updateStatus(taskId, 'verified');
 
