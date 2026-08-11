@@ -5,6 +5,7 @@ const Group = require('../models/Group');
 const Task = require('../models/Task');
 const TaskAssignment = require('../models/Taskassignment');
 const Chat = require('../models/Chat');
+const SkillTag = require('../models/Skilltag');
 const { notifyRoleUpdated } = require('./clubEventController');
 
 const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -181,18 +182,28 @@ const teamController = {
   async teamManagePage(req, res, next) {
     try {
       const team = req.team;
-      const [members, heads, tasks] = await Promise.all([
+      const [members, heads, tasks, skillTags] = await Promise.all([
         Team.listMembers(team.id),
         Team.getHeads(team.id),
         Task.findByTeam(team.id),
+        SkillTag.findAll(),
       ]);
+
+      // Same skills-vocabulary chips shown at signup (student_skills), reused
+      // here as: (a) the "required skills" picker for a new task, and (b) the
+      // per-member tags the volunteer-picker JS matches against to compute
+      // recommendations client-side (see team-manage.ejs).
+      const memberSkillsById = await SkillTag.getSkillsForStudents(members.map((m) => m.id));
+      const membersWithSkills = members.map((m) => ({ ...m, skills: memberSkillsById[m.id] || [] }));
+
       const tasksWithAssignees = await Promise.all(
         tasks.map(async (t) => ({ ...t, assignees: await TaskAssignment.findByTask(t.id) }))
       );
       res.render('team-manage', {
         team,
-        members,
+        members: membersWithSkills,
         heads,
+        skillTags,
         incompleteTasks: tasksWithAssignees.filter((t) => t.status !== 'verified'),
         completedTasks: tasksWithAssignees.filter((t) => t.status === 'verified'),
       });
@@ -223,7 +234,7 @@ const teamController = {
   async createTask(req, res, next) {
     try {
       const team = req.team;
-      const { title, description, assignedHours, dueAt, assignMode, studentIds } = req.body;
+      const { title, description, assignedHours, dueAt, assignMode, studentIds, skillTagIds } = req.body;
 
       if (!title || !assignedHours) {
         return res.redirect(`/teams/${team.id}/manage`);
@@ -240,6 +251,11 @@ const teamController = {
         createdByType: req.user.type === 'organizer' ? 'organizer' : 'team_head',
         dueAt: dueAt || null,
       });
+
+      // Same skill_tags vocabulary as student_skills — this is what lets the
+      // "recommended volunteer" matching (SkillTag.findMatchingVolunteers-
+      // style overlap) work for tasks, not just whole events.
+      await SkillTag.setTaskSkills(task.id, toArray(skillTagIds));
 
       const targetIds = assignMode === 'whole_team'
         ? (await Team.listMembers(team.id)).map((m) => m.id)

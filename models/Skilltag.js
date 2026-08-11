@@ -96,6 +96,27 @@ class SkillTag {
     return rows;
   }
 
+  // Batch version of getStudentSkills for a whole roster at once (e.g. a
+  // team's member list) — one query instead of N, returned as
+  // { studentId: [{id, name}, ...] } so callers can attach skills to each
+  // member without a round trip per person.
+  static async getSkillsForStudents(studentIds) {
+    if (!studentIds.length) return {};
+    const { rows } = await pool.query(
+      `SELECT ss.student_id, st.id, st.name
+       FROM student_skills ss
+       JOIN skill_tags st ON st.id = ss.skill_tag_id
+       WHERE ss.student_id = ANY($1::uuid[])`,
+      [studentIds]
+    );
+    const byStudent = {};
+    for (const row of rows) {
+      if (!byStudent[row.student_id]) byStudent[row.student_id] = [];
+      byStudent[row.student_id].push({ id: row.id, name: row.name });
+    }
+    return byStudent;
+  }
+
   // --- Student event-type interests (what they want to attend) ---
 
   static async setStudentEventInterests(studentId, eventTypeIds) {

@@ -78,6 +78,15 @@
         <input type="datetime-local" name="dueAt"
                class="w-full px-3 py-2 mb-3 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
 
+        <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">SKILLS REQUIRED</label>
+        <p class="text-muted text-xs mb-2">Same list volunteers picked from at signup — checking any of these ranks a matching volunteer as recommended below.</p>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <% skillTags.forEach(function(tag) { %>
+            <input type="checkbox" name="skillTagIds" id="task-skill-<%= tag.id %>" value="<%= tag.id %>" class="chip-input task-skill-checkbox" />
+            <label for="task-skill-<%= tag.id %>" class="chip-label"><%= tag.name %></label>
+          <% }); %>
+        </div>
+
         <div class="flex items-center gap-4 mb-3 text-sm">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="radio" name="assignMode" value="whole_team" class="new-task-assign-mode accent-lime" checked />
@@ -89,13 +98,34 @@
           </label>
         </div>
 
-        <div id="new-task-specific-volunteers" class="hidden flex flex-wrap gap-3 mb-3">
-          <% members.forEach(function(m) { %>
-            <label class="flex items-center gap-1.5 text-xs">
-              <input type="checkbox" name="studentIds" value="<%= m.id %>" class="accent-lime" />
-              <%= m.name %>
-            </label>
-          <% }); %>
+        <div id="new-task-specific-volunteers" class="hidden mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <label class="font-mono text-[10px] tracking-[0.1em] text-muted">VOLUNTEERS</label>
+            <select id="volunteer-year-filter" class="px-2 py-1 bg-panel border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
+              <option value="">All years</option>
+              <% [...new Set(members.map(function(m) { return m.year; }).filter(Boolean))].sort().forEach(function(y) { %>
+                <option value="<%= y %>">Year <%= y %></option>
+              <% }); %>
+            </select>
+          </div>
+          <% if (members.length === 0) { %>
+            <p class="text-muted text-xs">No volunteers on this team yet.</p>
+          <% } else { %>
+            <div id="volunteer-rows" class="border border-line rounded-lg divide-y divide-line max-h-72 overflow-y-auto">
+              <% members.forEach(function(m) { %>
+                <label class="volunteer-row flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer hover:bg-panel"
+                       data-year="<%= m.year || '' %>"
+                       data-skills="<%= (m.skills || []).map(function(s) { return s.id; }).join(',') %>">
+                  <input type="checkbox" name="studentIds" value="<%= m.id %>" class="accent-lime shrink-0" />
+                  <span class="flex-1 min-w-0">
+                    <span class="block"><%= m.name %></span>
+                    <span class="block text-muted text-xs">Year <%= m.year || '—' %> · <%= m.department || '—' %></span>
+                  </span>
+                  <span class="volunteer-match-badge hidden shrink-0 font-mono text-[10px] tracking-[0.08em] text-lime border border-lime rounded px-2 py-1"></span>
+                </label>
+              <% }); %>
+            </div>
+          <% } %>
         </div>
 
         <button type="submit" class="btn-lime bg-lime text-black font-semibold px-4 py-2 rounded-md text-sm">
@@ -187,6 +217,49 @@
         document.getElementById('new-task-specific-volunteers').classList.toggle('hidden', radio.value !== 'specific' || !radio.checked);
       });
     });
+
+    // Recommended-volunteer matching: plain skill-tag overlap, computed in
+    // the browser as the organizer checks "skills required" boxes — no
+    // server round trip needed since every member's skills are already on
+    // the row (data-skills). A volunteer is "recommended" the moment they
+    // share ANY checked skill; among recommended volunteers, more shared
+    // skills sorts higher (ties keep alphabetical order, Array#sort is
+    // stable). This mirrors SkillTag.findMatchingVolunteers' overlap-count
+    // ranking server-side, just done client-side for instant feedback.
+    const volunteerRowsContainer = document.getElementById('volunteer-rows');
+    const yearFilter = document.getElementById('volunteer-year-filter');
+
+    function refreshVolunteerList() {
+      if (!volunteerRowsContainer) return;
+
+      const selectedSkillIds = Array.from(document.querySelectorAll('.task-skill-checkbox:checked')).map((c) => c.value);
+      const year = yearFilter ? yearFilter.value : '';
+      const rows = Array.from(volunteerRowsContainer.querySelectorAll('.volunteer-row'));
+
+      rows.forEach((row) => {
+        const rowSkillIds = row.dataset.skills ? row.dataset.skills.split(',') : [];
+        const matchCount = selectedSkillIds.filter((id) => rowSkillIds.includes(id)).length;
+        row.dataset.matchCount = matchCount;
+
+        const badge = row.querySelector('.volunteer-match-badge');
+        if (matchCount > 0) {
+          badge.textContent = `★ RECOMMENDED · ${matchCount} MATCH${matchCount > 1 ? 'ES' : ''}`;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+
+        row.style.display = !year || row.dataset.year === year ? '' : 'none';
+      });
+
+      rows
+        .slice()
+        .sort((a, b) => Number(b.dataset.matchCount) - Number(a.dataset.matchCount))
+        .forEach((row) => volunteerRowsContainer.appendChild(row));
+    }
+
+    document.querySelectorAll('.task-skill-checkbox').forEach((cb) => cb.addEventListener('change', refreshVolunteerList));
+    if (yearFilter) yearFilter.addEventListener('change', refreshVolunteerList);
 
     const teamId = '<%= team.id %>';
     const incompleteTasks = <%- JSON.stringify(incompleteTasks) %>;

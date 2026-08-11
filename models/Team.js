@@ -128,7 +128,7 @@ class Team {
 
   static async listMembers(teamId) {
     const { rows } = await pool.query(
-      `SELECT s.id, s.name, s.email, tm.joined_at
+      `SELECT s.id, s.name, s.email, s.year, s.department, tm.joined_at
        FROM team_members tm
        JOIN students s ON s.id = tm.student_id
        WHERE tm.team_id = $1
