@@ -14,5 +14,6 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 
 organizerRouter.get('/', organizerController.clubPage);
 organizerRouter.post('/roster', upload.single('roster'), organizerController.uploadRoster);
+organizerRouter.post('/logbook-toggle', organizerController.toggleLogbook);
 
 module.exports = organizerRouter;

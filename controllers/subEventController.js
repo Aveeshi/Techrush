@@ -268,6 +268,13 @@ const subEventController = {
       }
 
       const { action, registration } = await AttendanceLog.scanQrCode(qrCode, { subEventId: subEvent.id }, req.user.id);
+
+      // Same live "My Hours" nudge as eventController.checkin — see its
+      // comment for why this fires unconditionally on any attendee check-in.
+      if (action === 'check_in' && registration.registration_type === 'attendee') {
+        req.app.get('io').to(`user:${registration.student_id}`).emit('hours:updated');
+      }
+
       res.json({
         success: true,
         action,

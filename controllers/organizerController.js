@@ -85,6 +85,22 @@ const organizerController = {
     }
   },
 
+  // POST /club/logbook-toggle — flips clubs.logbook_enabled for the
+  // organizer's own club. While off, students never see this club as a
+  // logbook option at all, regardless of membership (Club.findLogbookEnabledForStudent).
+  async toggleLogbook(req, res, next) {
+    try {
+      if (!req.user || req.user.type !== 'organizer') {
+        return res.redirect('/auth/login');
+      }
+      const enabled = req.body.enabled === '1';
+      await Club.setLogbookEnabled(req.user.club_id, enabled);
+      res.redirect('/club');
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // GET /account (organizer branch) — see studentController.account, which
   // dispatches here-equivalent data inline; this is the POST half, letting
   // an organizer edit their own name/email.

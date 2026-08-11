@@ -15,6 +15,7 @@ const pool = require('../utils/db');
     status TEXT CHECK (status IN ('draft','published','ongoing','completed','cancelled')) DEFAULT 'draft',
     visibility TEXT CHECK (visibility IN ('public','club_only')) DEFAULT 'public',
     registration_deadline TIMESTAMPTZ,
+    credit_hours NUMERIC(4,1),
     created_at TIMESTAMPTZ DEFAULT now()
   );
 
@@ -26,6 +27,15 @@ const pool = require('../utils/db');
   status is the event's WORKFLOW state (draft/published/ongoing/...).
   visibility is WHO CAN SEE a published event (everyone, or only club members).
   A meetup can be status='published' AND visibility='club_only' simultaneously.
+
+  credit_hours is set by the organizer at creation time, exactly like a
+  task's assigned_hours (see Task.js) — NULL means "attending this event
+  earns no CCA hours" (the default; most events won't set it). When set, a
+  student who registers as an ATTENDEE and actually checks in (event_
+  registrations.checked_in_at IS NOT NULL) gets this flat amount credited —
+  see User.getCreditedHours()/getHoursBreakdown(). It's a flat award, not
+  hours-worked math: unlike task_assignments.hours_logged (which varies per
+  student), everyone who attends the same event earns the same amount.
 */
 
 class Event {
@@ -34,13 +44,13 @@ class Event {
   // (named after the event, headed by the event head if one's picked)
   // right after this call returns; that's a controller-level concern
   // since it needs eventHeadStudentId, which this model method never sees.
-  static async create({ clubId, organizerId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, visibility = 'public', registrationDeadline }) {
+  static async create({ clubId, organizerId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, visibility = 'public', registrationDeadline, creditHours }) {
     const { rows } = await pool.query(
       `INSERT INTO events
-        (club_id, organizer_id, event_type_id, title, description, venue, start_time, end_time, banner_url, visibility, registration_deadline)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (club_id, organizer_id, event_type_id, title, description, venue, start_time, end_time, banner_url, visibility, registration_deadline, credit_hours)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [clubId, organizerId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, visibility, registrationDeadline]
+      [clubId, organizerId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, visibility, registrationDeadline, creditHours || null]
     );
     return rows[0];
   }
@@ -179,7 +189,7 @@ class Event {
   // Organizer editing an event's own info from the Club Events dashboard —
   // COALESCE means callers only need to pass whichever fields the edit
   // form actually changed.
-  static async update(id, { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline }) {
+  static async update(id, { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline, creditHours }) {
     const { rows } = await pool.query(
       `UPDATE events
        SET title = COALESCE($2, title),
@@ -190,10 +200,15 @@ class Event {
            banner_url = COALESCE($7, banner_url),
            event_type_id = COALESCE($8, event_type_id),
            visibility = COALESCE($9, visibility),
-           registration_deadline = COALESCE($10, registration_deadline)
+           registration_deadline = COALESCE($10, registration_deadline),
+           credit_hours = $11 -- NOT coalesced: unlike the other fields, an
+                               -- empty submission here means "clear it",
+                               -- not "leave unchanged" — the edit form
+                               -- always sends this field, so a blank value
+                               -- is a deliberate uncheck, not an omission.
        WHERE id = $1
        RETURNING *`,
-      [id, title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline]
+      [id, title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline, creditHours || null]
     );
     return rows[0] || null;
   }

@@ -246,7 +246,14 @@ const teamController = {
         : toArray(studentIds);
 
       if (targetIds.length) {
-        await TaskAssignment.assignBulk(task.id, targetIds, req.user.id);
+        // assigned_by is a real FK to students(id) (see TaskAssignment.js's
+        // schema note) — this route is also reachable by the club's
+        // organizer (requireTeamHead allows organizer.club_id === the
+        // team's club), and an organizer's id lives in organizers, not
+        // students. Passing it straight through blew up
+        // task_assignments_assigned_by_fkey whenever an organizer (rather
+        // than a team/event head) created the task.
+        await TaskAssignment.assignBulk(task.id, targetIds, req.user.type === 'student' ? req.user.id : null);
       }
 
       res.redirect(`/teams/${team.id}/manage`);

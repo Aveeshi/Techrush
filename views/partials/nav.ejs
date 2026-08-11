@@ -37,6 +37,9 @@
         <a href="/my-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
           MY EVENTS &amp; TEAMS
         </a>
+        <a href="/logbook" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          LOGBOOK
+        </a>
       <% } else if (user && user.type === 'organizer') { %>
         <a href="/club" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
           CLUB
@@ -118,6 +121,9 @@
       </a>
       <a href="/my-events" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
         MY EVENTS &amp; TEAMS
+      </a>
+      <a href="/logbook" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+        LOGBOOK
       </a>
     <% } else if (user && user.type === 'organizer') { %>
       <a href="/club" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">

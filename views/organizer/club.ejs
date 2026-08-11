@@ -49,6 +49,34 @@
       </form>
     </div>
 
+    <!-- CCA Activity Logbook toggle -->
+    <div class="border border-line rounded-lg p-6 mb-10">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-1">ACTIVITY LOGBOOK</h2>
+          <p class="text-muted text-sm">
+            When on, every member of <%= club.name %> gets a "Generate Logbook"
+            option on their dashboard — an auto-filled CCA Activity Logbook
+            (.docx) built from their verified task hours and event check-ins
+            under this club.
+          </p>
+        </div>
+        <form action="/club/logbook-toggle" method="POST" class="shrink-0">
+          <input type="hidden" name="enabled" value="<%= club.logbook_enabled ? '0' : '1' %>" />
+          <button
+            type="submit"
+            aria-pressed="<%= club.logbook_enabled ? 'true' : 'false' %>"
+            class="relative inline-flex items-center h-7 w-14 rounded-full transition-colors <%= club.logbook_enabled ? 'bg-lime' : 'bg-panel border border-line' %>"
+          >
+            <span class="inline-block h-5 w-5 transform rounded-full bg-black transition-transform <%= club.logbook_enabled ? 'translate-x-8 bg-black' : 'translate-x-1 bg-muted' %>"></span>
+          </button>
+        </form>
+      </div>
+      <p class="font-mono text-[11px] tracking-[0.1em] mt-3 <%= club.logbook_enabled ? 'text-lime' : 'text-muted' %>">
+        <%= club.logbook_enabled ? 'ENABLED — GENERATE LOGBOOK IS LIVE FOR MEMBERS' : 'DISABLED' %>
+      </p>
+    </div>
+
     <!-- Members (from club_members — reconciled from the roster automatically) -->
     <div>
       <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">

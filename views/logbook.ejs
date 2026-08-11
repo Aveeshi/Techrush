@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Activity Logbook' }) %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('partials/nav') %>
+
+  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="w-6 h-px bg-lime"></span>
+      <span class="font-mono text-xs tracking-[0.2em] text-lime">// ACTIVITY LOGBOOK</span>
+    </div>
+    <h1 class="font-display text-4xl mb-3">Generate Logbook</h1>
+    <p class="text-muted leading-relaxed mb-10">
+      Builds a CCA Activity Logbook (.docx) from your verified task hours and
+      checked-in events, for one club at a time.
+    </p>
+
+    <% if (uploaded) { %>
+      <div class="border border-lime/40 bg-lime/5 text-lime px-4 py-3 rounded-md mb-8 text-sm">
+        Photo(s) uploaded.
+      </div>
+    <% } %>
+    <% if (removed) { %>
+      <div class="border border-line bg-panel text-muted px-4 py-3 rounded-md mb-8 text-sm">
+        Photo removed.
+      </div>
+    <% } %>
+
+    <% if (eligibleClubs.length === 0) { %>
+      <div class="border border-line rounded-lg p-6 text-muted text-sm">
+        No club you're a member of has turned on logbook generation yet.
+        Ask your club's organizer to enable it from their Club dashboard.
+      </div>
+    <% } else { %>
+      <!-- Club picker -->
+      <div class="border border-line rounded-lg p-6 mb-10">
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">SELECT A CLUB</h2>
+        <div class="flex flex-wrap gap-2">
+          <% eligibleClubs.forEach(function(c) { %>
+            <a
+              href="/logbook?club=<%= c.id %>"
+              class="<%= selectedClub && selectedClub.id === c.id ? 'btn-lime bg-lime text-black' : 'btn-outline border border-line text-fg' %> font-semibold px-4 py-2 rounded-md text-sm"
+            ><%= c.name %></a>
+          <% }); %>
+        </div>
+      </div>
+
+      <% if (selectedClub) { %>
+        <!-- Upload photos -->
+        <div class="border border-line rounded-lg p-6 mb-10">
+          <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-1">PHOTOS FOR <%= selectedClub.name.toUpperCase() %></h2>
+          <p class="text-muted text-sm mb-4">
+            Optional — every photo you upload here gets appended to the end
+            of the generated document. Any image format works.
+          </p>
+          <form action="/logbook/images" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+            <input type="hidden" name="clubId" value="<%= selectedClub.id %>" />
+            <input type="file" name="images" accept="image/*" multiple
+                   class="text-sm text-muted file:mr-3 file:py-2 file:px-4 file:rounded-md file:border file:border-line file:bg-panel file:text-fg file:text-sm file:font-medium file:cursor-pointer" />
+            <button type="submit" class="btn-outline border border-line font-semibold px-5 py-2.5 rounded-md text-sm">
+              Upload
+            </button>
+          </form>
+
+          <% if (images.length > 0) { %>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5">
+              <% images.forEach(function(img) { %>
+                <div class="relative group">
+                  <img src="<%= img.url %>" alt="" class="w-full h-28 object-cover rounded-md border border-line" />
+                  <form action="/logbook/images/<%= img.id %>/delete" method="POST" class="absolute top-1 right-1">
+                    <input type="hidden" name="clubId" value="<%= selectedClub.id %>" />
+                    <button type="submit" title="Remove"
+                            class="bg-black/70 text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      ✕
+                    </button>
+                  </form>
+                </div>
+              <% }); %>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Generate -->
+        <a
+          href="/logbook/generate?club=<%= selectedClub.id %>"
+          class="btn-lime bg-lime text-black font-semibold px-6 py-3 rounded-md text-sm inline-block"
+        >
+          Generate Logbook (.docx)
+        </a>
+      <% } %>
+    <% } %>
+  </main>
+</body>
+</html>

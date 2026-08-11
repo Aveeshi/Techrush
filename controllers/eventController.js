@@ -319,6 +319,18 @@ const eventController = {
       }
 
       const { action, registration } = await AttendanceLog.scanQrCode(qrCode, { eventId: event.id }, req.user.id);
+
+      // A check-in is also the moment an attendee's credit_hours (if the
+      // organizer set any — see Event.js's schema note) become real, so
+      // push the same live-update signal teamController.completeTask sends
+      // on task verification — /account's "My Hours" table re-fetches and
+      // prepends without a reload. Cheap to fire even when this event has
+      // no credit_hours configured; getHoursBreakdown just won't have a
+      // new row for it, so the client-side dedupe is a no-op.
+      if (action === 'check_in' && registration.registration_type === 'attendee') {
+        req.app.get('io').to(`user:${registration.student_id}`).emit('hours:updated');
+      }
+
       res.json({
         success: true,
         action, // 'check_in' | 'check_out'

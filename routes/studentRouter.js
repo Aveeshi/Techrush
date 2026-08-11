@@ -3,8 +3,12 @@ const studentController = require('../controllers/studentController');
 const organizerController = require('../controllers/organizerController');
 const clubEventController = require('../controllers/clubEventController');
 const { makeUploader } = require('../utils/cloudinary');
+const wrapUpload = require('../middleware/wrapUpload');
 
-const profilePhotoUpload = makeUploader('profile-photos').single('profilePhoto');
+// wrapUpload: a rejected profile photo (bad format, corrupt image) must
+// reach error handling as a real Error, not the plain object Cloudinary's
+// SDK actually rejects with — see middleware/wrapUpload.js.
+const profilePhotoUpload = wrapUpload(makeUploader('profile-photos').single('profilePhoto'));
 
 const studentRouter = express.Router();
 

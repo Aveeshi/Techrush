@@ -85,6 +85,18 @@
                class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" />
       </div>
 
+      <div>
+        <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">CREDIT HOURS (OPTIONAL)</label>
+        <p class="text-muted text-xs mb-2">
+          Same idea as a task's assigned hours — whoever registers as an
+          <span class="text-fg">attendee</span> and actually checks in gets
+          this many hours credited automatically. Leave blank for no credit.
+        </p>
+        <input type="number" step="0.5" min="0" name="creditHours" placeholder="e.g. 2"
+               value="<%= val('credit_hours') %>"
+               class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+      </div>
+
       <select name="eventTypeId"
               class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime">
         <option value="">Event type (optional)</option>

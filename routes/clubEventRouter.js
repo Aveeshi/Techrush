@@ -2,6 +2,7 @@ const express = require('express');
 const clubEventController = require('../controllers/clubEventController');
 const { requireOrganizer, requireEventManager } = require('../middleware/auth');
 const { makeUploader } = require('../utils/cloudinary');
+const wrapUpload = require('../middleware/wrapUpload');
 
 const clubEventRouter = express.Router();
 
@@ -10,11 +11,18 @@ const clubEventRouter = express.Router();
 // utils/cloudinary.js) before the route handler ever runs; req.files.
 // primaryImage[0]/.additionalImages carry the resulting URLs (see
 // clubEventController's saveEventImages). Sub-events don't get this — no
-// gallery for them, per the original scope of this feature.
-const eventImageUpload = makeUploader('events').fields([
+// gallery for them, per the original scope of this feature. Any image
+// format is accepted (no allowedFormats restriction) but force-converted
+// to jpg on upload, since the pages that display these render a plain
+// <img src="..."> with no delivery transform — a raw heic/heif/avif
+// upload wouldn't render in a browser at all otherwise. Wrapped in
+// wrapUpload so a rejected file (corrupt image, etc.) reaches error
+// handling as a real Error, not the plain object Cloudinary's SDK
+// actually rejects with — see wrapUpload.js for why that matters.
+const eventImageUpload = wrapUpload(makeUploader('events', { format: 'jpg' }).fields([
   { name: 'primaryImage', maxCount: 1 },
   { name: 'additionalImages', maxCount: 9 },
-]);
+]));
 
 /*
   Mounted at /club-events in app.js.

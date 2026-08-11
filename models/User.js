@@ -120,66 +120,118 @@ class User {
     return rows;
   }
 
-  // The real credited hours total: attendance='present' AND status='verified' only.
-  // Self-reported 'completed' hours never appear here until an organizer verifies.
+  // The real credited hours total, from BOTH sources that can earn a
+  // student hours:
+  //   1. Verified task work: attendance='present' AND status='verified' only
+  //      (self-reported 'completed' hours never appear here until an
+  //      organizer/head verifies).
+  //   2. Event attendance: registered as 'attendee' AND actually checked in
+  //      (checked_in_at IS NOT NULL) for an event/sub-event the organizer
+  //      put a credit_hours value on (see Event.js's schema note) — a flat
+  //      award per event, not hours-worked math.
   static async getCreditedHours(studentId) {
     const { rows } = await pool.query(
-      `SELECT COALESCE(SUM(ta.hours_logged), 0) AS total_hours
-       FROM task_assignments ta
-       WHERE ta.student_id = $1
-         AND ta.attendance = 'present'
-         AND ta.status = 'verified'`,
+      `SELECT
+         COALESCE((
+           SELECT SUM(ta.hours_logged) FROM task_assignments ta
+           WHERE ta.student_id = $1 AND ta.attendance = 'present' AND ta.status = 'verified'
+         ), 0)
+         +
+         COALESCE((
+           SELECT SUM(COALESCE(e.credit_hours, se.credit_hours))
+           FROM event_registrations er
+           LEFT JOIN events e ON e.id = er.event_id
+           LEFT JOIN sub_events se ON se.id = er.sub_event_id
+           WHERE er.student_id = $1
+             AND er.registration_type = 'attendee'
+             AND er.checked_in_at IS NOT NULL
+         ), 0)
+         AS total_hours`,
       [studentId]
     );
     return Number(rows[0].total_hours);
   }
 
-  // Same gating as getCreditedHours, but broken down per club — a team's
+  // Same two sources as getCreditedHours, broken down per club. A team's
   // club comes from whichever of its container (event OR sub-event,
   // through the sub-event's own parent event) actually has one, hence the
-  // COALESCE across both LEFT JOIN paths rather than two separate queries.
+  // COALESCE across both LEFT JOIN paths — same shape event attendance's
+  // club resolution reuses below.
   static async getCreditedHoursByClub(studentId) {
     const { rows } = await pool.query(
-      `SELECT c.id AS club_id, c.name AS club_name, SUM(ta.hours_logged) AS total_hours
-       FROM task_assignments ta
-       JOIN tasks t ON t.id = ta.task_id
-       JOIN groups g ON g.id = t.group_id
-       JOIN teams tm ON tm.id = g.team_id
-       LEFT JOIN events e1 ON e1.id = tm.event_id
-       LEFT JOIN sub_events se ON se.id = tm.sub_event_id
-       LEFT JOIN events e2 ON e2.id = se.event_id
-       JOIN clubs c ON c.id = COALESCE(e1.club_id, e2.club_id)
-       WHERE ta.student_id = $1
-         AND ta.attendance = 'present'
-         AND ta.status = 'verified'
-       GROUP BY c.id, c.name
-       ORDER BY c.name`,
+      `SELECT club_id, club_name, SUM(hours) AS total_hours
+       FROM (
+         SELECT c.id AS club_id, c.name AS club_name, ta.hours_logged AS hours
+         FROM task_assignments ta
+         JOIN tasks t ON t.id = ta.task_id
+         JOIN groups g ON g.id = t.group_id
+         JOIN teams tm ON tm.id = g.team_id
+         LEFT JOIN events e1 ON e1.id = tm.event_id
+         LEFT JOIN sub_events se1 ON se1.id = tm.sub_event_id
+         LEFT JOIN events e2 ON e2.id = se1.event_id
+         JOIN clubs c ON c.id = COALESCE(e1.club_id, e2.club_id)
+         WHERE ta.student_id = $1
+           AND ta.attendance = 'present'
+           AND ta.status = 'verified'
+
+         UNION ALL
+
+         SELECT c.id AS club_id, c.name AS club_name, COALESCE(e.credit_hours, se2.credit_hours) AS hours
+         FROM event_registrations er
+         LEFT JOIN events e ON e.id = er.event_id
+         LEFT JOIN sub_events se2 ON se2.id = er.sub_event_id
+         LEFT JOIN events pe ON pe.id = se2.event_id
+         JOIN clubs c ON c.id = COALESCE(e.club_id, pe.club_id)
+         WHERE er.student_id = $1
+           AND er.registration_type = 'attendee'
+           AND er.checked_in_at IS NOT NULL
+           AND COALESCE(e.credit_hours, se2.credit_hours) IS NOT NULL
+       ) combined
+       GROUP BY club_id, club_name
+       ORDER BY club_name`,
       [studentId]
     );
     return rows.map((r) => ({ ...r, total_hours: Number(r.total_hours) }));
   }
 
-  // One row per credited task assignment — the "My Hours" table on the
-  // account page. Same join shape as getCreditedHoursByClub, just
-  // ungrouped and with the task/team names attached. Ordered newest-first
-  // so a just-verified task (pushed live over 'hours:updated') belongs at
-  // the top, matching where the client prepends it.
+  // One row per credited task assignment AND per credited event
+  // attendance — the "My Hours" table on the account page. `earned_at`
+  // is verified_at for a task row, checked_in_at for an event row, so
+  // both sort chronologically together. Ordered newest-first so a
+  // just-verified task or just-checked-in event (pushed live over
+  // 'hours:updated') belongs at the top, matching where the client
+  // prepends it.
   static async getHoursBreakdown(studentId) {
     const { rows } = await pool.query(
-      `SELECT ta.id, ta.hours_logged, ta.verified_at, t.title AS task_title,
+      `SELECT ta.id, ta.hours_logged, ta.verified_at AS earned_at, t.title AS task_title,
               tm.name AS team_name, c.name AS club_name
        FROM task_assignments ta
        JOIN tasks t ON t.id = ta.task_id
        JOIN groups g ON g.id = t.group_id
        JOIN teams tm ON tm.id = g.team_id
        LEFT JOIN events e1 ON e1.id = tm.event_id
-       LEFT JOIN sub_events se ON se.id = tm.sub_event_id
-       LEFT JOIN events e2 ON e2.id = se.event_id
+       LEFT JOIN sub_events se1 ON se1.id = tm.sub_event_id
+       LEFT JOIN events e2 ON e2.id = se1.event_id
        JOIN clubs c ON c.id = COALESCE(e1.club_id, e2.club_id)
        WHERE ta.student_id = $1
          AND ta.attendance = 'present'
          AND ta.status = 'verified'
-       ORDER BY ta.verified_at DESC`,
+
+       UNION ALL
+
+       SELECT er.id, COALESCE(e.credit_hours, se2.credit_hours) AS hours_logged, er.checked_in_at AS earned_at,
+              COALESCE(e.title, se2.title) AS task_title, 'Event attendance' AS team_name, c.name AS club_name
+       FROM event_registrations er
+       LEFT JOIN events e ON e.id = er.event_id
+       LEFT JOIN sub_events se2 ON se2.id = er.sub_event_id
+       LEFT JOIN events pe ON pe.id = se2.event_id
+       JOIN clubs c ON c.id = COALESCE(e.club_id, pe.club_id)
+       WHERE er.student_id = $1
+         AND er.registration_type = 'attendee'
+         AND er.checked_in_at IS NOT NULL
+         AND COALESCE(e.credit_hours, se2.credit_hours) IS NOT NULL
+
+       ORDER BY earned_at DESC`,
       [studentId]
     );
     return rows;

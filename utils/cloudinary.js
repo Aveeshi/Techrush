@@ -16,12 +16,26 @@ cloudinary.config({
   nothing ever touches local disk, and the DB only ever stores the
   resulting secure_url (see models/EventImage.js, User.updatePhoto).
 */
-function makeUploader(folder) {
+// allowedFormats gates what Cloudinary will accept at all — pass null to
+// lift the restriction entirely (accept any image Cloudinary can decode,
+// including phone formats like heic/heif that browsers can't render and
+// docx's ImageRun can't embed).
+//
+// format, separately, forces Cloudinary to CONVERT whatever came in to a
+// specific format on upload — e.g. logbookRouter passes format: 'jpg' so
+// a HEIC photo straight off an iPhone still lands as a jpg, which is both
+// what docx's ImageRun knows how to embed and what a plain <img src> can
+// render (raw HEIC can't do either). Without this, restricting
+// allowedFormats to just ['jpg','jpeg','png'] silently rejects most phone
+// photos before they ever reach Cloudinary — the upload throws, and
+// nothing downstream (DB row, docx embed) ever happens.
+function makeUploader(folder, { allowedFormats = null, format } = {}) {
   const storage = new CloudinaryStorage({
     cloudinary,
     params: {
       folder: `techrush/${folder}`,
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      ...(allowedFormats ? { allowed_formats: allowedFormats } : {}),
+      ...(format ? { format } : {}),
       transformation: [{ width: 1600, height: 1600, crop: 'limit' }],
     },
   });

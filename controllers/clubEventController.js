@@ -176,7 +176,7 @@ const clubEventController = {
       if (!req.user || req.user.type !== 'organizer') {
         return res.redirect('/auth/login');
       }
-      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline, eventHeadStudentId } = req.body;
+      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline, eventHeadStudentId, creditHours } = req.body;
 
       if (!title || !startTime || !endTime) {
         const formData = await getEventFormData(req.user.club_id);
@@ -194,6 +194,7 @@ const clubEventController = {
         bannerUrl: bannerUrl || null,
         visibility: visibility || 'public',
         registrationDeadline: registrationDeadline || null,
+        creditHours: creditHours || null,
       });
 
       await saveEventImages(event.id, req.files);
@@ -247,10 +248,11 @@ const clubEventController = {
   // POST /club-events/:eventId/edit
   async updateEvent(req, res, next) {
     try {
-      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline } = req.body;
+      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, visibility, registrationDeadline, creditHours } = req.body;
       await Event.update(req.params.eventId, {
         title, description, venue, startTime, endTime,
         bannerUrl, eventTypeId: eventTypeId || null, visibility, registrationDeadline: registrationDeadline || null,
+        creditHours: creditHours || null,
       });
       await saveEventImages(req.params.eventId, req.files);
       res.redirect(`/club-events/${req.params.eventId}`);
@@ -300,7 +302,7 @@ const clubEventController = {
   async createSubEvent(req, res, next) {
     try {
       const event = req.eventContainer.row;
-      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, registrationDeadline, eventHeadStudentId } = req.body;
+      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, registrationDeadline, eventHeadStudentId, creditHours } = req.body;
 
       if (!title || !startTime || !endTime) {
         const formData = await getEventFormData(event.club_id);
@@ -317,6 +319,7 @@ const clubEventController = {
         bannerUrl: bannerUrl || null,
         registrationDeadline: registrationDeadline || null,
         createdBy: req.user.type === 'organizer' ? req.user.id : null,
+        creditHours: creditHours || null,
       });
 
       const assignedBy = req.user.type === 'organizer' ? req.user.id : req.eventContainer.row.created_by;
@@ -372,10 +375,11 @@ const clubEventController = {
   // POST /club-events/:eventId/sub-events/:subEventId/edit
   async updateSubEvent(req, res, next) {
     try {
-      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, registrationDeadline } = req.body;
+      const { title, description, venue, startTime, endTime, bannerUrl, eventTypeId, registrationDeadline, creditHours } = req.body;
       await SubEvent.update(req.params.subEventId, {
         title, description, venue, startTime, endTime,
         bannerUrl, eventTypeId: eventTypeId || null, registrationDeadline: registrationDeadline || null,
+        creditHours: creditHours || null,
       });
       res.redirect(`/club-events/${req.params.eventId}/sub-events/${req.params.subEventId}`);
     } catch (err) {

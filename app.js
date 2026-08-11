@@ -20,6 +20,7 @@ const teamRouter=require("./routes/teamRouter.js");
 const studentRouter=require("./routes/studentRouter.js");
 const organizerRouter=require("./routes/organizerRouter.js");
 const clubEventRouter=require("./routes/clubEventRouter.js");
+const logbookRouter=require("./routes/logbookRouter.js");
 const registerChatSocket=require('./sockets/chatSocket.js');
 // const errorController=require("./controller/errors.js");
 
@@ -139,11 +140,38 @@ app.use('/event-types', eventTypeRouter);
 app.use('/teams', teamRouter);
 app.use('/club', organizerRouter);
 app.use('/club-events', clubEventRouter);
+app.use('/logbook', logbookRouter);
 app.use('/', studentRouter);
 app.use("/",(req,res)=>{
     res.render('index');
 });
 // app.use(errorController.pageNotFound);
+
+// Final catch-all error handler — MUST be registered last (4-arg
+// signature is what makes Express treat this as an error handler at all)
+// and MUST come after every router above, so every next(err) anywhere in
+// the app ends up here instead of Express's own default handler.
+//
+// Why this exists: Express's built-in default error handler renders
+// `err.stack || err.toString()`. That's fine for a real Error (has a
+// stack), but some of our dependencies (notably Cloudinary's Node SDK —
+// see middleware/wrapUpload.js) reject with a PLAIN OBJECT instead of an
+// Error. A plain object has no .stack, and String({}) is literally
+// "[object Object]" — which is exactly what used to render to the user on
+// a failed image upload, with zero indication of what actually broke.
+// wrapUpload.js normalizes upload errors at the source; this handler is
+// the backstop for anything else (a thrown non-Error from a library we
+// don't control, a rejected promise we didn't wrap, etc.) so the failure
+// mode is always a readable message, never that string.
+app.use((err, req, res, next) => {
+  const message = err instanceof Error ? err.message : (err && err.message) || 'Unexpected error';
+  console.error('Unhandled error:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  const status = Number.isInteger(err?.status) ? err.status : 500;
+  res.status(status).render('error', { message });
+});
 
 
 // Socket.IO needs the raw http.Server (not the express app) so it can

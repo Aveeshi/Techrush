@@ -69,6 +69,33 @@ class Club {
     );
     return rows;
   }
+
+  // Organizer-side toggle on the club's dashboard — while off, students
+  // never see this club as a logbook option at all (see
+  // Club.findLogbookEnabledForStudent), regardless of membership.
+  static async setLogbookEnabled(clubId, enabled) {
+    const { rows } = await pool.query(
+      `UPDATE clubs SET logbook_enabled = $2 WHERE id = $1 RETURNING *`,
+      [clubId, !!enabled]
+    );
+    return rows[0] || null;
+  }
+
+  // Clubs a student can generate a logbook for: they're a member AND the
+  // club's organizer has turned the feature on. This is the actual gate —
+  // enforce it again server-side wherever a clubId is accepted from a form,
+  // not just when rendering the picker.
+  static async findLogbookEnabledForStudent(studentId) {
+    const { rows } = await pool.query(
+      `SELECT c.*
+       FROM clubs c
+       JOIN club_members cm ON cm.club_id = c.id
+       WHERE cm.student_id = $1 AND c.logbook_enabled = true
+       ORDER BY c.name`,
+      [studentId]
+    );
+    return rows;
+  }
 }
 
 module.exports = Club;

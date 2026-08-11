@@ -13,6 +13,7 @@ const pool = require('../utils/db');
     banner_url TEXT,
     status TEXT CHECK (status IN ('draft','published','ongoing','completed','cancelled')) DEFAULT 'draft',
     registration_deadline TIMESTAMPTZ,
+    credit_hours NUMERIC(4,1),   -- same flat-award mechanism as events.credit_hours (see Event.js)
     created_by UUID REFERENCES organizers(id),
     created_at TIMESTAMPTZ DEFAULT now()
   );
@@ -37,13 +38,13 @@ class SubEvent {
   // auto-provisioned — organizers/event heads add whichever teams a
   // given track actually needs via Team.create() from the sub-event's
   // own management page. A fresh sub-event starts with zero teams.
-  static async create({ eventId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, createdBy }) {
+  static async create({ eventId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, createdBy, creditHours }) {
     const { rows } = await pool.query(
       `INSERT INTO sub_events
-        (event_id, event_type_id, title, description, venue, start_time, end_time, banner_url, registration_deadline, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        (event_id, event_type_id, title, description, venue, start_time, end_time, banner_url, registration_deadline, created_by, credit_hours)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [eventId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, createdBy]
+      [eventId, eventTypeId, title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, createdBy, creditHours || null]
     );
     return rows[0];
   }
@@ -124,7 +125,7 @@ class SubEvent {
     return new Set(rows.map((r) => r.event_id));
   }
 
-  static async update(id, { title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, eventTypeId }) {
+  static async update(id, { title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, eventTypeId, creditHours }) {
     const { rows } = await pool.query(
       `UPDATE sub_events
        SET title = COALESCE($2, title),
@@ -134,10 +135,11 @@ class SubEvent {
            end_time = COALESCE($6, end_time),
            banner_url = COALESCE($7, banner_url),
            registration_deadline = COALESCE($8, registration_deadline),
-           event_type_id = COALESCE($9, event_type_id)
+           event_type_id = COALESCE($9, event_type_id),
+           credit_hours = $10 -- not coalesced — see Event.update's note
        WHERE id = $1
        RETURNING *`,
-      [id, title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, eventTypeId]
+      [id, title, description, venue, startTime, endTime, bannerUrl, registrationDeadline, eventTypeId, creditHours || null]
     );
     return rows[0] || null;
   }
