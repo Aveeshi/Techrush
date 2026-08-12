@@ -10,10 +10,19 @@ const Event = require('./Event');
     sub_event_id UUID REFERENCES sub_events(id),   -- these two is set
     name TEXT NOT NULL,               -- e.g. "Tech", "Content"
     description TEXT,
+    max_size INT,                     -- NULL = unlimited (see 2026-08-12-team-capacity-and-skills.js)
     created_by UUID REFERENCES organizers(id),
     created_at TIMESTAMPTZ DEFAULT now()
   );
   CHECK ((event_id IS NOT NULL) <> (sub_event_id IS NOT NULL))
+
+  CREATE TABLE team_required_skills (
+    team_id UUID REFERENCES teams(id) NOT NULL,
+    skill_tag_id UUID REFERENCES skill_tags(id) NOT NULL,
+    PRIMARY KEY (team_id, skill_tag_id)
+  );
+  Same skill_tags vocabulary as student_skills/event_required_skills — see
+  models/Skilltag.js's setTeamRequiredSkills/getTeamRequiredSkills.
 
   A team belongs to EITHER a top-level event OR a sub-event, never both
   — a flagship's own teams (event_id set) and one of its tracks' teams
@@ -51,7 +60,7 @@ class Team {
   // Creates the team AND its paired group in one transaction — a team can
   // never exist without its group, or vice versa, because this is the only
   // path either gets created through. Pass exactly one of eventId/subEventId.
-  static async create({ eventId, subEventId, name, description, createdBy }) {
+  static async create({ eventId, subEventId, name, description, maxSize, createdBy }) {
     if (!eventId === !subEventId) {
       throw new Error('Team.create requires exactly one of eventId or subEventId');
     }
@@ -60,10 +69,10 @@ class Team {
       await client.query('BEGIN');
 
       const teamResult = await client.query(
-        `INSERT INTO teams (event_id, sub_event_id, name, description, created_by)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO teams (event_id, sub_event_id, name, description, max_size, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [eventId || null, subEventId || null, name, description, createdBy]
+        [eventId || null, subEventId || null, name, description, maxSize || null, createdBy]
       );
       const team = teamResult.rows[0];
 
@@ -89,9 +98,20 @@ class Team {
     return rows[0] || null;
   }
 
+  // member_count (+ the derived is_full) is included here, not fetched
+  // separately, so the volunteer-facing team picker (eventController/
+  // subEventController.volunteerTeamsPage) and the organizer team list get
+  // "how full is this team" in the same query that lists the teams —
+  // no N+1 per team just to render a capacity badge.
   static async findByEvent(eventId) {
     const { rows } = await pool.query(
-      `SELECT * FROM teams WHERE event_id = $1 ORDER BY name`,
+      `SELECT t.*, COUNT(tm.student_id)::int AS member_count,
+              (t.max_size IS NOT NULL AND COUNT(tm.student_id) >= t.max_size) AS is_full
+       FROM teams t
+       LEFT JOIN team_members tm ON tm.team_id = t.id
+       WHERE t.event_id = $1
+       GROUP BY t.id
+       ORDER BY t.name`,
       [eventId]
     );
     return rows;
@@ -100,23 +120,81 @@ class Team {
   // Sub-event counterpart to findByEvent — a track's own teams.
   static async findBySubEvent(subEventId) {
     const { rows } = await pool.query(
-      `SELECT * FROM teams WHERE sub_event_id = $1 ORDER BY name`,
+      `SELECT t.*, COUNT(tm.student_id)::int AS member_count,
+              (t.max_size IS NOT NULL AND COUNT(tm.student_id) >= t.max_size) AS is_full
+       FROM teams t
+       LEFT JOIN team_members tm ON tm.team_id = t.id
+       WHERE t.sub_event_id = $1
+       GROUP BY t.id
+       ORDER BY t.name`,
       [subEventId]
     );
     return rows;
   }
 
   // Volunteer self-serve join — no organizer/head approval needed at this level
-  // (approval only kicks in at task-assignment acceptance, not team membership)
+  // (approval only kicks in at task-assignment acceptance, not team membership).
+  // Capacity is enforced here (not just hidden in the UI): once max_size is
+  // hit, this becomes a silent no-op — same tamper-safety pattern as
+  // Organizer.isRoleOpen, checked inside the same transaction as the
+  // insert so two volunteers racing for the last slot can't both get in.
   static async addMember(teamId, studentId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const teamRes = await client.query(
+        `SELECT max_size FROM teams WHERE id = $1 FOR UPDATE`,
+        [teamId]
+      );
+      const team = teamRes.rows[0];
+      if (!team) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      if (team.max_size != null) {
+        const countRes = await client.query(
+          `SELECT COUNT(*)::int AS count FROM team_members WHERE team_id = $1`,
+          [teamId]
+        );
+        if (countRes.rows[0].count >= team.max_size) {
+          await client.query('ROLLBACK');
+          return null; // team full — caller treats this the same as any other no-op
+        }
+      }
+
+      const { rows } = await client.query(
+        `INSERT INTO team_members (team_id, student_id)
+         VALUES ($1, $2)
+         ON CONFLICT (team_id, student_id) DO NOTHING
+         RETURNING *`,
+        [teamId, studentId]
+      );
+      await client.query('COMMIT');
+      return rows[0] || null;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Explicit capacity check for callers that need to know (and explain)
+  // "full" up front, rather than just having addMember silently no-op —
+  // e.g. rendering "Team full" on the volunteer team picker.
+  static async isFull(teamId) {
     const { rows } = await pool.query(
-      `INSERT INTO team_members (team_id, student_id)
-       VALUES ($1, $2)
-       ON CONFLICT (team_id, student_id) DO NOTHING
-       RETURNING *`,
-      [teamId, studentId]
+      `SELECT t.max_size, COUNT(tm.student_id)::int AS member_count
+       FROM teams t
+       LEFT JOIN team_members tm ON tm.team_id = t.id
+       WHERE t.id = $1
+       GROUP BY t.id`,
+      [teamId]
     );
-    return rows[0] || null;
+    const team = rows[0];
+    return !!team && team.max_size != null && team.member_count >= team.max_size;
   }
 
   static async removeMember(teamId, studentId) {

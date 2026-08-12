@@ -2,6 +2,7 @@ const passport = require('passport');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Organizer = require('../models/Organizer');
+const VerifiedOrganizer = require('../models/VerifiedOrganizer');
 const ClubMember = require('../models/Clubmember');
 const ClubRoster = require('../models/ClubRoster');
 const SkillTag = require('../models/Skilltag');
@@ -187,6 +188,21 @@ const authController = {
         });
       }
 
+      // The actual "only the real President/VP can become an organizer"
+      // gate — email + club + role must match a pre-populated
+      // verified_organizers row (see models/VerifiedOrganizer.js). This is
+      // separate from (and checked before) the club/role slot check above,
+      // which only guards against duplicate accounts, not impostors.
+      if (!(await VerifiedOrganizer.isVerified(clubId, email, role))) {
+        const pickerData = await getSignupPickerData();
+        return res.status(403).render('auth/signup', {
+          title: 'Sign Up',
+          errors: ['This email is not recognized as that club\'s President/Vice President. Contact your club admin if you believe this is a mistake.'],
+          oldInput: req.body,
+          ...pickerData,
+        });
+      }
+
       const organizer = await Organizer.create({ name, email, password, clubId, role });
 
       req.login({ ...organizer, type: 'organizer' }, (err) => {
@@ -361,6 +377,19 @@ const authController = {
           title: 'Complete your profile',
           pendingUser: req.user,
           errors: ['That club/role is no longer available — someone may have just claimed it.'],
+          oldInput: req.body,
+          ...pickerData,
+        });
+      }
+
+      // Same allowlist gate as the plain-password organizer signup path —
+      // see the comment in _organizerSignup.
+      if (!(await VerifiedOrganizer.isVerified(clubId, req.user.email, role))) {
+        const pickerData = await getSignupPickerData();
+        return res.status(403).render('choose-role', {
+          title: 'Complete your profile',
+          pendingUser: req.user,
+          errors: ['This email is not recognized as that club\'s President/Vice President. Contact your club admin if you believe this is a mistake.'],
           oldInput: req.body,
           ...pickerData,
         });

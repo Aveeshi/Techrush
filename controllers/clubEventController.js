@@ -9,6 +9,7 @@ const Task = require('../models/Task');
 const TaskAssignment = require('../models/Taskassignment');
 const EventRegistration = require('../models/Eventregistration');
 const EventImage = require('../models/EventImage');
+const SkillTag = require('../models/Skilltag');
 
 const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -215,17 +216,24 @@ const clubEventController = {
   async eventDetail(req, res, next) {
     try {
       const event = req.eventContainer.row;
-      const [subEvents, teams, heads, attendees] = await Promise.all([
+      const [subEvents, teams, heads, attendees, skillTags] = await Promise.all([
         SubEvent.findByEvent(event.id),
         Team.findByEvent(event.id),
         EventHead.listFor({ eventId: event.id }),
         EventRegistration.findByEvent(event.id),
+        SkillTag.findAll(),
       ]);
+      const requiredSkillsByTeam = await SkillTag.getRequiredSkillsForTeams(teams.map((t) => t.id));
       const teamsWithMembers = await Promise.all(
-        teams.map(async (team) => ({ ...team, members: await Team.listMembers(team.id), heads: await Team.getHeads(team.id) }))
+        teams.map(async (team) => ({
+          ...team,
+          members: await Team.listMembers(team.id),
+          heads: await Team.getHeads(team.id),
+          requiredSkills: requiredSkillsByTeam[team.id] || [],
+        }))
       );
       res.render('organizer/event-detail', {
-        containerType: 'event', event, parentEvent: null, subEvents, teams: teamsWithMembers, heads,
+        containerType: 'event', event, parentEvent: null, subEvents, teams: teamsWithMembers, heads, skillTags,
         attendees: attendees.filter((r) => r.registration_type === 'attendee'),
         manageBasePath: `/club-events/${event.id}`,
       });
@@ -339,17 +347,24 @@ const clubEventController = {
   async subEventDetail(req, res, next) {
     try {
       const subEvent = req.eventContainer.row;
-      const [teams, heads, attendees] = await Promise.all([
+      const [teams, heads, attendees, skillTags] = await Promise.all([
         Team.findBySubEvent(subEvent.id),
         EventHead.listFor({ subEventId: subEvent.id }),
         EventRegistration.findBySubEvent(subEvent.id),
+        SkillTag.findAll(),
       ]);
+      const requiredSkillsByTeam = await SkillTag.getRequiredSkillsForTeams(teams.map((t) => t.id));
       const teamsWithMembers = await Promise.all(
-        teams.map(async (team) => ({ ...team, members: await Team.listMembers(team.id), heads: await Team.getHeads(team.id) }))
+        teams.map(async (team) => ({
+          ...team,
+          members: await Team.listMembers(team.id),
+          heads: await Team.getHeads(team.id),
+          requiredSkills: requiredSkillsByTeam[team.id] || [],
+        }))
       );
       res.render('organizer/event-detail', {
         containerType: 'sub_event', event: subEvent, parentEvent: { id: subEvent.event_id, title: subEvent.event_title },
-        subEvents: [], teams: teamsWithMembers, heads,
+        subEvents: [], teams: teamsWithMembers, heads, skillTags,
         attendees: attendees.filter((r) => r.registration_type === 'attendee'),
         manageBasePath: `/club-events/${subEvent.event_id}/sub-events/${subEvent.id}`,
       });
@@ -394,15 +409,21 @@ const clubEventController = {
   async createTeam(req, res, next) {
     try {
       const { type, row } = req.eventContainer;
-      const { name, description } = req.body;
+      const { name, description, maxSize, skillTagIds } = req.body;
       if (name && name.trim()) {
-        await Team.create({
+        const team = await Team.create({
           eventId: type === 'event' ? row.id : undefined,
           subEventId: type === 'sub_event' ? row.id : undefined,
           name: name.trim(),
           description: description || null,
+          // Optional cap set by whoever creates the team — blank input
+          // means unlimited, same as leaving it out entirely.
+          maxSize: maxSize && Number(maxSize) > 0 ? Number(maxSize) : null,
           createdBy: req.user.type === 'organizer' ? req.user.id : null,
         });
+        // Same skill_tags vocabulary/checkbox format as student signup —
+        // see SkillTag.setTeamRequiredSkills.
+        await SkillTag.setTeamRequiredSkills(team.id, toArray(skillTagIds));
       }
       res.redirect(manageUrl(req));
     } catch (err) {

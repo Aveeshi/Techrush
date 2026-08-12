@@ -17,6 +17,13 @@
       <% if (team.description) { %>
         <p class="text-muted max-w-2xl mb-3"><%= team.description %></p>
       <% } %>
+      <% if (requiredSkills.length > 0) { %>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <% requiredSkills.forEach(function(s) { %>
+            <span class="chip-label"><%= s.name %></span>
+          <% }); %>
+        </div>
+      <% } %>
       <a href="/teams/<%= team.id %>#chat" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
         VIEW TEAM CHAT →
       </a>
@@ -25,7 +32,12 @@
     <!-- Members + assign head -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
       <div>
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">MEMBERS (<%= members.length %>)</h2>
+        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">
+          MEMBERS (<%= members.length %><%= team.max_size ? ' / ' + team.max_size : '' %>)
+          <% if (team.max_size && members.length >= team.max_size) { %>
+            <span class="text-red-400">· TEAM FULL</span>
+          <% } %>
+        </h2>
         <% if (members.length === 0) { %>
           <p class="text-muted text-sm">No volunteers on this team yet.</p>
         <% } else { %>

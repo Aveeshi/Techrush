@@ -113,8 +113,9 @@
                 <h3 class="font-display text-lg"><%= team.name %></h3>
                 <% if (team.description) { %><p class="text-muted text-xs mt-1"><%= team.description %></p><% } %>
               </div>
-              <span class="font-mono text-[11px] tracking-[0.1em] text-muted shrink-0">
-                <%= team.members.length %> MEMBER<%= team.members.length === 1 ? '' : 'S' %>
+              <span class="font-mono text-[11px] tracking-[0.1em] shrink-0 <%= team.max_size && team.members.length >= team.max_size ? 'text-red-400' : 'text-muted' %>">
+                <%= team.members.length %><%= team.max_size ? ' / ' + team.max_size : '' %> MEMBER<%= team.members.length === 1 ? '' : 'S' %>
+                <% if (team.max_size && team.members.length >= team.max_size) { %> · TEAM FULL<% } %>
               </span>
             </div>
 
@@ -122,6 +123,14 @@
               <div class="flex flex-wrap gap-2 mb-4">
                 <% team.heads.forEach(function(h) { %>
                   <span class="chip-label">Head: <%= h.name %></span>
+                <% }); %>
+              </div>
+            <% } %>
+
+            <% if (team.requiredSkills.length > 0) { %>
+              <div class="flex flex-wrap gap-2 mb-4">
+                <% team.requiredSkills.forEach(function(s) { %>
+                  <span class="chip-label"><%= s.name %></span>
                 <% }); %>
               </div>
             <% } %>
@@ -138,17 +147,33 @@
         <% }); %>
       </div>
 
-      <form action="<%= manageBasePath %>/teams" method="POST" class="border border-line rounded-lg p-5 flex flex-wrap gap-3 items-end mt-6">
-        <div class="flex-1 min-w-[160px]">
-          <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">NEW TEAM NAME</label>
-          <input type="text" name="name" required
-                 class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+      <form action="<%= manageBasePath %>/teams" method="POST" class="border border-line rounded-lg p-5 mt-6">
+        <div class="flex flex-wrap gap-3 items-end mb-4">
+          <div class="flex-1 min-w-[160px]">
+            <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">NEW TEAM NAME</label>
+            <input type="text" name="name" required
+                   class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+          </div>
+          <div class="flex-1 min-w-[160px]">
+            <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">DESCRIPTION (OPTIONAL)</label>
+            <input type="text" name="description"
+                   class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+          </div>
+          <div class="w-32">
+            <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">TEAM SIZE</label>
+            <input type="number" name="maxSize" min="1" placeholder="Unlimited"
+                   class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+          </div>
         </div>
-        <div class="flex-1 min-w-[160px]">
-          <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">DESCRIPTION (OPTIONAL)</label>
-          <input type="text" name="description"
-                 class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+
+        <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">SKILLS REQUIRED (OPTIONAL)</label>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <% skillTags.forEach(function(tag) { %>
+            <input type="checkbox" name="skillTagIds" id="new-team-skill-<%= tag.id %>" value="<%= tag.id %>" class="chip-input" />
+            <label for="new-team-skill-<%= tag.id %>" class="chip-label"><%= tag.name %></label>
+          <% }); %>
         </div>
+
         <button type="submit" class="btn-outline border border-line px-5 py-2.5 rounded-md text-sm">+ Add team</button>
       </form>
     </div>

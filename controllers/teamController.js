@@ -182,11 +182,12 @@ const teamController = {
   async teamManagePage(req, res, next) {
     try {
       const team = req.team;
-      const [members, heads, tasks, skillTags] = await Promise.all([
+      const [members, heads, tasks, skillTags, requiredSkills] = await Promise.all([
         Team.listMembers(team.id),
         Team.getHeads(team.id),
         Task.findByTeam(team.id),
         SkillTag.findAll(),
+        SkillTag.getTeamRequiredSkills(team.id),
       ]);
 
       // Same skills-vocabulary chips shown at signup (student_skills), reused
@@ -204,6 +205,7 @@ const teamController = {
         members: membersWithSkills,
         heads,
         skillTags,
+        requiredSkills,
         incompleteTasks: tasksWithAssignees.filter((t) => t.status !== 'verified'),
         completedTasks: tasksWithAssignees.filter((t) => t.status === 'verified'),
       });

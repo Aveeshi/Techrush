@@ -5,6 +5,7 @@ const ClubMember = require('../models/Clubmember');
 const Team = require('../models/Team');
 const AttendanceLog = require('../models/Attenancelog');
 const EventHead = require('../models/EventHead');
+const SkillTag = require('../models/Skilltag');
 const { sendRegistrationEmail } = require('../utils/mailer');
 
 // A draft sub-event is visible to its own managers (the owning club's
@@ -186,10 +187,15 @@ const subEventController = {
       const allTeams = await ensureAtLeastOneTeam(subEvent);
       const myTeams = await Team.findByStudentAndSubEvent(subEvent.id, req.user.id);
       const myTeamIds = new Set(myTeams.map((t) => t.id));
+      const requiredSkillsByTeam = await SkillTag.getRequiredSkillsForTeams(allTeams.map((t) => t.id));
 
       res.render('volunteer-teams', {
         event: subEvent,
-        teams: allTeams.map((t) => ({ ...t, joined: myTeamIds.has(t.id) })),
+        teams: allTeams.map((t) => ({
+          ...t,
+          joined: myTeamIds.has(t.id),
+          requiredSkills: requiredSkillsByTeam[t.id] || [],
+        })),
         backUrl: `/events/${req.params.eventId}/sub-events/${subEvent.id}`,
         formAction: `/events/${req.params.eventId}/sub-events/${subEvent.id}/volunteer-teams`,
       });

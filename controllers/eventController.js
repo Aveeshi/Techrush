@@ -7,6 +7,7 @@ const ClubMember = require('../models/Clubmember');
 const Team = require('../models/Team');
 const AttendanceLog = require('../models/Attenancelog'); // filename is misspelled in this repo, matching it as-is
 const EventHead = require('../models/EventHead');
+const SkillTag = require('../models/Skilltag');
 const { sendRegistrationEmail } = require('../utils/mailer');
 
 // A fresh event starts with zero teams (organizers add their own via
@@ -230,10 +231,15 @@ const eventController = {
       const allTeams = await ensureAtLeastOneTeam(event);
       const myTeams = await Team.findByStudentAndEvent(event.id, req.user.id);
       const myTeamIds = new Set(myTeams.map((t) => t.id));
+      const requiredSkillsByTeam = await SkillTag.getRequiredSkillsForTeams(allTeams.map((t) => t.id));
 
       res.render('volunteer-teams', {
         event,
-        teams: allTeams.map((t) => ({ ...t, joined: myTeamIds.has(t.id) })),
+        teams: allTeams.map((t) => ({
+          ...t,
+          joined: myTeamIds.has(t.id),
+          requiredSkills: requiredSkillsByTeam[t.id] || [],
+        })),
         backUrl: `/events/${event.id}`,
         formAction: `/events/${event.id}/volunteer-teams`,
       });

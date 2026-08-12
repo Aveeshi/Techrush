@@ -183,6 +183,63 @@ class SkillTag {
     return rows;
   }
 
+  // --- Team required skills ---
+
+  // What a volunteer should bring to be useful on this team — same
+  // skill_tags vocabulary/checkbox format as student signup's "skills
+  // you'd volunteer with" (see views/auth/signup.ejs and the team-creation
+  // form it's mirrored in), so the two are directly comparable, not two
+  // separate lists that happen to look similar.
+  static async setTeamRequiredSkills(teamId, skillTagIds) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(`DELETE FROM team_required_skills WHERE team_id = $1`, [teamId]);
+      if (skillTagIds.length) {
+        const values = skillTagIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+        await client.query(
+          `INSERT INTO team_required_skills (team_id, skill_tag_id) VALUES ${values}`,
+          [teamId, ...skillTagIds]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  static async getTeamRequiredSkills(teamId) {
+    const { rows } = await pool.query(
+      `SELECT st.* FROM team_required_skills trs
+       JOIN skill_tags st ON st.id = trs.skill_tag_id
+       WHERE trs.team_id = $1`,
+      [teamId]
+    );
+    return rows;
+  }
+
+  // Batch version for a list of teams at once (organizer's team-list page,
+  // volunteer team picker) — one query instead of N.
+  static async getRequiredSkillsForTeams(teamIds) {
+    if (!teamIds.length) return {};
+    const { rows } = await pool.query(
+      `SELECT trs.team_id, st.id, st.name
+       FROM team_required_skills trs
+       JOIN skill_tags st ON st.id = trs.skill_tag_id
+       WHERE trs.team_id = ANY($1::uuid[])`,
+      [teamIds]
+    );
+    const byTeam = {};
+    for (const row of rows) {
+      if (!byTeam[row.team_id]) byTeam[row.team_id] = [];
+      byTeam[row.team_id].push({ id: row.id, name: row.name });
+    }
+    return byTeam;
+  }
+
   // --- Task skill tags ---
 
   static async setTaskSkills(taskId, skillTagIds) {
