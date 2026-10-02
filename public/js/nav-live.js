@@ -1,18 +1,13 @@
-// Live nav role badges — no page reload needed when an organizer assigns
-// a student as event head / team head while they're already browsing.
-//
-// Every authenticated student's socket auto-joins `user:<id>` (see
-// sockets/chatSocket.js), so this connection alone is enough to receive
-// a 'role:updated' broadcast targeted at them. On that event, re-fetch
-// GET /auth/me-roles (server truth) and toggle the `nav-role-hidden`
-// class on every element tagged `data-role="isEventHead"` /
-// `data-role="isTeamHead"` in nav.ejs — chips AND nav links alike.
-// `data-role` may list multiple flags comma-separated (the combined "My
-// Events & Teams" link) — shown if ANY listed flag is true.
+// Listens on the global Socket.IO connection for real-time role updates
+// (pushed by organizers assigning/removing event heads or team heads),
+// and flips the nav chips between visible and hidden without requiring
+// a page reload.
 (function () {
   if (typeof io !== 'function') return;
 
-  async function refreshRoleBadges() {
+  const socket = io({ withCredentials: true });
+
+  async function refreshRoles() {
     try {
       const res = await fetch('/auth/me-roles');
       if (!res.ok) return;
@@ -22,10 +17,9 @@
         el.classList.toggle('nav-role-hidden', !anyTrue);
       });
     } catch (err) {
-      // Silent — the badges just stay as they were server-rendered.
+      // Offline / transient network failure — leave badges as they are.
     }
   }
 
-  const socket = io({ withCredentials: true });
-  socket.on('role:updated', refreshRoleBadges);
+  socket.on('role:updated', refreshRoles);
 })();

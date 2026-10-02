@@ -19,6 +19,9 @@ async function clubIdForTeam(team) {
 // Blocks any unauthenticated request, regardless of type
 function requireAuth(req, res, next) {
   if (!req.isAuthenticated()) {
+    if (req.accepts('html')) {
+      return res.redirect('/auth/login');
+    }
     return res.status(401).json({ error: 'Login required' });
   }
   next();
@@ -26,6 +29,9 @@ function requireAuth(req, res, next) {
 
 function requireStudent(req, res, next) {
   if (!req.isAuthenticated() || req.user.type !== 'student') {
+    if (req.accepts('html')) {
+      return res.redirect('/auth/login');
+    }
     return res.status(403).json({ error: 'Student account required' });
   }
   next();
@@ -33,6 +39,9 @@ function requireStudent(req, res, next) {
 
 function requireOrganizer(req, res, next) {
   if (!req.isAuthenticated() || req.user.type !== 'organizer') {
+    if (req.accepts('html')) {
+      return res.redirect('/auth/login');
+    }
     return res.status(403).json({ error: 'Organizer account required' });
   }
   next();
@@ -145,4 +154,78 @@ async function requireEventManager(req, res, next) {
   }
 }
 
-module.exports = { requireAuth, requireStudent, requireOrganizer, requireTeamHead, requireEventManager };
+function requireFaculty(req, res, next) {
+  if (!req.isAuthenticated() || req.user.type !== 'faculty') {
+    if (req.accepts('html')) {
+      return res.redirect('/auth/faculty-login');
+    }
+    return res.status(403).json({ error: 'Faculty Coordinator account required' });
+  }
+  next();
+}
+
+function requireInstitutional(req, res, next) {
+  if (!req.isAuthenticated() || req.user.type !== 'institutional') {
+    if (req.accepts('html')) {
+      return res.redirect('/auth/institutional-login');
+    }
+    return res.status(403).json({ error: 'Institutional Coordinator account required' });
+  }
+  next();
+}
+
+// Requirement 7: Dashboard access control
+// A student's dashboard is accessible only by that student, or by the FC, or by assigned Student Coordinator
+async function requireStudentOrInspector(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return res.redirect('/auth/login');
+  }
+
+  const targetStudentId = req.params.studentId || req.user.id;
+
+  // Institutional Coordinator has institution-wide audit access
+  if (req.user.type === 'institutional') {
+    req.targetStudentId = targetStudentId;
+    return next();
+  }
+
+  // Faculty Coordinator can inspect student records
+  if (req.user.type === 'faculty') {
+    req.targetStudentId = targetStudentId;
+    return next();
+  }
+
+  // The student themselves viewing their own dashboard
+  if (req.user.type === 'student' && req.user.id === targetStudentId) {
+    req.targetStudentId = targetStudentId;
+    return next();
+  }
+
+  // If another student is requesting, check if they are an assigned Student Coordinator
+  if (req.user.type === 'student') {
+    const FacultyCoordinator = require('../models/FacultyCoordinator');
+    const coordinatorships = await FacultyCoordinator.isStudentCoordinator(req.user.id);
+    const canInspect = coordinatorships.some(sc => sc.can_inspect_records);
+    if (canInspect) {
+      req.targetStudentId = targetStudentId;
+      req.isStudentCoordinatorInspector = true;
+      return next();
+    }
+  }
+
+  // Otherwise access is denied
+  return res.status(403).render('error', {
+    message: 'Access Denied: You do not have permission to inspect this student\'s activity record.'
+  });
+}
+
+module.exports = {
+  requireAuth,
+  requireStudent,
+  requireOrganizer,
+  requireFaculty,
+  requireInstitutional,
+  requireStudentOrInspector,
+  requireTeamHead,
+  requireEventManager,
+};

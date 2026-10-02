@@ -194,7 +194,7 @@
         <% } %>
 
       <% } else { %>
-        <div class="flex flex-wrap gap-4">
+        <div class="flex flex-wrap items-center gap-4">
           <form action="/events/<%= event.id %>/register" method="POST">
             <input type="hidden" name="registrationType" value="attendee" />
             <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">

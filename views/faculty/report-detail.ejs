@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-[1100px] mx-auto px-4 sm:px-8 py-10">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/faculty/reports" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to All Reports</a>
+      <span class="font-mono text-xs px-2.5 py-1 rounded bg-panel border border-line text-muted">
+        Report ID: <%= report.id.substring(0, 8) %>...
+      </span>
+    </div>
+
+    <!-- Student Bio Card -->
+    <div class="border border-line rounded-xl bg-panel p-6 sm:p-8 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-6 h-px bg-lime"></span>
+          <span class="font-mono text-xs tracking-[0.2em] text-lime">// STUDENT REPORT VERIFICATION</span>
+        </div>
+        <h1 class="font-display text-3xl font-bold"><%= report.student_name %></h1>
+        <div class="text-xs text-muted mt-1 space-x-2">
+          <span>Roll No: <strong class="text-fg font-mono"><%= report.roll_number || 'N/A' %></strong></span>
+          <span>•</span>
+          <span>Dept: <strong class="text-fg"><%= report.department || 'Eng' %></strong></span>
+          <span>•</span>
+          <span>Year: <strong class="text-fg"><%= report.student_year || '1' %></strong></span>
+        </div>
+      </div>
+
+      <div class="text-right sm:border-l sm:border-line sm:pl-6">
+        <span class="text-[10px] font-mono tracking-wider text-muted uppercase block">REPORT SUMMARY</span>
+        <div class="font-display text-2xl font-bold text-fg mt-0.5">Semester <%= report.semester %></div>
+        <div class="font-mono text-xs text-muted">Academic Year <%= report.academic_year %></div>
+        <div class="text-xs font-mono text-lime font-bold mt-1">Claimed: <%= report.total_hours %> hrs</div>
+      </div>
+    </div>
+
+    <!-- Itemized Events in this Report -->
+    <div class="border border-line rounded-xl bg-panel overflow-hidden mb-8">
+      <div class="p-6 border-b border-line flex items-center justify-between">
+        <h2 class="font-display text-lg">Itemized Event Attendances &amp; Hours Log</h2>
+        <span class="text-xs text-muted font-mono"><%= report.club_name %></span>
+      </div>
+
+      <% 
+        const repData = typeof report.report_data === 'string' ? JSON.parse(report.report_data) : (report.report_data || {});
+        const eventsList = repData.events || [];
+      %>
+
+      <% if (eventsList.length === 0) { %>
+        <div class="p-8 text-center text-muted text-sm">
+          No individual events listed in this report.
+        </div>
+      <% } else { %>
+        <table class="w-full text-left text-xs">
+          <thead class="bg-black/30 font-mono text-[10px] text-muted uppercase border-b border-line">
+            <tr>
+              <th class="p-4 border-r border-line">#</th>
+              <th class="p-4 border-r border-line">Event Name</th>
+              <th class="p-4 border-r border-line">Date</th>
+              <th class="p-4 border-r border-line">Venue</th>
+              <th class="p-4 text-right">Awarded Hours</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            <% eventsList.forEach(function(ev, idx) { %>
+              <tr>
+                <td class="p-4 border-r border-line font-mono text-muted"><%= idx + 1 %></td>
+                <td class="p-4 border-r border-line font-bold text-fg"><%= ev.title %></td>
+                <td class="p-4 border-r border-line font-mono text-muted"><%= ev.date ? new Date(ev.date).toLocaleDateString() : 'N/A' %></td>
+                <td class="p-4 border-r border-line"><%= ev.venue || 'Campus' %></td>
+                <td class="p-4 text-right font-mono font-bold text-lime">+<%= ev.creditHours || 0 %> hrs</td>
+              </tr>
+            <% }); %>
+          </tbody>
+          <tfoot class="bg-black/20 font-bold border-t border-line">
+            <tr>
+              <td colspan="4" class="p-4 text-right font-mono uppercase text-muted">Total Verified Semester Hours:</td>
+              <td class="p-4 text-right font-mono text-lime font-bold text-sm"><%= report.total_hours %> Hours</td>
+            </tr>
+          </tfoot>
+        </table>
+      <% } %>
+    </div>
+
+    <!-- Current Status & Verification History -->
+    <% if (report.fc_remarks) { %>
+      <div class="mb-8 p-4 rounded-lg bg-black/20 border border-line text-xs">
+        <span class="font-mono text-[10px] text-muted uppercase tracking-wider block mb-1">PREVIOUS FACULTY REMARKS</span>
+        <p class="text-amber-300 italic">"<%= report.fc_remarks %>"</p>
+      </div>
+    <% } %>
+
+    <!-- Faculty Decision Actions (Tick, Cross, Send Back for Re-verification) -->
+    <div class="border-2 border-line rounded-xl bg-panel p-6 sm:p-8 shadow-2xl">
+      <div class="mb-6">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-lime"></span>
+          <h2 class="font-display text-xl font-bold">Faculty Coordinator Decision Panel</h2>
+        </div>
+        <p class="text-xs text-muted mt-1">
+          Perform formal inspection of student activity record and select your sign-off action:
+        </p>
+      </div>
+
+      <form action="/faculty/reports/<%= report.id %>/verify" method="POST" class="space-y-6">
+        <div>
+          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">
+            FACULTY REMARKS / VERIFICATION NOTES
+          </label>
+          <textarea name="fcRemarks" rows="3" placeholder="Provide notes or revision requirements for the student..."
+                    class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime text-xs"><%= report.fc_remarks || '' %></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <!-- Option 1: TICK (Approve / Verified) -->
+          <button type="submit" name="action" value="approve"
+                  class="btn-lime flex items-center justify-center gap-2 px-6 py-4 bg-lime text-black font-bold rounded-lg shadow-lg hover:opacity-95 transition-all text-sm">
+            <span class="text-lg">✓</span> Tick (Approve &amp; Sign-off)
+          </button>
+
+          <!-- Option 2: SEND BACK FOR RE-VERIFICATION -->
+          <button type="submit" name="action" value="reverification"
+                  class="flex items-center justify-center gap-2 px-6 py-4 bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold rounded-lg hover:bg-amber-500/30 transition-all text-sm">
+            <span class="text-lg">↺</span> Send Back for Re-verification
+          </button>
+
+          <!-- Option 3: CROSS (Reject) -->
+          <button type="submit" name="action" value="reject"
+                  class="flex items-center justify-center gap-2 px-6 py-4 bg-red-500/20 text-red-400 border border-red-500/50 font-bold rounded-lg hover:bg-red-500/30 transition-all text-sm">
+            <span class="text-lg">✕</span> Cross (Reject Report)
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

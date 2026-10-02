@@ -33,6 +33,8 @@ const profilePhotoUpload = makeUploader('profile-photos').single('profilePhoto')
 // --- Pages ---
 authRouter.get('/signup', authController.signupPage);
 authRouter.get('/login', authController.loginPage);
+authRouter.get('/faculty-login', authController.facultyLoginPage);
+authRouter.get('/institutional-login', authController.institutionalLoginPage);
 
 // --- Unified signup (student OR organizer, branches on typeOfUser) ---
 authRouter.post('/signup', profilePhotoUpload, runSignupValidation, authController.signup);
@@ -40,12 +42,24 @@ authRouter.post('/signup', profilePhotoUpload, runSignupValidation, authControll
 // --- Login ---
 authRouter.post('/student/login', studentLoginValidation, authController.studentLogin);
 authRouter.post('/organizer/login', organizerLoginValidation, authController.organizerLogin);
+authRouter.post('/faculty/login', authController.facultyLogin);
+authRouter.post('/institutional/login', authController.institutionalLogin);
 
 // --- Google OAuth (both types — see passport.js for the pending/choose-role flow) ---
-authRouter.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+authRouter.get('/google', (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return res.redirect('/auth/login?error=Google+login+is+not+configured');
+  }
+  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+});
 authRouter.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: '/auth/login?error=google', session: true }),
+  (req, res, next) => {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      return res.redirect('/auth/login?error=Google+login+is+not+configured');
+    }
+    passport.authenticate('google', { failureRedirect: '/auth/login?error=google', session: true })(req, res, next);
+  },
   authController.googleCallback
 );
 

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-md mx-auto px-6 py-16">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="w-6 h-px bg-lime"></span>
+      <span class="font-mono text-xs tracking-[0.2em] text-lime">// INSTITUTIONAL ADMINISTRATION</span>
+    </div>
+    <h1 class="font-display text-3xl sm:text-4xl mb-2">Institutional Login</h1>
+    <p class="text-muted text-sm mb-8">
+      Central oversight portal for Institutional Coordinators to audit all clubs, events, attendance records, and faculty coordinators.
+    </p>
+
+    <% if (errors && errors.length > 0) { %>
+      <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mb-6 text-sm">
+        <ul class="list-disc list-inside space-y-1">
+          <% errors.forEach(function(error) { %>
+            <li><%= error %></li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+
+    <div class="border border-line bg-panel/60 p-6 rounded-xl shadow-xl backdrop-blur-sm mb-6">
+      <form action="/auth/institutional/login" method="POST" class="space-y-4">
+        <div>
+          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">ADMINISTRATOR EMAIL</label>
+          <input type="email" name="email" placeholder="institution@pict.edu"
+                 value="<%= oldInput.email || '' %>"
+                 class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">PASSWORD</label>
+          <input type="password" name="password" placeholder="••••••••"
+                 class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
+        </div>
+
+        <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md mt-2 hover:opacity-95 transition-all">
+          Sign In as Institutional Coordinator &rarr;
+        </button>
+      </form>
+    </div>
+
+    <div class="p-4 rounded-lg border border-line/60 bg-panel/30 text-xs text-muted flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <span>Default Demo Credentials:</span>
+        <code class="font-mono text-lime bg-lime/10 px-2 py-0.5 rounded">admin123</code>
+      </div>
+      <div class="flex items-center justify-between">
+        <span>Account:</span>
+        <code class="font-mono text-muted">institution@pict.edu</code>
+      </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-line flex flex-col gap-3 text-center text-sm">
+      <div class="text-muted">
+        Are you a Faculty Coordinator?
+        <a href="/auth/faculty-login" class="text-lime hover:underline font-semibold ml-1">Faculty Login &rarr;</a>
+      </div>
+      <div class="text-muted">
+        Are you a Student or Club Organizer?
+        <a href="/auth/login" class="text-fg hover:underline ml-1">Student / Organizer Login</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

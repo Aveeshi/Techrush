@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <style>
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; }
+      header, .no-print { display: none !important; }
+      .keepsake-card { border: 3px double #000000 !important; background: #ffffff !important; color: #000000 !important; box-shadow: none !important; }
+      .text-fg, .text-muted { color: #000000 !important; }
+      .border-line { border-color: #888888 !important; }
+    }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <div class="no-print">
+    <%- include('../partials/nav') %>
+  </div>
+
+  <main class="max-w-[950px] mx-auto px-4 sm:px-8 py-8">
+    <!-- Controls (Hidden on print) -->
+    <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-line">
+      <a href="/student/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Dashboard</a>
+      
+      <div class="flex items-center gap-3">
+        <form method="GET" action="/student/yearly-summary" class="flex items-center gap-2">
+          <label class="text-xs text-muted font-mono uppercase">Academic Year:</label>
+          <select name="year" onchange="this.form.submit()" class="text-xs bg-panel border border-line rounded px-2.5 py-1.5 text-fg focus:outline-none focus:border-lime">
+            <option value="2026-2027" <%= selectedYear === '2026-2027' ? 'selected' : '' %>>2026 - 2027</option>
+            <option value="2025-2026" <%= (!selectedYear || selectedYear === '2025-2026') ? 'selected' : '' %>>2025 - 2026</option>
+            <option value="2024-2025" <%= selectedYear === '2024-2025' ? 'selected' : '' %>>2024 - 2025</option>
+            <option value="2023-2024" <%= selectedYear === '2023-2024' ? 'selected' : '' %>>2023 - 2024</option>
+          </select>
+        </form>
+
+        <button onclick="window.print()" class="btn-lime text-xs font-semibold px-4 py-2 bg-lime text-black rounded-md flex items-center gap-1.5 shadow">
+          <span>🖨️</span> Print Memory Keepsake
+        </button>
+      </div>
+    </div>
+
+    <!-- Commemorative Yearly Keepsake Card -->
+    <div class="keepsake-card border-2 border-line bg-panel p-8 sm:p-14 rounded-2xl shadow-2xl relative overflow-hidden">
+      <!-- Ornate Header -->
+      <div class="text-center border-b-2 border-line/60 pb-8 mb-8">
+        <div class="flex items-center justify-center gap-2 mb-3">
+          <span class="text-lime text-xl font-bold font-mono">✦</span>
+          <span class="font-mono text-xs tracking-[0.3em] uppercase text-muted">CAMPUSBUZZ ACADEMIC MEMORIES</span>
+          <span class="text-lime text-xl font-bold font-mono">✦</span>
+        </div>
+        <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">
+          Yearly Activity &amp; Memory Dossier
+        </h1>
+        <div class="font-mono text-xs text-lime font-bold tracking-wider">
+          ACADEMIC YEAR: <%= summary.academicYear %>
+        </div>
+      </div>
+
+      <!-- Student Presentation Banner -->
+      <div class="text-center max-w-xl mx-auto mb-10">
+        <p class="text-xs text-muted tracking-wide uppercase font-mono">This commemorative summary honors the active campus participation of</p>
+        <div class="font-display text-2xl sm:text-3xl font-bold text-fg my-2">
+          <%= summary.student.name %>
+        </div>
+        <p class="text-xs text-muted">
+          Roll Number: <strong class="text-fg font-mono"><%= summary.student.roll_number || 'N/A' %></strong> • 
+          Department: <strong class="text-fg"><%= summary.student.department || 'Engineering' %></strong>
+        </p>
+      </div>
+
+      <!-- Highlight Badges -->
+      <div class="grid grid-cols-2 gap-4 max-w-md mx-auto mb-10 text-center">
+        <div class="p-4 rounded-xl border border-line bg-black/20">
+          <span class="font-mono text-[10px] uppercase text-muted block">Events Engaged</span>
+          <span class="font-display text-3xl text-fg font-bold mt-1 block"><%= summary.events.length %></span>
+        </div>
+        <div class="p-4 rounded-xl border border-line bg-black/20">
+          <span class="font-mono text-[10px] uppercase text-muted block">Credited Hours Earned</span>
+          <span class="font-display text-3xl text-lime font-bold mt-1 block"><%= summary.yearHours %> hrs</span>
+        </div>
+      </div>
+
+      <!-- Events Listing -->
+      <div class="mb-10">
+        <h3 class="font-mono text-xs tracking-[0.15em] uppercase text-muted mb-4 text-center">
+          // MEMORABLE SESSIONS &amp; WORKSHOPS ATTENDED
+        </h3>
+
+        <% if (summary.events.length === 0) { %>
+          <div class="p-8 border border-line rounded-lg text-center text-muted text-sm">
+            No events attended recorded in academic year <%= summary.academicYear %>.
+          </div>
+        <% } else { %>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <% summary.events.forEach(function(ev) { %>
+              <div class="p-4 rounded-lg border border-line bg-black/10 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="font-mono text-[10px] text-lime px-1.5 py-0.5 rounded bg-lime/10"><%= ev.club_name %></span>
+                    <span class="font-mono text-[10px] text-muted"><%= ev.event_date ? new Date(ev.event_date).toLocaleDateString() : 'N/A' %></span>
+                  </div>
+                  <h4 class="font-bold text-sm text-fg"><%= ev.title %></h4>
+                  <div class="text-xs text-muted mt-1"><%= ev.venue || 'Campus Center' %></div>
+                </div>
+                <div class="mt-3 pt-2 border-t border-line/40 flex items-center justify-between text-xs font-mono">
+                  <span class="text-emerald-400">✓ Completed</span>
+                  <span class="text-lime font-bold">+<%= ev.credit_hours %> hrs</span>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Footer Stamp -->
+      <div class="pt-8 border-t border-line text-center text-xs text-muted flex flex-col items-center">
+        <p class="max-w-md italic">
+          "A record of curiosity, camaraderie, and student leadership — to carry along with the degree."
+        </p>
+        <div class="mt-4 font-mono text-[10px] text-muted/60 uppercase">
+          Generated on <%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %> • CampusBuzz Institutional Archive
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

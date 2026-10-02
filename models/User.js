@@ -256,6 +256,91 @@ class User {
     );
     return rows[0] || null;
   }
+
+  // Set the student's primary/first priority club
+  static async setPriorityClub(studentId, clubId) {
+    const { rows } = await pool.query(
+      `UPDATE students SET priority_club_id = $2 WHERE id = $1 RETURNING *`,
+      [studentId, clubId]
+    );
+    return rows[0] || null;
+  }
+
+  // Get student's priority club (or fallback to the first club they joined)
+  static async getPriorityClub(studentId) {
+    const { rows } = await pool.query(
+      `SELECT c.*, s.priority_club_id
+       FROM students s
+       LEFT JOIN clubs c ON c.id = COALESCE(
+         s.priority_club_id,
+         (SELECT cm.club_id FROM club_members cm WHERE cm.student_id = s.id ORDER BY cm.joined_at ASC LIMIT 1)
+       )
+       WHERE s.id = $1`,
+      [studentId]
+    );
+    return rows[0] || null;
+  }
+
+  // Returns all attended events with non-editable verified log data (name, date, hours, club)
+  static async getAttendedEventsWithDetails(studentId) {
+    const { rows } = await pool.query(
+      `SELECT er.id AS registration_id, er.registration_type, er.checked_in_at, er.status,
+              COALESCE(e.id, se.id) AS event_id,
+              COALESCE(e.title, se.title) AS title,
+              COALESCE(e.description, se.description) AS description,
+              COALESCE(e.start_time, se.start_time) AS event_date,
+              COALESCE(e.venue, se.venue) AS venue,
+              COALESCE(e.credit_hours, se.credit_hours, 0) AS credit_hours,
+              c.id AS club_id, c.name AS club_name, c.logo_url AS club_logo
+       FROM event_registrations er
+       LEFT JOIN events e ON e.id = er.event_id
+       LEFT JOIN sub_events se ON se.id = er.sub_event_id
+       LEFT JOIN events pe ON pe.id = se.event_id
+       JOIN clubs c ON c.id = COALESCE(e.club_id, pe.club_id)
+       WHERE er.student_id = $1
+         AND er.checked_in_at IS NOT NULL
+       ORDER BY event_date DESC`,
+      [studentId]
+    );
+    return rows;
+  }
+
+  // Calculate hours specifically for the student's priority club
+  static async getPriorityClubHours(studentId, priorityClubId) {
+    if (!priorityClubId) return 0;
+    const { rows } = await pool.query(
+      `SELECT
+         COALESCE((
+           SELECT SUM(ta.hours_logged)
+           FROM task_assignments ta
+           JOIN tasks t ON t.id = ta.task_id
+           JOIN groups g ON g.id = t.group_id
+           JOIN teams tm ON tm.id = g.team_id
+           LEFT JOIN events e1 ON e1.id = tm.event_id
+           LEFT JOIN sub_events se1 ON se1.id = tm.sub_event_id
+           LEFT JOIN events e2 ON e2.id = se1.event_id
+           WHERE ta.student_id = $1
+             AND ta.attendance = 'present'
+             AND ta.status = 'verified'
+             AND COALESCE(e1.club_id, e2.club_id) = $2
+         ), 0)
+         +
+         COALESCE((
+           SELECT SUM(COALESCE(e.credit_hours, se2.credit_hours))
+           FROM event_registrations er
+           LEFT JOIN events e ON e.id = er.event_id
+           LEFT JOIN sub_events se2 ON se2.id = er.sub_event_id
+           LEFT JOIN events pe ON pe.id = se2.event_id
+           WHERE er.student_id = $1
+             AND er.registration_type = 'attendee'
+             AND er.checked_in_at IS NOT NULL
+             AND COALESCE(e.club_id, pe.club_id) = $2
+         ), 0)
+         AS priority_hours`,
+      [studentId, priorityClubId]
+    );
+    return Number(rows[0]?.priority_hours || 0);
+  }
 }
 
 module.exports = User;

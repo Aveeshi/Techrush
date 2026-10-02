@@ -235,6 +235,129 @@ class Event {
     );
     return rows;
   }
+
+  // Find events for Faculty Coordinator review
+  static async findPendingForFaculty(clubId) {
+    const { rows } = await pool.query(
+      `SELECT e.*, o.name AS organizer_name, et.name AS event_type_name
+       FROM events e
+       LEFT JOIN organizers o ON o.id = e.organizer_id
+       LEFT JOIN event_types et ON et.id = e.event_type_id
+       WHERE e.club_id = $1 AND e.approval_status = 'pending_faculty'
+       ORDER BY e.created_at DESC`,
+      [clubId]
+    );
+    return rows;
+  }
+
+  static async findAllForFaculty(clubId) {
+    const { rows } = await pool.query(
+      `SELECT e.*, o.name AS organizer_name, et.name AS event_type_name,
+              COUNT(DISTINCT er.id) AS total_registrations,
+              COUNT(DISTINCT er.id) FILTER (WHERE er.checked_in_at IS NOT NULL) AS attended_count
+       FROM events e
+       LEFT JOIN organizers o ON o.id = e.organizer_id
+       LEFT JOIN event_types et ON et.id = e.event_type_id
+       LEFT JOIN event_registrations er ON er.event_id = e.id
+       WHERE e.club_id = $1
+       GROUP BY e.id, o.name, et.name
+       ORDER BY e.start_time DESC`,
+      [clubId]
+    );
+    return rows;
+  }
+
+  static async approveByFaculty(eventId, fcId, remarks) {
+    const { rows } = await pool.query(
+      `UPDATE events
+       SET approval_status = 'approved',
+           status = 'published',
+           approved_by_fc = $2,
+           fc_remarks = $3,
+           verified_at = now()
+       WHERE id = $1
+       RETURNING *`,
+      [eventId, fcId, remarks || 'Approved by Faculty Coordinator']
+    );
+    return rows[0] || null;
+  }
+
+  static async rejectByFaculty(eventId, fcId, remarks) {
+    const { rows } = await pool.query(
+      `UPDATE events
+       SET approval_status = 'rejected',
+           status = 'draft',
+           approved_by_fc = $2,
+           fc_remarks = $3,
+           verified_at = now()
+       WHERE id = $1
+       RETURNING *`,
+      [eventId, fcId, remarks || 'Rejected by Faculty Coordinator']
+    );
+    return rows[0] || null;
+  }
+
+  // Full attendee roster for an event (used by FC and Institutional Coordinator)
+  static async getAttendeesForEvent(eventId) {
+    const { rows } = await pool.query(
+      `SELECT er.id AS registration_id, er.registration_type, er.checked_in_at, er.status,
+              s.id AS student_id, s.name AS student_name, s.email, s.roll_number,
+              s.department, s.year, s.phone,
+              COALESCE(e.credit_hours, 0) AS credit_hours
+       FROM event_registrations er
+       JOIN students s ON s.id = er.student_id
+       JOIN events e ON e.id = er.event_id
+       WHERE er.event_id = $1
+         AND er.checked_in_at IS NOT NULL
+       ORDER BY s.roll_number ASC, s.name ASC`,
+      [eventId]
+    );
+    return rows;
+  }
+
+  // Timeframe report generator for Faculty Coordinator (yearly, monthly, weekly, or single event)
+  static async getClubReportByTimeframe(clubId, { timeframe = 'monthly', eventId = null, year = null, month = null }) {
+    let dateFilter = '';
+    const params = [clubId];
+
+    if (eventId) {
+      params.push(eventId);
+      dateFilter = ` AND e.id = $${params.length}`;
+    } else if (timeframe === 'yearly' && year) {
+      params.push(`${year}-01-01 00:00:00+00`, `${year}-12-31 23:59:59+00`);
+      dateFilter = ` AND e.start_time BETWEEN $${params.length - 1} AND $${params.length}`;
+    } else if (timeframe === 'monthly' && year && month) {
+      const start = new Date(year, month - 1, 1).toISOString();
+      const end = new Date(year, month, 0, 23, 59, 59).toISOString();
+      params.push(start, end);
+      dateFilter = ` AND e.start_time BETWEEN $${params.length - 1} AND $${params.length}`;
+    } else if (timeframe === 'weekly') {
+      dateFilter = ` AND e.start_time >= now() - INTERVAL '7 days'`;
+    }
+
+    const eventsRes = await pool.query(
+      `SELECT e.*,
+              COUNT(DISTINCT er.id) FILTER (WHERE er.checked_in_at IS NOT NULL) AS attendees_count
+       FROM events e
+       LEFT JOIN event_registrations er ON er.event_id = e.id
+       WHERE e.club_id = $1 ${dateFilter}
+       GROUP BY e.id
+       ORDER BY e.start_time ASC`,
+      params
+    );
+
+    // Fetch attendee rosters for each event in this timeframe
+    const eventsWithAttendees = [];
+    for (const ev of eventsRes.rows) {
+      const attendees = await this.getAttendeesForEvent(ev.id);
+      eventsWithAttendees.push({
+        ...ev,
+        attendees,
+      });
+    }
+
+    return eventsWithAttendees;
+  }
 }
 
 module.exports = Event;

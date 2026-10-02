@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-6 border-b border-line">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-6 h-px bg-lime"></span>
+          <span class="font-mono text-xs tracking-[0.2em] text-lime">// INSTITUTIONAL GOVERNANCE PORTAL</span>
+        </div>
+        <h1 class="font-display text-3xl sm:text-4xl"><%= admin.name %></h1>
+        <p class="text-muted text-sm mt-1">
+          Central Administration Oversight • All Campus Societies, Student Coordinators &amp; Event Audits
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-xs px-3 py-1.5 rounded-full bg-lime/10 text-lime border border-lime/30 font-semibold">
+          <%= clubs.length %> Registered Campus Clubs
+        </span>
+      </div>
+    </div>
+
+    <!-- Institutional High-level Metric Strip -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+      <div class="border border-line bg-panel p-6 rounded-xl">
+        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">CAMPUS CLUBS &amp; CHAPTERS</span>
+        <span class="font-display text-4xl font-bold mt-2 block text-fg"><%= clubs.length %></span>
+        <span class="text-xs text-muted">Active societies under institutional charter</span>
+      </div>
+
+      <div class="border border-line bg-panel p-6 rounded-xl">
+        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">TOTAL CAMPUS EVENTS</span>
+        <span class="font-display text-4xl font-bold mt-2 block text-lime"><%= totalEventsAcrossClubs %></span>
+        <span class="text-xs text-muted">Flagship, workshops, and technical events</span>
+      </div>
+
+      <div class="border border-line bg-panel p-6 rounded-xl">
+        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">ACTIVE STUDENT PARTICIPATIONS</span>
+        <span class="font-display text-4xl font-bold mt-2 block text-emerald-400"><%= totalMembersAcrossClubs %></span>
+        <span class="text-xs text-muted">Enrolled student club members</span>
+      </div>
+    </div>
+
+    <!-- All Clubs Directory Grid (Requirement 2 & 6: Option of all clubs, click on any club for all info) -->
+    <div class="mb-12">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="font-display text-2xl font-bold">Institution-Wide Clubs Directory</h2>
+          <p class="text-xs text-muted mt-0.5">
+            Click on any club card to inspect its Faculty Coordinator, Student Coordinators, conducted events, and attendee rosters.
+          </p>
+        </div>
+
+        <input type="text" id="club-search" placeholder="Search clubs..." onkeyup="filterClubs()"
+               class="px-4 py-2 bg-panel border border-line rounded-md text-xs text-fg placeholder-muted focus:outline-none focus:border-lime w-64" />
+      </div>
+
+      <div id="clubs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% clubs.forEach(function(club) { %>
+          <a href="/institutional/clubs/<%= club.id %>" class="club-card border border-line rounded-xl bg-panel p-6 hover:border-lime/60 transition-all block group relative overflow-hidden">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div class="flex items-center gap-3">
+                <% if (club.logo_url) { %>
+                  <img src="<%= club.logo_url %>" alt="" class="w-12 h-12 rounded-lg object-cover border border-line" />
+                <% } else { %>
+                  <div class="w-12 h-12 rounded-lg bg-lime/10 border border-lime/30 flex items-center justify-center font-bold text-lime font-display text-lg">
+                    <%= club.name.substring(0, 2).toUpperCase() %>
+                  </div>
+                <% } %>
+                <div>
+                  <h3 class="font-display text-xl font-bold text-fg group-hover:text-lime transition-colors">
+                    <%= club.name %>
+                  </h3>
+                  <div class="text-xs text-muted font-mono">
+                    <%= club.total_events || 0 %> Events • <%= club.total_members || 0 %> Members
+                  </div>
+                </div>
+              </div>
+              <span class="text-muted group-hover:text-lime group-hover:translate-x-1 transition-all text-sm font-mono">&rarr;</span>
+            </div>
+
+            <p class="text-xs text-muted/80 line-clamp-2 mb-4 leading-relaxed">
+              <%= club.description || 'Institutional student technical & cultural society.' %>
+            </p>
+
+            <div class="pt-4 border-t border-line/60 flex items-center justify-between text-xs">
+              <div class="truncate max-w-[200px]">
+                <span class="text-[10px] font-mono uppercase text-muted block">FACULTY INCHARGE</span>
+                <span class="font-semibold text-fg text-xs truncate">
+                  <%= club.faculty_name || 'Not Assigned' %>
+                </span>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] font-mono uppercase text-muted block">STUDENT COORDS</span>
+                <span class="font-mono text-lime font-bold text-xs">
+                  <%= club.student_coordinators_count || 0 %> Appointed
+                </span>
+              </div>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function filterClubs() {
+      const q = document.getElementById('club-search').value.toLowerCase();
+      document.querySelectorAll('.club-card').forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(q) ? 'block' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,9 +1,8 @@
 <%
 /*
-  `user` comes from res.locals.user, set once by app-level middleware
-  (see the note at the bottom of this file) — every template gets it
-  automatically, no per-route wiring needed. user is null if logged out,
-  otherwise the full req.user object including .type ('student'|'organizer').
+  `user` comes from res.locals.user, set once by app-level middleware — every template gets it
+  automatically. user is null if logged out, otherwise { id, name, email, type, ... }
+  Types supported: 'student', 'organizer', 'faculty', 'institutional'.
 */
 %>
 
@@ -14,31 +13,27 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="shrink-0">
         <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#d7ff2b"/>
       </svg>
-      <span class="font-display text-lg tracking-tight">CLUBBING</span>
+      <span class="font-display text-lg tracking-tight">CAMPUSBUZZ</span>
     </a>
 
-    <div class="hidden md:flex items-center gap-8">
+    <!-- Desktop Navigation Links -->
+    <div class="hidden md:flex items-center gap-6">
       <a href="/events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
         EVENTS
       </a>
 
       <% if (user && user.type === 'student') { %>
-        <a href="/registered-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
-          REGISTERED EVENTS
-        </a>
-        <!--
-          The old standalone "Teams" tab is gone — every student sees this
-          ONE tab instead, always (it now also covers "events/sub-events
-          I volunteer at", the old Teams tab's job for a non-head
-          student — see clubEventController.myEvents). isEventHead/
-          isTeamHead only control the role CHIPS elsewhere in this nav,
-          not this link's visibility.
-        -->
-        <a href="/my-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
-          MY EVENTS &amp; TEAMS
+        <a href="/student/dashboard" class="text-xs tracking-[0.15em] text-lime font-bold hover:text-white transition-colors">
+          MY DASHBOARD
         </a>
         <a href="/logbook" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
           LOGBOOK
+        </a>
+        <a href="/registered-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          REGISTERED EVENTS
+        </a>
+        <a href="/my-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          MY EVENTS &amp; TEAMS
         </a>
       <% } else if (user && user.type === 'organizer') { %>
         <a href="/club" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
@@ -47,9 +42,33 @@
         <a href="/club-events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
           CLUB EVENTS
         </a>
+      <% } else if (user && user.type === 'faculty') { %>
+        <a href="/faculty/dashboard" class="text-xs tracking-[0.15em] text-lime font-bold hover:text-white transition-colors">
+          FACULTY PORTAL
+        </a>
+        <a href="/faculty/events" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          EVENT APPROVALS
+        </a>
+        <a href="/faculty/reports" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          VERIFY REPORTS
+        </a>
+        <a href="/faculty/coordinators" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          COORDINATORS
+        </a>
+        <a href="/faculty/generate-report" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          REPORTS
+        </a>
+      <% } else if (user && user.type === 'institutional') { %>
+        <a href="/institutional/dashboard" class="text-xs tracking-[0.15em] text-lime font-bold hover:text-white transition-colors">
+          INSTITUTIONAL PORTAL
+        </a>
+        <a href="/institutional/dashboard" class="text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+          ALL CLUBS AUDIT
+        </a>
       <% } %>
     </div>
 
+    <!-- Right Controls -->
     <div class="hidden md:flex items-center gap-3">
       <button
         type="button"
@@ -59,11 +78,17 @@
       >🌓</button>
 
       <% if (!user) { %>
-        <a href="/auth/login" class="btn-outline text-sm font-semibold px-5 py-2.5 border border-line rounded-md">
+        <a href="/auth/login" class="btn-outline text-sm font-semibold px-4 py-2 border border-line rounded-md">
           Login
         </a>
-        <a href="/auth/signup" class="btn-lime text-sm font-semibold px-5 py-2.5 bg-lime text-black rounded-md">
+        <a href="/auth/signup" class="btn-lime text-sm font-semibold px-4 py-2 bg-lime text-black rounded-md">
           Signup
+        </a>
+        <a href="/auth/faculty-login" class="text-xs font-mono text-muted hover:text-lime px-2 py-1" title="Faculty Coordinator Portal">
+          Faculty &rarr;
+        </a>
+        <a href="/auth/institutional-login" class="text-xs font-mono text-muted hover:text-lime px-2 py-1" title="Institutional Admin Portal">
+          Institution &rarr;
         </a>
       <% } else { %>
         <% if (user.type === 'student') { %>
@@ -73,13 +98,24 @@
           <span data-role="isTeamHead" class="nav-role-chip font-mono text-[10px] tracking-[0.1em] text-lime border border-lime rounded px-2 py-1 <%= isTeamHead ? '' : 'nav-role-hidden' %>">
             TEAM HEAD
           </span>
+        <% } else if (user.type === 'faculty') { %>
+          <span class="font-mono text-[10px] tracking-[0.1em] text-lime bg-lime/10 border border-lime/30 rounded px-2 py-1">
+            FACULTY INCHARGE
+          </span>
+        <% } else if (user.type === 'institutional') { %>
+          <span class="font-mono text-[10px] tracking-[0.1em] text-amber-300 bg-amber-400/10 border border-amber-400/30 rounded px-2 py-1">
+            INSTITUTIONAL ADMIN
+          </span>
         <% } %>
-        <a href="/account" class="btn-outline flex items-center gap-2 text-sm font-semibold pl-2.5 pr-5 py-2 border border-line rounded-md">
+
+        <a href="<%= user.type === 'faculty' ? '/faculty/dashboard' : (user.type === 'institutional' ? '/institutional/dashboard' : (user.type === 'student' ? '/student/dashboard' : '/account')) %>"
+           class="btn-outline flex items-center gap-2 text-sm font-semibold pl-2.5 pr-4 py-1.5 border border-line rounded-md">
           <% if (user.type === 'student') { %>
             <img src="<%= user.profile_photo_url || '/avatars/avatar-1.svg' %>" alt="" class="w-6 h-6 rounded-full object-cover" />
           <% } %>
-          <%= user.type === 'organizer' ? user.name : 'My Account' %>
+          <%= user.name %>
         </a>
+
         <form action="/auth/logout" method="POST" class="inline">
           <button type="submit" class="text-xs tracking-[0.1em] text-muted hover:text-fg transition-colors">
             LOGOUT
@@ -88,7 +124,7 @@
       <% } %>
     </div>
 
-    <!-- Mobile-only: hamburger toggle for the folded menu below -->
+    <!-- Mobile-only hamburger toggle -->
     <button
       type="button"
       id="nav-hamburger"
@@ -109,57 +145,66 @@
     </button>
   </nav>
 
-  <!-- Mobile-only: folded menu — all nav links + account controls stacked -->
+  <!-- Mobile-only menu -->
   <div id="nav-mobile-menu" class="hidden md:hidden border-t border-line px-4 py-4 flex-col gap-1">
-    <a href="/events" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+    <a href="/events" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
       EVENTS
     </a>
 
     <% if (user && user.type === 'student') { %>
-      <a href="/registered-events" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
-        REGISTERED EVENTS
+      <a href="/student/dashboard" class="px-2 py-2 text-xs tracking-[0.15em] text-lime font-bold hover:text-white transition-colors">
+        MY DASHBOARD
       </a>
-      <a href="/my-events" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
-        MY EVENTS &amp; TEAMS
-      </a>
-      <a href="/logbook" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+      <a href="/logbook" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
         LOGBOOK
       </a>
+      <a href="/registered-events" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+        REGISTERED EVENTS
+      </a>
+      <a href="/my-events" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+        MY EVENTS &amp; TEAMS
+      </a>
     <% } else if (user && user.type === 'organizer') { %>
-      <a href="/club" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+      <a href="/club" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
         CLUB
       </a>
-      <a href="/club-events" class="px-2 py-2.5 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+      <a href="/club-events" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
         CLUB EVENTS
+      </a>
+    <% } else if (user && user.type === 'faculty') { %>
+      <a href="/faculty/dashboard" class="px-2 py-2 text-xs tracking-[0.15em] text-lime font-bold hover:text-white transition-colors">
+        FACULTY PORTAL
+      </a>
+      <a href="/faculty/events" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+        EVENT APPROVALS
+      </a>
+      <a href="/faculty/reports" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+        VERIFY REPORTS
+      </a>
+      <a href="/faculty/coordinators" class="px-2 py-2 text-xs tracking-[0.15em] text-muted hover:text-fg transition-colors">
+        COORDINATORS
+      </a>
+    <% } else if (user && user.type === 'institutional') { %>
+      <a href="/institutional/dashboard" class="px-2 py-2 text-xs tracking-[0.15em] text-lime font-bold hover:text-white transition-colors">
+        INSTITUTIONAL PORTAL
       </a>
     <% } %>
 
     <div class="mt-3 pt-3 border-t border-line flex flex-col gap-3">
-      <% if (user && user.type === 'student') { %>
-        <div class="flex items-center gap-2 px-2">
-          <span data-role="isEventHead" class="nav-role-chip font-mono text-[10px] tracking-[0.1em] text-lime border border-lime rounded px-2 py-1 <%= isEventHead ? '' : 'nav-role-hidden' %>">
-            EVENT HEAD
-          </span>
-          <span data-role="isTeamHead" class="nav-role-chip font-mono text-[10px] tracking-[0.1em] text-lime border border-lime rounded px-2 py-1 <%= isTeamHead ? '' : 'nav-role-hidden' %>">
-            TEAM HEAD
-          </span>
-        </div>
-      <% } %>
-
       <% if (!user) { %>
-        <a href="/auth/login" class="btn-outline text-sm font-semibold px-5 py-2.5 border border-line rounded-md text-center">
-          Login
-        </a>
-        <a href="/auth/signup" class="btn-lime text-sm font-semibold px-5 py-2.5 bg-lime text-black rounded-md text-center">
-          Signup
-        </a>
+        <div class="grid grid-cols-2 gap-2">
+          <a href="/auth/login" class="btn-outline text-xs font-semibold py-2 border border-line rounded-md text-center">
+            Login
+          </a>
+          <a href="/auth/signup" class="btn-lime text-xs font-semibold py-2 bg-lime text-black rounded-md text-center">
+            Signup
+          </a>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-center text-xs font-mono">
+          <a href="/auth/faculty-login" class="py-1 text-muted hover:text-lime">Faculty Portal &rarr;</a>
+          <a href="/auth/institutional-login" class="py-1 text-muted hover:text-lime">Institutional Portal &rarr;</a>
+        </div>
       <% } else { %>
-        <a href="/account" class="btn-outline flex items-center gap-2 text-sm font-semibold pl-2.5 pr-5 py-2 border border-line rounded-md">
-          <% if (user.type === 'student') { %>
-            <img src="<%= user.profile_photo_url || '/avatars/avatar-1.svg' %>" alt="" class="w-6 h-6 rounded-full object-cover" />
-          <% } %>
-          <%= user.type === 'organizer' ? user.name : 'My Account' %>
-        </a>
         <form action="/auth/logout" method="POST">
           <button type="submit" class="w-full text-left text-xs tracking-[0.1em] text-muted hover:text-fg transition-colors px-2 py-2">
             LOGOUT
@@ -171,7 +216,7 @@
         type="button"
         id="theme-toggle-mobile"
         aria-label="Toggle dark/light theme"
-        class="btn-outline text-sm px-3 py-2.5 border border-line rounded-md self-start"
+        class="btn-outline text-xs px-3 py-2 border border-line rounded-md self-start"
       >🌓 Toggle theme</button>
     </div>
   </div>
@@ -182,11 +227,6 @@
 </style>
 
 <script>
-  // Theme toggle — flips document.documentElement.dataset.theme instantly
-  // (every utility class already reads the CSS variables in
-  // partials/head.ejs, so this alone re-themes the whole page with no
-  // reload) and persists the choice via POST /theme, which sets the
-  // `theme` cookie head.ejs's pre-paint script reads on the next visit.
   function toggleTheme() {
     const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
     document.documentElement.dataset.theme = next;
@@ -199,8 +239,6 @@
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
   document.getElementById('theme-toggle-mobile').addEventListener('click', toggleTheme);
 
-  // Hamburger — folds all nav links + account controls into a dropdown
-  // panel below the header on phone-width screens (< md).
   (function () {
     const button = document.getElementById('nav-hamburger');
     const menu = document.getElementById('nav-mobile-menu');
@@ -219,27 +257,13 @@
       setOpen(menu.classList.contains('hidden'));
     });
 
-    // Close the menu once the viewport grows back to desktop width, so it
-    // doesn't stay stuck open (and mis-styled) behind the desktop nav.
     window.matchMedia('(min-width: 768px)').addEventListener('change', function (e) {
       if (e.matches) setOpen(false);
     });
   })();
 </script>
 
-<% if (user && user.type === 'student') { %>
+<% if (user) { %>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/nav-live.js"></script>
 <% } %>
-
-<%#
-  Wire res.locals.user once, app-wide, so every template (including this
-  partial) can reference `user` with zero per-route boilerplate:
-
-    app.use((req, res, next) => {
-      res.locals.user = req.user || null;
-      next();
-    });
-
-  Place this AFTER passport's session middleware and BEFORE your routers.
-%>

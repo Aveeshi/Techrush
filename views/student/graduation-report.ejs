@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <style>
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; }
+      header, .no-print { display: none !important; }
+      .print-border { border: 2px solid #000000 !important; }
+      .bg-panel { background: #ffffff !important; color: #000000 !important; }
+      .text-fg, .text-muted { color: #000000 !important; }
+      .border-line { border-color: #bbbbbb !important; }
+    }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <div class="no-print">
+    <%- include('../partials/nav') %>
+  </div>
+
+  <main class="max-w-[1000px] mx-auto px-4 sm:px-8 py-8">
+    <div class="no-print flex items-center justify-between mb-8 pb-4 border-b border-line">
+      <a href="/student/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Dashboard</a>
+      <button onclick="window.print()" class="btn-lime text-xs font-semibold px-4 py-2 bg-lime text-black rounded-md flex items-center gap-1.5 shadow">
+        <span>🖨️</span> Print Official Dossier
+      </button>
+    </div>
+
+    <!-- Official Graduation Dossier Card -->
+    <div class="border-2 border-line bg-panel p-8 sm:p-14 rounded-2xl shadow-2xl print-border relative overflow-hidden">
+      <!-- Watermark / Background Accent -->
+      <div class="absolute -top-12 -right-12 w-64 h-64 bg-lime/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Header Letterhead -->
+      <div class="text-center border-b-2 border-line pb-8 mb-8">
+        <div class="flex items-center justify-center gap-3 mb-2">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" class="shrink-0">
+            <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#d7ff2b"/>
+          </svg>
+          <span class="font-display text-3xl font-extrabold tracking-tight">CAMPUSBUZZ INSTITUTIONAL ARCHIVE</span>
+        </div>
+        <div class="font-mono text-xs tracking-[0.25em] uppercase text-muted">
+          FOUR-YEAR COMPREHENSIVE GRADUATION TRANSCRIPT &amp; CLUB DOSSIER
+        </div>
+        <p class="text-xs text-muted/70 mt-2 max-w-lg mx-auto">
+          Official verification of extra-curricular leadership, voluntary hours, and campus club participations across undergraduate tenure.
+        </p>
+      </div>
+
+      <!-- Graduate Bio Section -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 p-6 rounded-xl bg-black/20 border border-line mb-10 text-xs">
+        <div>
+          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">GRADUATING STUDENT</span>
+          <span class="font-bold text-fg text-base"><%= summary.student.name %></span>
+        </div>
+        <div>
+          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">ROLL NUMBER</span>
+          <span class="font-mono font-bold text-fg text-sm"><%= summary.student.roll_number || 'N/A' %></span>
+        </div>
+        <div>
+          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">ACADEMIC DEPARTMENT</span>
+          <span class="font-semibold text-fg text-sm"><%= summary.student.department || 'Engineering' %></span>
+        </div>
+        <div>
+          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">PRIMARY CLUB AFFILIATION</span>
+          <span class="font-bold text-lime text-sm"><%= summary.student.priority_club_name || 'Campus Societies' %></span>
+        </div>
+      </div>
+
+      <!-- Cumulative 4-Year Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-center">
+        <div class="p-6 border border-line rounded-xl bg-black/10">
+          <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">TOTAL 4-YEAR HOURS</span>
+          <span class="font-display text-4xl text-lime font-bold mt-2 block"><%= summary.totalHours %></span>
+          <span class="text-xs text-muted">Verified Activity Hours</span>
+        </div>
+        <div class="p-6 border border-line rounded-xl bg-black/10">
+          <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">EVENTS ATTENDED</span>
+          <span class="font-display text-4xl text-fg font-bold mt-2 block"><%= summary.events.length %></span>
+          <span class="text-xs text-muted">Technical &amp; Cultural Events</span>
+        </div>
+        <div class="p-6 border border-line rounded-xl bg-black/10">
+          <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">LEADERSHIP POSTS HELD</span>
+          <span class="font-display text-4xl text-emerald-400 font-bold mt-2 block"><%= summary.roles.length %></span>
+          <span class="text-xs text-muted">Head / Coordinator Positions</span>
+        </div>
+      </div>
+
+      <!-- Hours Breakdown by Club -->
+      <div class="mb-10 p-6 border border-line rounded-xl bg-black/10">
+        <h3 class="font-mono text-xs tracking-[0.15em] uppercase text-muted mb-4">// CLUB-WISE HOURS ACCREDITATION</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <% Object.entries(summary.clubBreakdown).forEach(([clubName, hours]) => { %>
+            <div class="p-3 border border-line/60 rounded-lg bg-black/20">
+              <span class="text-xs font-semibold block text-fg"><%= clubName %></span>
+              <span class="font-mono font-bold text-lime text-sm mt-1 block"><%= hours %> hrs</span>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Leadership Roles Held -->
+      <% if (summary.roles.length > 0) { %>
+        <div class="mb-10">
+          <h3 class="font-mono text-xs tracking-[0.15em] uppercase text-muted mb-3">// RECORD OF APPOINTMENTS &amp; ROLES</h3>
+          <div class="border border-line rounded-lg overflow-hidden">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-black/30 font-mono text-[10px] text-muted uppercase">
+                <tr>
+                  <th class="p-3 border-r border-line">Designation</th>
+                  <th class="p-3 border-r border-line">Context / Event</th>
+                  <th class="p-3">Club / Body</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line">
+                <% summary.roles.forEach(function(r) { %>
+                  <tr>
+                    <td class="p-3 border-r border-line font-bold text-lime"><%= r.role_type %></td>
+                    <td class="p-3 border-r border-line font-medium"><%= r.context_name %></td>
+                    <td class="p-3 text-muted"><%= r.club_name %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Chronological Events Listing -->
+      <div class="mb-12">
+        <h3 class="font-mono text-xs tracking-[0.15em] uppercase text-muted mb-3">// COMPLETE 4-YEAR ACTIVITY TIMELINE</h3>
+        <div class="border border-line rounded-lg overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-black/30 font-mono text-[10px] text-muted uppercase border-b border-line">
+              <tr>
+                <th class="p-3 border-r border-line">#</th>
+                <th class="p-3 border-r border-line">Event Title</th>
+                <th class="p-3 border-r border-line">Club</th>
+                <th class="p-3 border-r border-line">Date</th>
+                <th class="p-3 text-right">Credit Hours</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <% summary.events.forEach(function(ev, i) { %>
+                <tr>
+                  <td class="p-3 border-r border-line font-mono text-muted"><%= i + 1 %></td>
+                  <td class="p-3 border-r border-line font-bold text-fg"><%= ev.title %></td>
+                  <td class="p-3 border-r border-line text-muted"><%= ev.club_name %></td>
+                  <td class="p-3 border-r border-line font-mono text-muted"><%= ev.event_date ? new Date(ev.event_date).toLocaleDateString() : 'N/A' %></td>
+                  <td class="p-3 text-right font-mono font-bold text-lime">+<%= ev.credit_hours %> hrs</td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Institutional Sign-off Block -->
+      <div class="pt-10 border-t-2 border-line grid grid-cols-2 sm:grid-cols-3 gap-6 text-center text-xs">
+        <div>
+          <div class="h-10"></div>
+          <div class="border-t border-muted/50 pt-2 font-mono text-[10px] uppercase text-muted">Dean of Student Affairs</div>
+        </div>
+        <div>
+          <div class="h-10"></div>
+          <div class="border-t border-muted/50 pt-2 font-mono text-[10px] uppercase text-muted">Institutional Coordinator</div>
+        </div>
+        <div>
+          <div class="h-10"></div>
+          <div class="border-t border-muted/50 pt-2 font-mono text-[10px] uppercase text-muted">Head of Institution / Principal</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-6 border-b border-line">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-6 h-px bg-lime"></span>
+          <span class="font-mono text-xs tracking-[0.2em] text-lime">// FACULTY COORDINATOR COMMAND CENTER</span>
+        </div>
+        <h1 class="font-display text-3xl sm:text-4xl"><%= fc.name %></h1>
+        <p class="text-muted text-sm mt-1">
+          Faculty Incharge for <strong class="text-lime"><%= club ? club.name : 'Assigned Club' %></strong> • <%= fc.department || 'Department' %>
+        </p>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex flex-wrap items-center gap-3">
+        <a href="/faculty/events" class="btn-lime text-xs font-semibold px-4 py-2.5 bg-lime text-black rounded-md flex items-center gap-1.5">
+          <span>📅</span> Event Approvals
+          <% if (pendingEvents.length > 0) { %>
+            <span class="ml-1 px-1.5 py-0.2 bg-black text-lime font-mono text-[10px] rounded-full"><%= pendingEvents.length %></span>
+          <% } %>
+        </a>
+        <a href="/faculty/reports" class="btn-outline text-xs font-semibold px-4 py-2.5 border border-line rounded-md hover:border-lime transition-colors flex items-center gap-1.5">
+          <span>📋</span> Verify Student Reports
+          <% if (pendingReports.length > 0) { %>
+            <span class="ml-1 px-1.5 py-0.2 bg-amber-400 text-black font-mono text-[10px] rounded-full"><%= pendingReports.length %></span>
+          <% } %>
+        </a>
+        <a href="/faculty/coordinators" class="btn-outline text-xs font-semibold px-4 py-2.5 border border-line rounded-md hover:border-lime transition-colors flex items-center gap-1.5">
+          <span>👥</span> Student Coordinators
+        </a>
+        <a href="/faculty/generate-report" class="btn-outline text-xs font-semibold px-4 py-2.5 border border-line rounded-md hover:border-lime transition-colors flex items-center gap-1.5">
+          <span>📊</span> Generate Reports
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-10">
+      <div class="border border-line bg-panel p-6 rounded-xl">
+        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">PENDING EVENT PERMISSIONS</span>
+        <span class="font-display text-4xl font-bold mt-2 block <%= pendingEvents.length > 0 ? 'text-amber-400 animate-pulse' : 'text-fg' %>">
+          <%= pendingEvents.length %>
+        </span>
+        <span class="text-xs text-muted">Awaiting your approval</span>
+      </div>
+
+      <div class="border border-line bg-panel p-6 rounded-xl">
+        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">PENDING SEMESTER REPORTS</span>
+        <span class="font-display text-4xl font-bold mt-2 block <%= pendingReports.length > 0 ? 'text-lime animate-pulse' : 'text-fg' %>">
+          <%= pendingReports.length %>
+        </span>
+        <span class="text-xs text-muted">Student reports to verify</span>
+      </div>
+
+      <div class="border border-line bg-panel p-6 rounded-xl">
+        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">TOTAL CLUB EVENTS</span>
+        <span class="font-display text-4xl text-fg font-bold mt-2 block"><%= allEvents.length %></span>
+        <span class="text-xs text-muted">Organized under this club</span>
+      </div>
+
+      <div class="border border-line bg-panel p-6 rounded-xl">
+        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">STUDENT COORDINATORS</span>
+        <span class="font-display text-4xl text-emerald-400 font-bold mt-2 block"><%= studentCoordinators.length %></span>
+        <span class="text-xs text-muted">Appointed for club operations</span>
+      </div>
+    </div>
+
+    <!-- Split View: Pending Approvals & Pending Reports -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+      <!-- Event Proposals Awaiting Agreement -->
+      <div class="border border-line rounded-xl bg-panel overflow-hidden">
+        <div class="p-6 border-b border-line flex items-center justify-between">
+          <div>
+            <h2 class="font-display text-xl">Event Permissions Awaiting Sign-off</h2>
+            <p class="text-xs text-muted mt-0.5">Events require Faculty Coordinator agreement before publishing.</p>
+          </div>
+          <a href="/faculty/events" class="text-xs font-mono text-lime hover:underline">View All &rarr;</a>
+        </div>
+
+        <% if (pendingEvents.length === 0) { %>
+          <div class="p-8 text-center text-muted text-sm">
+            ✓ All event proposals have been reviewed and approved.
+          </div>
+        <% } else { %>
+          <div class="divide-y divide-line">
+            <% pendingEvents.slice(0, 3).forEach(function(ev) { %>
+              <div class="p-6">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                  <h3 class="font-bold text-base text-fg"><%= ev.title %></h3>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/30 uppercase">
+                    Needs Agreement
+                  </span>
+                </div>
+                <p class="text-xs text-muted line-clamp-2 mb-3"><%= ev.description || 'No description provided.' %></p>
+                <div class="flex items-center justify-between text-xs text-muted">
+                  <span>📅 <%= new Date(ev.start_time).toLocaleDateString() %> • <%= ev.venue || 'Campus' %></span>
+                  <a href="/faculty/events" class="btn-lime text-xs font-semibold px-3 py-1 bg-lime text-black rounded">
+                    Review &rarr;
+                  </a>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Student Semester Reports Pending Verification -->
+      <div class="border border-line rounded-xl bg-panel overflow-hidden">
+        <div class="p-6 border-b border-line flex items-center justify-between">
+          <div>
+            <h2 class="font-display text-xl">Student Semester Reports Pending Verification</h2>
+            <p class="text-xs text-muted mt-0.5">Verify total student hours with tick, cross, or re-verification.</p>
+          </div>
+          <a href="/faculty/reports" class="text-xs font-mono text-lime hover:underline">View All &rarr;</a>
+        </div>
+
+        <% if (pendingReports.length === 0) { %>
+          <div class="p-8 text-center text-muted text-sm">
+            ✓ No pending student reports awaiting verification.
+          </div>
+        <% } else { %>
+          <div class="divide-y divide-line">
+            <% pendingReports.slice(0, 3).forEach(function(rep) { %>
+              <div class="p-6 flex items-center justify-between gap-4">
+                <div>
+                  <h3 class="font-bold text-sm text-fg"><%= rep.student_name %></h3>
+                  <div class="text-xs text-muted mt-0.5">
+                    Roll: <%= rep.roll_number || 'N/A' %> • Semester <%= rep.semester %> (<%= rep.academic_year %>)
+                  </div>
+                  <div class="font-mono text-xs text-lime font-bold mt-1">
+                    Submitted Hours: <%= rep.total_hours %> hrs
+                  </div>
+                </div>
+                <a href="/faculty/reports/<%= rep.id %>" class="btn-lime text-xs font-semibold px-3.5 py-1.5 bg-lime text-black rounded">
+                  Verify Report &rarr;
+                </a>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

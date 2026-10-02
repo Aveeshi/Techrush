@@ -30,13 +30,6 @@ function registerChatSocket(io) {
       return;
     }
 
-    // Every authenticated student automatically joins their own private
-    // room — this is the one place notificationsSocket.js and any
-    // controller (via req.app.get('io')) needs to target to reach a
-    // specific student in real time (nav role badges, live hours updates),
-    // with zero extra client-side "join" step required.
-    socket.join(`user:${user.id}`);
-
     // Client asks to join one team's room before it can send/receive in it.
     socket.on('team:join', async (teamId, ack) => {
       try {

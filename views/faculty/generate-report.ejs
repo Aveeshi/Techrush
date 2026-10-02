@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <style>
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; }
+      header, .no-print { display: none !important; }
+      .print-box { border: 2px solid #000000 !important; background: #ffffff !important; color: #000000 !important; }
+      .text-fg, .text-muted { color: #000000 !important; }
+      .border-line { border-color: #888888 !important; }
+    }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <div class="no-print">
+    <%- include('../partials/nav') %>
+  </div>
+
+  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
+    <div class="no-print mb-6 flex items-center justify-between">
+      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Command Center</a>
+      <% if (reportData) { %>
+        <button onclick="window.print()" class="btn-lime text-xs font-semibold px-4 py-2 bg-lime text-black rounded-md flex items-center gap-1.5 shadow">
+          <span>🖨️</span> Print Generated Report
+        </button>
+      <% } %>
+    </div>
+
+    <div class="no-print flex items-center gap-3 mb-2">
+      <span class="w-6 h-px bg-lime"></span>
+      <span class="font-mono text-xs tracking-[0.2em] text-lime">// FACULTY REPORTING ENGINE</span>
+    </div>
+    <h1 class="no-print font-display text-3xl sm:text-4xl mb-3">Club Activity Report Generator</h1>
+    <p class="no-print text-muted text-sm max-w-2xl mb-8">
+      Generate official yearly, monthly, weekly, or individual event attendance reports for <strong class="text-lime"><%= club ? club.name : 'Your Club' %></strong>.
+    </p>
+
+    <!-- Report Filter Form (Hidden on Print) -->
+    <div class="no-print border border-line rounded-xl bg-panel p-6 mb-10 shadow-xl">
+      <form method="GET" action="/faculty/generate-report" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+        <input type="hidden" name="run" value="1" />
+
+        <div>
+          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">TIMEFRAME</label>
+          <select name="timeframe" id="tf-select" onchange="updateFormFields()" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
+            <option value="monthly" <%= timeframe === 'monthly' ? 'selected' : '' %>>Monthly Report</option>
+            <option value="yearly" <%= timeframe === 'yearly' ? 'selected' : '' %>>Yearly Report</option>
+            <option value="weekly" <%= timeframe === 'weekly' ? 'selected' : '' %>>Weekly Report (Last 7 Days)</option>
+            <option value="event" <%= timeframe === 'event' ? 'selected' : '' %>>Individual Event Report</option>
+          </select>
+        </div>
+
+        <div id="year-field">
+          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">YEAR</label>
+          <select name="year" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
+            <option value="2026" <%= String(year) === '2026' ? 'selected' : '' %>>2026</option>
+            <option value="2025" <%= String(year) === '2025' ? 'selected' : '' %>>2025</option>
+            <option value="2024" <%= String(year) === '2024' ? 'selected' : '' %>>2024</option>
+          </select>
+        </div>
+
+        <div id="month-field">
+          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">MONTH</label>
+          <select name="month" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
+            <% const months = ['January','February','March','April','May','June','July','August','September','October','November','December']; %>
+            <% months.forEach(function(m, idx) { %>
+              <option value="<%= idx + 1 %>" <%= Number(month) === (idx + 1) ? 'selected' : '' %>><%= m %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div id="event-field" style="display: none;">
+          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">INDIVIDUAL EVENT</label>
+          <select name="eventId" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
+            <% allEvents.forEach(function(ev) { %>
+              <option value="<%= ev.id %>" <%= eventId === ev.id ? 'selected' : '' %>><%= ev.title %> (<%= new Date(ev.start_time).toLocaleDateString() %>)</option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div>
+          <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md text-xs shadow hover:opacity-90 transition-opacity">
+            Generate Report &rarr;
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      function updateFormFields() {
+        const tf = document.getElementById('tf-select').value;
+        document.getElementById('year-field').style.display = (tf === 'weekly' || tf === 'event') ? 'none' : 'block';
+        document.getElementById('month-field').style.display = (tf === 'monthly') ? 'block' : 'none';
+        document.getElementById('event-field').style.display = (tf === 'event') ? 'block' : 'none';
+      }
+      updateFormFields();
+    </script>
+
+    <!-- Generated Report Output -->
+    <% if (reportData) { %>
+      <div class="print-box border-2 border-line bg-panel p-8 sm:p-12 rounded-2xl shadow-2xl">
+        <!-- Letterhead -->
+        <div class="text-center border-b-2 border-line pb-6 mb-8">
+          <div class="flex items-center justify-center gap-3 mb-2">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" class="shrink-0">
+              <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#d7ff2b"/>
+            </svg>
+            <span class="font-display text-2xl font-bold tracking-tight">PICT • FACULTY COORDINATOR AUDIT REPORT</span>
+          </div>
+          <div class="font-mono text-xs tracking-[0.2em] uppercase text-muted">
+            <%= club ? club.name : 'CLUB' %> • <%= timeframe.toUpperCase() %> ACTIVITY &amp; PARTICIPATION SUMMARY
+          </div>
+          <div class="text-xs text-muted/80 mt-1">
+            Faculty Incharge: <strong><%= fc.name %></strong> (<%= fc.department %>) • Generated: <%= new Date().toLocaleDateString() %>
+          </div>
+        </div>
+
+        <!-- High-level Metric Strip -->
+        <% 
+          let totalEvents = reportData.length;
+          let totalStudentsAttended = 0;
+          let totalHoursGenerated = 0;
+          reportData.forEach(ev => {
+            const attCount = ev.attendees ? ev.attendees.length : 0;
+            totalStudentsAttended += attCount;
+            totalHoursGenerated += (Number(ev.credit_hours) || 0) * attCount;
+          });
+        %>
+
+        <div class="grid grid-cols-3 gap-4 mb-8 text-center bg-black/20 p-4 rounded-xl border border-line text-xs font-mono">
+          <div>
+            <span class="text-muted block text-[10px] uppercase">EVENTS CONDUCTED</span>
+            <span class="text-2xl font-bold text-fg"><%= totalEvents %></span>
+          </div>
+          <div>
+            <span class="text-muted block text-[10px] uppercase">TOTAL STUDENT ATTENDANCES</span>
+            <span class="text-2xl font-bold text-lime"><%= totalStudentsAttended %></span>
+          </div>
+          <div>
+            <span class="text-muted block text-[10px] uppercase">TOTAL STUDENT HOURS AWARDED</span>
+            <span class="text-2xl font-bold text-emerald-400"><%= totalHoursGenerated %> hrs</span>
+          </div>
+        </div>
+
+        <% if (reportData.length === 0) { %>
+          <div class="p-8 text-center text-muted text-sm border border-line rounded-lg">
+            No events found for the selected timeframe.
+          </div>
+        <% } else { %>
+          <div class="space-y-8">
+            <% reportData.forEach(function(ev, idx) { %>
+              <div class="border border-line rounded-xl overflow-hidden bg-black/10">
+                <div class="p-5 border-b border-line bg-black/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span class="font-mono text-xs text-lime font-bold">#<%= idx + 1 %></span>
+                    <h3 class="font-display text-lg font-bold inline ml-1"><%= ev.title %></h3>
+                    <div class="text-xs text-muted mt-0.5">
+                      Date: <%= new Date(ev.start_time).toLocaleDateString() %> • Venue: <%= ev.venue || 'Campus' %> • Assigned Credit: <strong class="text-lime"><%= ev.credit_hours || 0 %> hrs</strong>
+                    </div>
+                  </div>
+                  <div class="font-mono text-xs bg-lime/10 text-lime px-2.5 py-1 rounded border border-lime/30 font-semibold self-start sm:self-auto">
+                    <%= ev.attendees.length %> Students Attended
+                  </div>
+                </div>
+
+                <!-- Attendee List -->
+                <% if (ev.attendees.length === 0) { %>
+                  <div class="p-4 text-xs text-muted text-center">
+                    No verified attendee check-ins for this event.
+                  </div>
+                <% } else { %>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                      <thead class="bg-black/30 font-mono text-[10px] text-muted uppercase border-b border-line">
+                        <tr>
+                          <th class="p-3 border-r border-line">#</th>
+                          <th class="p-3 border-r border-line">Roll No</th>
+                          <th class="p-3 border-r border-line">Student Name</th>
+                          <th class="p-3 border-r border-line">Dept &amp; Year</th>
+                          <th class="p-3 border-r border-line">Check-in Time</th>
+                          <th class="p-3 text-right">Hours Awarded</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-line">
+                        <% ev.attendees.forEach(function(att, aIdx) { %>
+                          <tr>
+                            <td class="p-3 border-r border-line font-mono text-muted"><%= aIdx + 1 %></td>
+                            <td class="p-3 border-r border-line font-mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
+                            <td class="p-3 border-r border-line font-semibold text-fg"><%= att.student_name %></td>
+                            <td class="p-3 border-r border-line text-muted"><%= att.department || 'Eng' %> (Yr <%= att.year || '1' %>)</td>
+                            <td class="p-3 border-r border-line font-mono text-muted"><%= new Date(att.checked_in_at).toLocaleTimeString() %></td>
+                            <td class="p-3 text-right font-mono font-bold text-lime">+<%= att.credit_hours %> hrs</td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% } %>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+
+        <!-- Signature Block -->
+        <div class="pt-10 mt-10 border-t-2 border-line grid grid-cols-2 gap-8 text-center text-xs">
+          <div>
+            <div class="h-10"></div>
+            <div class="border-t border-muted/50 pt-2 font-mono text-[10px] uppercase text-muted">
+              <%= fc.name %> (Faculty Incharge)
+            </div>
+          </div>
+          <div>
+            <div class="h-10"></div>
+            <div class="border-t border-muted/50 pt-2 font-mono text-[10px] uppercase text-muted">
+              Institutional Coordinator / Vice Principal
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

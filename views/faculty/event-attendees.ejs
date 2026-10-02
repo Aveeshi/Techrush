@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-[1200px] mx-auto px-4 sm:px-8 py-10">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/faculty/events" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Event Approvals</a>
+      <span class="font-mono text-xs px-2.5 py-1 rounded bg-lime/10 text-lime font-bold">
+        <%= attendees.length %> Verified Attendees
+      </span>
+    </div>
+
+    <!-- Event Header -->
+    <div class="border border-line rounded-xl bg-panel p-6 sm:p-8 mb-8">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="w-6 h-px bg-lime"></span>
+        <span class="font-mono text-xs tracking-[0.2em] text-lime">// EVENT ATTENDEE ROSTER</span>
+      </div>
+      <h1 class="font-display text-3xl font-bold mb-2"><%= event.title %></h1>
+      <div class="text-xs text-muted space-x-2">
+        <span>Date: <strong class="text-fg"><%= new Date(event.start_time).toLocaleDateString() %></strong></span>
+        <span>•</span>
+        <span>Venue: <strong class="text-fg"><%= event.venue || 'Campus' %></strong></span>
+        <span>•</span>
+        <span>Assigned Credit: <strong class="text-lime font-mono"><%= event.credit_hours || 0 %> hrs</strong></span>
+      </div>
+      <% if (event.description) { %>
+        <p class="text-xs text-muted/80 mt-3 pt-3 border-t border-line"><%= event.description %></p>
+      <% } %>
+    </div>
+
+    <!-- Attendees Table -->
+    <div class="border border-line rounded-xl bg-panel overflow-hidden">
+      <div class="p-6 border-b border-line flex items-center justify-between">
+        <h2 class="font-display text-lg">Present &amp; Checked-in Students</h2>
+        <span class="text-xs font-mono text-muted">Audited by QR Scanner</span>
+      </div>
+
+      <% if (attendees.length === 0) { %>
+        <div class="p-12 text-center text-muted text-sm">
+          No students checked into this event yet.
+        </div>
+      <% } else { %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-black/30 font-mono text-[10px] text-muted uppercase border-b border-line">
+              <tr>
+                <th class="p-4 border-r border-line">#</th>
+                <th class="p-4 border-r border-line">Roll Number</th>
+                <th class="p-4 border-r border-line">Student Name</th>
+                <th class="p-4 border-r border-line">Email</th>
+                <th class="p-4 border-r border-line">Department &amp; Year</th>
+                <th class="p-4 border-r border-line">Check-in Time</th>
+                <th class="p-4 text-right">Credit Earned</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <% attendees.forEach(function(att, idx) { %>
+                <tr class="hover:bg-white/[0.02]">
+                  <td class="p-4 border-r border-line font-mono text-muted"><%= idx + 1 %></td>
+                  <td class="p-4 border-r border-line font-mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
+                  <td class="p-4 border-r border-line font-semibold text-fg">
+                    <a href="/student/dashboard/<%= att.student_id %>" class="hover:text-lime transition-colors" title="Inspect student activity record">
+                      <%= att.student_name %> &rarr;
+                    </a>
+                  </td>
+                  <td class="p-4 border-r border-line text-muted font-mono"><%= att.email %></td>
+                  <td class="p-4 border-r border-line text-muted"><%= att.department || 'Eng' %> (Yr <%= att.year || '1' %>)</td>
+                  <td class="p-4 border-r border-line font-mono text-muted"><%= new Date(att.checked_in_at).toLocaleTimeString() %></td>
+                  <td class="p-4 text-right font-mono font-bold text-lime">+<%= att.credit_hours %> hrs</td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

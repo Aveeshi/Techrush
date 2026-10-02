@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/institutional/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to All Clubs</a>
+      <span class="font-mono text-xs px-2.5 py-1 rounded bg-lime/10 text-lime border border-lime/30 font-semibold">
+        Institutional Audit View
+      </span>
+    </div>
+
+    <!-- Club Banner & Identity -->
+    <div class="border border-line rounded-2xl bg-panel p-8 mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
+      <div class="flex items-center gap-6">
+        <% if (club.logo_url) { %>
+          <img src="<%= club.logo_url %>" alt="" class="w-20 h-20 rounded-xl object-cover border border-line" />
+        <% } else { %>
+          <div class="w-20 h-20 rounded-xl bg-lime/10 border border-lime/30 flex items-center justify-center font-display text-3xl font-bold text-lime">
+            <%= club.name.substring(0, 2).toUpperCase() %>
+          </div>
+        <% } %>
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <span class="w-5 h-px bg-lime"></span>
+            <span class="font-mono text-xs tracking-wider text-lime uppercase">// CLUB DOSSIER</span>
+          </div>
+          <h1 class="font-display text-3xl sm:text-4xl font-bold text-fg"><%= club.name %></h1>
+          <p class="text-xs text-muted mt-1 max-w-xl"><%= club.description || 'Institutional student body.' %></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-6 border-t md:border-t-0 md:border-l border-line pt-4 md:pt-0 md:pl-8 text-center text-xs font-mono">
+        <div>
+          <span class="text-muted block text-[10px] uppercase">EVENTS</span>
+          <span class="text-2xl font-bold text-lime"><%= club.events ? club.events.length : 0 %></span>
+        </div>
+        <div>
+          <span class="text-muted block text-[10px] uppercase">MEMBERS</span>
+          <span class="text-2xl font-bold text-fg"><%= club.members ? club.members.length : 0 %></span>
+        </div>
+        <div>
+          <span class="text-muted block text-[10px] uppercase">COORDINATORS</span>
+          <span class="text-2xl font-bold text-emerald-400"><%= club.student_coordinators ? club.student_coordinators.length : 0 %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Faculty Coordinator & Student Coordinators Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <!-- Faculty Coordinator Info Card -->
+      <div class="lg:col-span-1 border border-line rounded-xl bg-panel p-6 shadow-lg">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-2.5 h-2.5 rounded-full bg-lime"></span>
+          <h2 class="font-display text-xl font-bold">Faculty Coordinator</h2>
+        </div>
+
+        <% if (club.faculty_name) { %>
+          <div class="p-4 rounded-lg bg-black/20 border border-line/60 space-y-2 text-xs">
+            <div>
+              <span class="text-muted block text-[10px] font-mono uppercase">NAME</span>
+              <span class="text-fg font-bold text-sm"><%= club.faculty_name %></span>
+            </div>
+            <div>
+              <span class="text-muted block text-[10px] font-mono uppercase">DESIGNATION &amp; DEPT</span>
+              <span class="text-fg"><%= club.faculty_designation || 'Incharge' %> • <%= club.faculty_department || 'Computer Engineering' %></span>
+            </div>
+            <div>
+              <span class="text-muted block text-[10px] font-mono uppercase">CONTACT EMAIL</span>
+              <span class="font-mono text-lime"><%= club.faculty_email %></span>
+            </div>
+            <% if (club.faculty_phone) { %>
+              <div>
+                <span class="text-muted block text-[10px] font-mono uppercase">PHONE</span>
+                <span class="font-mono text-muted"><%= club.faculty_phone %></span>
+              </div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div class="p-6 text-center text-muted text-xs border border-dashed border-line rounded-lg">
+            No Faculty Coordinator currently assigned to this club.
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Student Coordinators List Card -->
+      <div class="lg:col-span-2 border border-line rounded-xl bg-panel p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <h2 class="font-display text-xl font-bold">Appointed Student Coordinators</h2>
+          </div>
+          <span class="font-mono text-xs text-muted">
+            <%= club.student_coordinators ? club.student_coordinators.length : 0 %> Appointed
+          </span>
+        </div>
+
+        <% if (!club.student_coordinators || club.student_coordinators.length === 0) { %>
+          <div class="p-8 text-center text-muted text-xs border border-dashed border-line rounded-lg">
+            No student coordinators assigned for this club yet.
+          </div>
+        <% } else { %>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <% club.student_coordinators.forEach(function(sc) { %>
+              <div class="p-4 rounded-lg bg-black/20 border border-line flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between gap-2">
+                    <h3 class="font-bold text-sm text-fg"><%= sc.student_name %></h3>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-lime/20 text-lime font-semibold">
+                      <%= sc.role_title %>
+                    </span>
+                  </div>
+                  <div class="text-xs text-muted mt-1 font-mono">
+                    Roll: <%= sc.roll_number || 'N/A' %> • <%= sc.department || 'Eng' %> (Yr <%= sc.year || '1' %>)
+                  </div>
+                  <% if (sc.task_description) { %>
+                    <div class="text-xs text-fg/80 mt-2 bg-black/30 p-2 rounded">
+                      <strong class="text-muted text-[10px] font-mono">MANDATE:</strong> <%= sc.task_description %>
+                    </div>
+                  <% } %>
+                </div>
+                <div class="mt-3 pt-2 border-t border-line/40 text-[11px] font-mono text-muted">
+                  <%= sc.student_email %>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- All Events Conducted (Description, Summary, & Attendance Roster) -->
+    <div class="border border-line rounded-xl bg-panel overflow-hidden mb-12">
+      <div class="p-6 border-b border-line flex items-center justify-between">
+        <div>
+          <h2 class="font-display text-2xl font-bold">All Events Conducted by <%= club.name %></h2>
+          <p class="text-xs text-muted mt-0.5">
+            Full summary, descriptions, and verified attendance rosters for every event.
+          </p>
+        </div>
+        <span class="font-mono text-xs px-2.5 py-1 rounded bg-panel border border-line text-muted">
+          <%= club.events ? club.events.length : 0 %> Events Logged
+        </span>
+      </div>
+
+      <% if (!club.events || club.events.length === 0) { %>
+        <div class="p-12 text-center text-muted text-sm">
+          No events have been organized by this club yet.
+        </div>
+      <% } else { %>
+        <div class="divide-y divide-line">
+          <% club.events.forEach(function(ev) { %>
+            <div class="p-6 sm:p-8 hover:bg-white/[0.01] transition-colors">
+              <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3 mb-2">
+                    <h3 class="font-display text-xl font-bold text-fg"><%= ev.title %></h3>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-lime/10 text-lime uppercase">
+                      <%= ev.event_type_name || 'Event' %>
+                    </span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded
+                      <%= ev.approval_status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-300' %>">
+                      <%= ev.approval_status === 'approved' ? '✓ FC Approved' : ev.approval_status %>
+                    </span>
+                  </div>
+
+                  <p class="text-sm text-fg/80 leading-relaxed mb-4 whitespace-pre-line">
+                    <%= ev.description || 'No description provided.' %>
+                  </p>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-black/20 border border-line text-xs font-mono">
+                    <div>
+                      <span class="text-muted block text-[10px]">EVENT DATE</span>
+                      <span class="text-fg font-semibold"><%= new Date(ev.start_time).toLocaleDateString() %></span>
+                    </div>
+                    <div>
+                      <span class="text-muted block text-[10px]">VENUE</span>
+                      <span class="text-fg font-semibold"><%= ev.venue || 'Campus' %></span>
+                    </div>
+                    <div>
+                      <span class="text-muted block text-[10px]">CREDIT HOURS</span>
+                      <span class="text-lime font-bold font-mono"><%= ev.credit_hours || 0 %> hrs</span>
+                    </div>
+                    <div>
+                      <span class="text-muted block text-[10px]">ORGANIZER</span>
+                      <span class="text-fg font-semibold"><%= ev.organizer_name || 'Club Core' %></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Attendance Statistics & Inspection Button -->
+                <div class="w-full lg:w-72 p-5 rounded-xl border border-line bg-black/30 flex flex-col justify-between">
+                  <div>
+                    <span class="font-mono text-[10px] uppercase text-muted tracking-wider block mb-2">ATTENDANCE STATS</span>
+                    <div class="space-y-1.5 text-xs">
+                      <div class="flex items-center justify-between">
+                        <span class="text-muted">Registered:</span>
+                        <span class="font-mono text-fg font-bold"><%= ev.total_registrations || 0 %></span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-muted">Present / Checked-in:</span>
+                        <span class="font-mono text-lime font-bold"><%= ev.checked_in_count || 0 %> students</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <a href="/institutional/events/<%= ev.id %>" class="btn-lime w-full text-xs font-semibold py-2.5 bg-lime text-black rounded mt-4 flex items-center justify-center gap-1.5 shadow">
+                    <span>👥</span> Inspect Attendance Sheet &rarr;
+                  </a>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

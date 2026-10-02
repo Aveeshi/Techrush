@@ -48,12 +48,17 @@ function clearAuthCookies(res) {
 // appear. Students no longer pick clubs at all (see ClubRoster.js) so
 // there's no student-facing club list here anymore.
 async function getSignupPickerData() {
-  const [openSlots, skillTags, eventTypes] = await Promise.all([
-    Organizer.findOpenSlots(),
-    SkillTag.findAll(),
-    EventType.findAll(),
-  ]);
-  return { openSlots, skillTags, eventTypes };
+  try {
+    const [openSlots, skillTags, eventTypes] = await Promise.all([
+      Organizer.findOpenSlots(),
+      SkillTag.findAll(),
+      EventType.findAll(),
+    ]);
+    return { openSlots, skillTags, eventTypes };
+  } catch (err) {
+    console.warn('DB query in getSignupPickerData failed (database not connected yet):', err.message);
+    return { openSlots: [], skillTags: [], eventTypes: [] };
+  }
 }
 
 const authController = {
@@ -453,6 +458,72 @@ const authController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  // GET /auth/faculty-login (Requirement: Separate login page for Faculty Coordinator)
+  facultyLoginPage(req, res) {
+    res.render('auth/faculty-login', { title: 'Faculty Coordinator Login', errors: [], oldInput: {} });
+  },
+
+  // POST /auth/faculty/login
+  facultyLogin(req, res, next) {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(422).render('auth/faculty-login', {
+        title: 'Faculty Coordinator Login',
+        errors: ['Please enter both email and password'],
+        oldInput: req.body,
+      });
+    }
+
+    passport.authenticate('faculty-local', (err, fc, info) => {
+      if (err) return next(err);
+      if (!fc) {
+        return res.status(401).render('auth/faculty-login', {
+          title: 'Faculty Coordinator Login',
+          errors: [info?.message || 'Invalid faculty credentials'],
+          oldInput: req.body,
+        });
+      }
+      req.login(fc, (err) => {
+        if (err) return next(err);
+        setAuthCookies(res, fc, 'faculty');
+        res.redirect('/faculty/dashboard');
+      });
+    })(req, res, next);
+  },
+
+  // GET /auth/institutional-login (Requirement: Separate login page for Institutional Administrator)
+  institutionalLoginPage(req, res) {
+    res.render('auth/institutional-login', { title: 'Institutional Coordinator Login', errors: [], oldInput: {} });
+  },
+
+  // POST /auth/institutional/login
+  institutionalLogin(req, res, next) {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(422).render('auth/institutional-login', {
+        title: 'Institutional Coordinator Login',
+        errors: ['Please enter both email and password'],
+        oldInput: req.body,
+      });
+    }
+
+    passport.authenticate('institutional-local', (err, admin, info) => {
+      if (err) return next(err);
+      if (!admin) {
+        return res.status(401).render('auth/institutional-login', {
+          title: 'Institutional Coordinator Login',
+          errors: [info?.message || 'Invalid institutional administrator credentials'],
+          oldInput: req.body,
+        });
+      }
+      req.login(admin, (err) => {
+        if (err) return next(err);
+        setAuthCookies(res, admin, 'institutional');
+        res.redirect('/institutional/dashboard');
+      });
+    })(req, res, next);
   },
 };
 

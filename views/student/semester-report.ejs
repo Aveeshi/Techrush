@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body class="font-sans text-fg antialiased">
+  <%- include('../partials/nav') %>
+
+  <main class="max-w-[1100px] mx-auto px-4 sm:px-8 py-10">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/student/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Activity Dashboard</a>
+    </div>
+
+    <div class="flex items-center gap-3 mb-2">
+      <span class="w-6 h-px bg-lime"></span>
+      <span class="font-mono text-xs tracking-[0.2em] text-lime">// END-OF-SEMESTER REPORT</span>
+    </div>
+    <h1 class="font-display text-3xl sm:text-4xl mb-3">Generate Semester Activity Report</h1>
+    <p class="text-muted text-sm max-w-2xl mb-8">
+      Generate and submit your verified semester report directly to your club's Faculty Coordinator for official inspection and sign-off.
+    </p>
+
+    <% if (submitted) { %>
+      <div class="p-4 mb-6 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-2">
+        <span>✓</span> Report submitted successfully to Faculty Coordinator for verification.
+      </div>
+    <% } %>
+
+    <!-- Report Submission Form -->
+    <div class="border border-line rounded-xl bg-panel p-6 sm:p-8 mb-10">
+      <h2 class="font-display text-xl mb-4">Submit New Semester Report</h2>
+      
+      <form action="/student/semester-report/submit" method="POST" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">SELECT CLUB</label>
+            <select name="clubId" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg focus:outline-none focus:border-lime" required>
+              <% myClubs.forEach(function(c) { %>
+                <option value="<%= c.club_id %>" <%= priorityClub && priorityClub.id === c.club_id ? 'selected' : '' %>>
+                  <%= c.name %> <%= priorityClub && priorityClub.id === c.club_id ? '(Priority Club)' : '' %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">ACADEMIC YEAR</label>
+            <select name="academicYear" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg focus:outline-none focus:border-lime" required>
+              <option value="2026-2027">2026 - 2027</option>
+              <option value="2025-2026" selected>2025 - 2026</option>
+              <option value="2024-2025">2024 - 2025</option>
+              <option value="2023-2024">2023 - 2024</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">SEMESTER</label>
+            <select name="semester" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg focus:outline-none focus:border-lime" required>
+              <option value="1">Semester 1 (Odd)</option>
+              <option value="2">Semester 2 (Even)</option>
+              <option value="3">Semester 3 (Odd)</option>
+              <option value="4">Semester 4 (Even)</option>
+              <option value="5">Semester 5 (Odd)</option>
+              <option value="6">Semester 6 (Even)</option>
+              <option value="7">Semester 7 (Odd)</option>
+              <option value="8">Semester 8 (Even)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-lg bg-black/20 border border-line/60 text-xs text-muted flex items-start gap-3">
+          <span class="text-lime text-base">ℹ</span>
+          <div>
+            The report will automatically bundle all your verified event attendances, assigned hours, dates, and check-in logs for the selected club into the standardized institutional format.
+          </div>
+        </div>
+
+        <button type="submit" class="btn-lime px-6 py-3.5 bg-lime text-black font-semibold rounded-md hover:opacity-90 transition-opacity">
+          Generate &amp; Submit to Faculty Coordinator &rarr;
+        </button>
+      </form>
+    </div>
+
+    <!-- History of Reports -->
+    <div class="border border-line rounded-xl bg-panel overflow-hidden">
+      <div class="p-6 border-b border-line">
+        <h2 class="font-display text-xl">My Submitted Semester Reports</h2>
+      </div>
+
+      <% if (reports.length === 0) { %>
+        <div class="p-8 text-center text-muted text-sm">
+          No semester reports generated yet.
+        </div>
+      <% } else { %>
+        <div class="divide-y divide-line">
+          <% reports.forEach(function(rep) { %>
+            <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-3">
+                  <span class="font-display text-lg font-bold">Semester <%= rep.semester %> (<%= rep.academic_year %>)</span>
+                  <span class="font-mono text-xs px-2 py-0.5 rounded bg-lime/10 text-lime"><%= rep.club_name %></span>
+                </div>
+                <div class="text-xs text-muted mt-1">
+                  Submitted on <%= new Date(rep.submitted_at).toLocaleDateString() %> • Total: <span class="text-lime font-bold font-mono"><%= rep.total_hours %> hrs</span>
+                </div>
+                <% if (rep.fc_remarks) { %>
+                  <div class="text-xs mt-2 text-amber-300 italic">
+                    Faculty Remarks: "<%= rep.fc_remarks %>"
+                  </div>
+                <% } %>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono px-3 py-1 rounded-full uppercase
+                  <%= rep.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
+                      rep.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/40' :
+                      rep.status === 'reverification' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+                      'bg-sky-500/20 text-sky-400 border border-sky-500/40' %>">
+                  <%= rep.status === 'reverification' ? 'Needs Revision' : rep.status %>
+                </span>
+                <a href="/student/semester-report/<%= rep.id %>/view" class="btn-outline text-xs px-3.5 py-1.5 border border-line rounded hover:border-lime">
+                  View / Print &rarr;
+                </a>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

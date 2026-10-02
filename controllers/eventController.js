@@ -40,12 +40,17 @@ const eventController = {
     try {
       const studentId = req.user?.type === 'student' ? req.user.id : null;
       const q = req.query.q?.trim() || null;
-      const events = await Event.findForFeedWithDetails(studentId, { q });
-      const idsWithSubEvents = await SubEvent.findEventIdsWithPublishedSubEvents(events.map((e) => e.id));
-      const eventsWithFlags = events.map((event) => ({
-        ...event,
-        hasSubEvents: idsWithSubEvents.has(event.id),
-      }));
+      let eventsWithFlags = [];
+      try {
+        const events = await Event.findForFeedWithDetails(studentId, { q });
+        const idsWithSubEvents = await SubEvent.findEventIdsWithPublishedSubEvents(events.map((e) => e.id));
+        eventsWithFlags = events.map((event) => ({
+          ...event,
+          hasSubEvents: idsWithSubEvents.has(event.id),
+        }));
+      } catch (dbErr) {
+        console.warn('DB query in listEvents failed (database not connected yet):', dbErr.message);
+      }
       res.render('events', { events: eventsWithFlags, q: q || '' });
     } catch (err) {
       next(err);
@@ -148,15 +153,17 @@ const eventController = {
       }
 
       const event = await Event.findByIdWithDetails(req.params.id);
+      if (!event) {
+        return res.status(404).render('not-found');
+      }
+
       const registration = await EventRegistration.create({
         eventId: req.params.id,
         studentId: req.user.id,
         registrationType,
       });
 
-      // Best-effort confirmation email — never blocks the registration
-      // itself. Only attendees get a QR attached (see EventRegistration.
-      // create: volunteers never get a qr_code at all).
+      // Best-effort confirmation email
       const qrDataUrl = registrationType === 'attendee' && registration.qr_code
         ? await QRCode.toDataURL(registration.qr_code)
         : null;
@@ -170,10 +177,6 @@ const eventController = {
         qrDataUrl,
       }).catch((err) => console.error('Registration email failed:', err.message));
 
-      // Attendees land back on the event page to see their QR. Volunteers
-      // have no QR to see — send them to pick which of the event's teams
-      // they want to join (self-healing: creates a single fallback team
-      // if the organizer hasn't added any yet — see ensureAtLeastOneTeam).
       if (registrationType === 'volunteer') {
         return res.redirect(`/events/${req.params.id}/volunteer-teams`);
       }

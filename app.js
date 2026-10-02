@@ -21,6 +21,9 @@ const studentRouter=require("./routes/studentRouter.js");
 const organizerRouter=require("./routes/organizerRouter.js");
 const clubEventRouter=require("./routes/clubEventRouter.js");
 const logbookRouter=require("./routes/logbookRouter.js");
+const studentDashboardRouter=require("./routes/studentDashboardRouter.js");
+const facultyRouter=require("./routes/facultyRouter.js");
+const institutionalRouter=require("./routes/institutionalRouter.js");
 const registerChatSocket=require('./sockets/chatSocket.js');
 // const errorController=require("./controller/errors.js");
 
@@ -39,6 +42,15 @@ app.set('trust proxy', 1);
 app.set('view engine','ejs');
 app.set('views','views');
 
+app.use((req, res, next) => {
+    res.locals.user = null;
+    res.locals.isLoggedIn = false;
+    res.locals.isEventHead = false;
+    res.locals.isTeamHead = false;
+    res.locals.theme = null;
+    next();
+});
+
 app.use((req,res,next)=>{
     console.log(req.url,req.method);
     next();
@@ -47,13 +59,17 @@ app.use((req,res,next)=>{
 // Pulled into a variable (rather than inlined into app.use()) so the exact
 // same session middleware instance can also run in front of Socket.IO's
 // handshake below — one session store, shared by HTTP and websocket alike.
+const sessionStore = process.env.DATABASE_URL
+  ? new pgSession({
+      pool: db,
+      tableName: 'session',
+      createTableIfMissing: true,
+    })
+  : new session.MemoryStore();
+
 const sessionMiddleware=session({
-    store: new pgSession({
-        pool:db,
-        tableName:'session',
-        createTableIfMissing:true
-    }),
-    secret: process.env.SESSION_SECRET,
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET || 'campusconnect-secret-session-key',
     resave:false,
     saveUninitialized:true,
     cookie: {
@@ -107,7 +123,10 @@ app.use(async (req, res, next) => {
     res.locals.isTeamHead = isTeamHead;
     next();
   } catch (err) {
-    next(err);
+    console.warn('Role check error (fallback to false):', err.message);
+    res.locals.isEventHead = false;
+    res.locals.isTeamHead = false;
+    next();
   }
 });
 
@@ -141,28 +160,16 @@ app.use('/teams', teamRouter);
 app.use('/club', organizerRouter);
 app.use('/club-events', clubEventRouter);
 app.use('/logbook', logbookRouter);
+app.use('/student', studentDashboardRouter);
+app.use('/faculty', facultyRouter);
+app.use('/institutional', institutionalRouter);
 app.use('/', studentRouter);
 app.use("/",(req,res)=>{
     res.render('index');
 });
 // app.use(errorController.pageNotFound);
 
-// Final catch-all error handler — MUST be registered last (4-arg
-// signature is what makes Express treat this as an error handler at all)
-// and MUST come after every router above, so every next(err) anywhere in
-// the app ends up here instead of Express's own default handler.
-//
-// Why this exists: Express's built-in default error handler renders
-// `err.stack || err.toString()`. That's fine for a real Error (has a
-// stack), but some of our dependencies (notably Cloudinary's Node SDK —
-// see middleware/wrapUpload.js) reject with a PLAIN OBJECT instead of an
-// Error. A plain object has no .stack, and String({}) is literally
-// "[object Object]" — which is exactly what used to render to the user on
-// a failed image upload, with zero indication of what actually broke.
-// wrapUpload.js normalizes upload errors at the source; this handler is
-// the backstop for anything else (a thrown non-Error from a library we
-// don't control, a rejected promise we didn't wrap, etc.) so the failure
-// mode is always a readable message, never that string.
+// Final catch-all error handler
 app.use((err, req, res, next) => {
   const message = err instanceof Error ? err.message : (err && err.message) || 'Unexpected error';
   console.error('Unhandled error:', err);
@@ -174,9 +181,7 @@ app.use((err, req, res, next) => {
 });
 
 
-// Socket.IO needs the raw http.Server (not the express app) so it can
-// upgrade the same port's connections to websockets — app.listen() below
-// is replaced with server.listen() for this reason.
+// Socket.IO
 const server=http.createServer(app);
 const io=new Server(server);
 

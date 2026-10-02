@@ -47,7 +47,7 @@ class ClubMember {
   // Every club a student belongs to — powers "my clubs" on their dashboard
   static async listClubsForStudent(studentId) {
     const { rows } = await pool.query(
-      `SELECT c.id, c.name, c.description, c.logo_url, cm.joined_at
+      `SELECT c.id, c.id AS club_id, c.name, c.description, c.logo_url, cm.joined_at
        FROM club_members cm
        JOIN clubs c ON c.id = cm.club_id
        WHERE cm.student_id = $1
@@ -55,6 +55,10 @@ class ClubMember {
       [studentId]
     );
     return rows;
+  }
+
+  static async findByStudent(studentId) {
+    return this.listClubsForStudent(studentId);
   }
 
   // Full member roster — for the club's own management view
