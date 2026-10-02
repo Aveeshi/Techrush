@@ -1,131 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: subEvent.title }) %>
+  <%- include('partials/head', { title: subEvent.title + ' — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
-    <a href="/events/<%= subEvent.event_id %>" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK TO <%= (subEvent.event_title || 'EVENT').toUpperCase() %></a>
+  <main class="page max-w-4xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/events/<%= subEvent.event_id %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← BACK TO <%= (subEvent.event_title || 'PARENT EVENT').toUpperCase() %>
+      </a>
+      <span class="badge badge-lime text-[9px] font-mono">
+        <%= (subEvent.event_type_name || 'SUB-EVENT').toUpperCase() %>
+      </span>
+    </div>
 
     <% if (typeof error !== 'undefined' && error) { %>
-      <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mt-6 text-sm">
+      <div class="badge badge-red mb-6 p-4 w-full rounded-xl text-xs">
         <%= error %>
       </div>
     <% } %>
 
-    <div class="mt-6 mb-8">
-      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-        <%= (subEvent.event_type_name || 'SUB-EVENT').toUpperCase() %>
-      </span>
-      <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= subEvent.title %></h1>
-      <p class="text-muted">Part of <span class="text-fg"><%= subEvent.event_title %></span></p>
+    <!-- Header Panel -->
+    <div class="panel p-6 sm:p-8 mb-8 relative overflow-hidden">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="overline text-lime">// SUB-TRACK APPLICATION</span>
+        <span class="text-xs text-muted">Part of <strong class="text-fg"><%= subEvent.event_title %></strong></span>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-fg mb-4 leading-tight">
+        <%= subEvent.title %>
+      </h1>
+
+      <p class="text-sm text-muted leading-relaxed">
+        <%= subEvent.description || 'No detailed specifications provided for this sub-session.' %>
+      </p>
     </div>
 
     <% if (subEvent.banner_url) { %>
-      <img src="<%= subEvent.banner_url %>" alt="" class="w-full h-72 object-cover rounded-lg border border-line mb-8" />
+      <div class="w-full h-72 rounded-2xl overflow-hidden border border-line mb-8 bg-surface-2">
+        <img src="<%= subEvent.banner_url %>" alt="<%= subEvent.title %>" class="w-full h-full object-cover" />
+      </div>
     <% } %>
 
+    <!-- Quick Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">WHEN</span>
-        <p class="mt-2 text-sm">
+      <div class="panel p-5">
+        <span class="overline text-[8px] text-muted block mb-1">DATE &amp; SCHEDULE</span>
+        <strong class="text-sm text-fg block">
           <%= new Date(subEvent.start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %>
-        </p>
+        </strong>
       </div>
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">WHERE</span>
-        <p class="mt-2 text-sm"><%= subEvent.venue || 'TBA' %></p>
+      <div class="panel p-5">
+        <span class="overline text-[8px] text-muted block mb-1">DESIGNATED VENUE</span>
+        <strong class="text-sm text-fg block"><%= subEvent.venue || 'Campus Auditorium' %></strong>
       </div>
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">REGISTRATION DEADLINE</span>
-        <p class="mt-2 text-sm">
-          <%= subEvent.registration_deadline ? new Date(subEvent.registration_deadline).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'None' %>
-        </p>
+      <div class="panel p-5">
+        <span class="overline text-[8px] text-muted block mb-1">REGISTRATION CUT-OFF</span>
+        <strong class="text-sm text-fg block">
+          <%= subEvent.registration_deadline ? new Date(subEvent.registration_deadline).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'Open until kickoff' %>
+        </strong>
       </div>
     </div>
 
-    <div class="mb-10">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">ABOUT THIS SUB-EVENT</h2>
-      <p class="text-fg leading-relaxed whitespace-pre-line"><%= subEvent.description || 'No description provided.' %></p>
-    </div>
-
-    <!-- Registration -->
-    <div class="border-t border-line pt-8">
+    <!-- Registration & Pass Interaction Panel -->
+    <div class="panel p-8 bg-surface border border-line">
       <% if (!user) { %>
-        <p class="text-muted mb-4">Log in as a student to register for this sub-event.</p>
-        <a href="/auth/login" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-          Log in to register
-        </a>
+        <div class="text-center py-6">
+          <p class="text-sm text-muted mb-4">Log in with your college credentials to claim an attendee pass or sign up as a volunteer.</p>
+          <a href="/auth/login" class="button button-primary text-xs text-decoration-none">
+            Log In to Register →
+          </a>
+        </div>
 
       <% } else if (typeof isHead !== 'undefined' && isHead) { %>
-        <!-- This sub-event's own head, OR the head of its parent flagship
-             (inherited authority) — either way they manage it, not
-             register for it. -->
-        <p class="text-lime font-semibold mb-1">You're this sub-event's head.</p>
-        <p class="text-muted text-sm mb-4">Manage its info, teams, and tasks from your dashboard instead of registering here.</p>
-        <a href="/club-events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-5 py-3 rounded-md text-sm">
-          Manage sub-event →
-        </a>
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <span class="badge badge-amber text-[9px] mb-1">OPERATIONAL HEAD</span>
+            <h3 class="text-base font-bold text-fg">You are appointed as the Lead for this sub-track</h3>
+            <p class="text-xs text-muted">Manage volunteers, teams, attendees, and operational logs from your organizer desk.</p>
+          </div>
+          <a href="/club-events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>" class="button button-amber text-xs text-decoration-none">
+            Open Sub-Event Management →
+          </a>
+        </div>
 
       <% } else if (user.type === 'organizer') { %>
         <% if (user.club_id === subEvent.club_id) { %>
-          <a href="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/scan" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-            Scan attendee QR codes
-          </a>
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <span class="badge badge-lime text-[9px] mb-1">HOST CLUB</span>
+              <h3 class="text-base font-bold text-fg">Organizer Gate Check-In</h3>
+              <p class="text-xs text-muted">Scan attendee and volunteer pass QR codes directly using device camera.</p>
+            </div>
+            <a href="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/scan" class="button button-primary text-xs text-decoration-none">
+              Launch QR Scanner →
+            </a>
+          </div>
         <% } else { %>
-          <p class="text-muted">Organizer accounts don't register for events.</p>
+          <p class="text-xs text-muted">Organizer accounts cannot register as attendees.</p>
         <% } %>
 
       <% } else if (registration) { %>
-        <div class="border border-lime/40 bg-lime/5 rounded-md px-5 py-4">
-          <p class="text-lime font-semibold">
-            You're registered as <%= registration.registration_type === 'volunteer' ? 'a volunteer' : 'an attendee' %>.
-          </p>
-          <p class="text-muted text-sm mt-1">Status: <%= registration.status %></p>
+        <div>
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <span class="badge <%= registration.status === 'checked_in' ? 'badge-green' : 'badge-lime' %> text-[9px] font-mono mb-1">
+                <%= registration.status.toUpperCase() %>
+              </span>
+              <h3 class="text-lg font-bold text-fg">
+                Registered as <%= registration.registration_type === 'volunteer' ? 'a Volunteer' : 'an Attendee' %>
+              </h3>
+            </div>
+          </div>
 
           <% if (registration.registration_type === 'attendee' && typeof qrImage !== 'undefined' && qrImage) { %>
-            <div class="mt-5 pt-5 border-t border-lime/20 flex flex-col items-start gap-3">
-              <p class="font-mono text-[11px] tracking-[0.15em] text-muted">YOUR CHECK-IN CODE</p>
-              <img src="<%= qrImage %>" alt="Your sub-event QR code" class="w-48 h-48 rounded-md border border-line bg-white p-2" />
-              <p class="text-muted text-xs max-w-sm">
-                Show this at the entrance. The organizer or event head scans it once to check you in, and again to check you out.
-              </p>
+            <div class="p-6 rounded-xl bg-surface-2 border border-line flex flex-col sm:flex-row items-center gap-6 mt-6">
+              <div class="p-2.5 bg-white rounded-xl shadow-lg shrink-0">
+                <img src="<%= qrImage %>" alt="Your sub-event QR code" class="w-40 h-40" />
+              </div>
+              <div>
+                <span class="overline text-lime text-[9px] block mb-1">DIGITAL GATE PASS</span>
+                <h4 class="text-sm font-bold text-fg mb-1">Present this QR Code at the Entrance</h4>
+                <p class="text-xs text-muted mb-3 leading-relaxed">
+                  Upon arrival, show this ticket to an appointed Student Coordinator or Volunteer. Scanning validates your attendance and records accredited credit hours for course F023.
+                </p>
+                <div class="flex items-center gap-2">
+                  <span class="badge badge-green font-mono text-[8px]">NON-TRANSFERABLE</span>
+                  <span class="text-xs font-mono text-muted">Pass ID: #<%= registration.id.slice(0, 8) %></span>
+                </div>
+              </div>
             </div>
           <% } %>
 
           <% if (registration.registration_type === 'volunteer') { %>
-            <div class="mt-5 pt-5 border-t border-lime/20">
-              <a href="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/volunteer-teams" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-5 py-3 rounded-md text-sm">
-                Manage which teams you're on →
+            <div class="mt-6 pt-6 border-t border-line flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-bold text-fg">Volunteer Team Roster</h4>
+                <p class="text-xs text-muted">Manage your sub-event team tasks and assignments.</p>
+              </div>
+              <a href="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/volunteer-teams" class="button button-quiet text-xs text-decoration-none">
+                Manage Teams →
               </a>
             </div>
           <% } %>
         </div>
 
       <% } else { %>
-        <div class="flex flex-wrap gap-4">
-          <form action="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/register" method="POST">
-            <input type="hidden" name="registrationType" value="attendee" />
-            <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-              Register as attendee
-            </button>
-          </form>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h3 class="text-base font-bold text-fg mb-1">Join this Sub-Event Track</h3>
+            <p class="text-xs text-muted">Claim your institutional pass to verify attendance and earn co-curricular credits.</p>
+          </div>
 
-          <% if (canVolunteer) { %>
-            <form action="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/register" method="POST">
-              <input type="hidden" name="registrationType" value="volunteer" />
-              <button type="submit" class="btn-outline border border-line font-semibold px-6 py-3.5 rounded-md">
-                Volunteer now
+          <div class="flex items-center gap-3">
+            <form action="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/register" method="POST" class="inline">
+              <input type="hidden" name="registrationType" value="attendee" />
+              <button type="submit" class="button button-primary text-xs">
+                Register as Attendee →
               </button>
             </form>
-          <% } %>
+
+            <% if (canVolunteer) { %>
+              <form action="/events/<%= subEvent.event_id %>/sub-events/<%= subEvent.id %>/register" method="POST" class="inline">
+                <input type="hidden" name="registrationType" value="volunteer" />
+                <button type="submit" class="button button-quiet text-xs">
+                  Volunteer for Event →
+                </button>
+              </form>
+            <% } %>
+          </div>
         </div>
 
         <% if (!canVolunteer) { %>
-          <p class="text-muted text-xs mt-4">
-            Volunteering is open to club members. Join the club to unlock this option.
+          <p class="text-xs text-muted mt-4 border-t border-line pt-3">
+            Note: Volunteering is exclusive to registered club members. You can join the club from your Student Hub to unlock operational volunteer roles.
           </p>
         <% } %>
       <% } %>

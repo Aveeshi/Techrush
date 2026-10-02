@@ -1,108 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head') %>
+  <%- include('../partials/head', { title: 'Student Semester Reports Verification — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
     <div class="mb-6 flex items-center justify-between">
-      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Command Center</a>
+      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Faculty Desk
+      </a>
+      <span class="badge badge-lime font-mono text-[9px]">F023 COMPLIANCE</span>
     </div>
 
-    <div class="flex items-center gap-3 mb-2">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// STUDENT HOURS &amp; ACCREDITATION</span>
-    </div>
-    <h1 class="font-display text-3xl sm:text-4xl mb-3">Student Semester Reports Verification</h1>
-    <p class="text-muted text-sm max-w-2xl mb-8">
-      Verify student submitted activity hours. Review individual reports with direct options to <strong>Tick (Approve)</strong>, <strong>Cross (Reject)</strong>, or <strong>Send back for re-verification</strong>.
-    </p>
+    <!-- Header Section -->
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline text-lime">// STUDENT HOURS &amp; ACCREDITATION AUDIT</span>
+        <h1>Student Semester Reports Verification</h1>
+        <p>Verify student submitted activity hours. Review individual reports with direct options to <strong class="text-lime">Tick (Approve)</strong>, <strong class="text-red-400">Cross (Reject)</strong>, or <strong class="text-amber-400">Send back for re-verification</strong>.</p>
+      </div>
+
+      <div class="date-tile">
+        <strong><%= reports.length %></strong>
+        <small>REPORTS</small>
+      </div>
+    </section>
 
     <% if (message) { %>
-      <div class="p-4 mb-6 rounded-lg bg-lime/10 border border-lime/30 text-lime text-sm">
-        ✓ <%= message %>
+      <div class="panel p-4 mb-6 bg-lime/10 border border-lime/40 text-lime text-xs flex items-center gap-2">
+        <span class="font-bold">✓</span> <%= message %>
       </div>
     <% } %>
 
-    <!-- Filter Bar -->
+    <!-- Filter Pills -->
     <div class="flex flex-wrap items-center gap-2 mb-6">
-      <a href="/faculty/reports" class="px-3 py-1.5 rounded text-xs font-mono font-semibold transition-colors
-        <%= currentFilter === 'all' ? 'bg-lime text-black' : 'border border-line text-muted hover:text-fg' %>">
+      <a href="/faculty/reports" class="badge <%= currentFilter === 'all' ? 'badge-lime' : 'badge-neutral' %> text-xs px-3.5 py-1.5 text-decoration-none">
         All Reports
       </a>
-      <a href="/faculty/reports?status=pending" class="px-3 py-1.5 rounded text-xs font-mono font-semibold transition-colors
-        <%= currentFilter === 'pending' ? 'bg-lime text-black' : 'border border-line text-muted hover:text-fg' %>">
+      <a href="/faculty/reports?status=pending" class="badge <%= currentFilter === 'pending' ? 'badge-lime' : 'badge-neutral' %> text-xs px-3.5 py-1.5 text-decoration-none">
         Pending Review
       </a>
-      <a href="/faculty/reports?status=approved" class="px-3 py-1.5 rounded text-xs font-mono font-semibold transition-colors
-        <%= currentFilter === 'approved' ? 'bg-lime text-black' : 'border border-line text-muted hover:text-fg' %>">
+      <a href="/faculty/reports?status=approved" class="badge <%= currentFilter === 'approved' ? 'badge-lime' : 'badge-neutral' %> text-xs px-3.5 py-1.5 text-decoration-none">
         Verified (Approved)
       </a>
-      <a href="/faculty/reports?status=reverification" class="px-3 py-1.5 rounded text-xs font-mono font-semibold transition-colors
-        <%= currentFilter === 'reverification' ? 'bg-lime text-black' : 'border border-line text-muted hover:text-fg' %>">
+      <a href="/faculty/reports?status=reverification" class="badge <%= currentFilter === 'reverification' ? 'badge-lime' : 'badge-neutral' %> text-xs px-3.5 py-1.5 text-decoration-none">
         Needs Re-verification
       </a>
-      <a href="/faculty/reports?status=rejected" class="px-3 py-1.5 rounded text-xs font-mono font-semibold transition-colors
-        <%= currentFilter === 'rejected' ? 'bg-lime text-black' : 'border border-line text-muted hover:text-fg' %>">
+      <a href="/faculty/reports?status=rejected" class="badge <%= currentFilter === 'rejected' ? 'badge-lime' : 'badge-neutral' %> text-xs px-3.5 py-1.5 text-decoration-none">
         Rejected
       </a>
     </div>
 
-    <!-- Reports Table -->
-    <div class="border border-line rounded-xl bg-panel overflow-hidden">
+    <!-- Reports Table Panel -->
+    <div class="panel overflow-hidden">
+      <div class="panel-head">
+        <div>
+          <span class="overline">// VERIFICATION QUEUE</span>
+          <h3 class="text-base font-bold text-fg">Submitted Student Transcripts (<%= club ? club.name : 'PASC' %>)</h3>
+        </div>
+        <span class="badge badge-green font-mono text-[9px]"><%= reports.length %> in view</span>
+      </div>
+
       <% if (reports.length === 0) { %>
-        <div class="p-12 text-center text-muted text-sm">
+        <div class="p-12 text-center text-muted text-xs">
           No semester reports matching the selected filter.
         </div>
       <% } else { %>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-black/30 font-mono text-[10px] text-muted tracking-wider uppercase border-b border-line">
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th class="px-6 py-4">Student Name</th>
-                <th class="px-6 py-4">Roll Number</th>
-                <th class="px-6 py-4">Department &amp; Year</th>
-                <th class="px-6 py-4">Semester &amp; Year</th>
-                <th class="px-6 py-4 text-center">Claimed Hours</th>
-                <th class="px-6 py-4">Status</th>
-                <th class="px-6 py-4 text-right">Actions</th>
+                <th>Student Candidate</th>
+                <th>Roll Number</th>
+                <th>Dept &amp; Year</th>
+                <th>Semester &amp; Year</th>
+                <th class="text-center">Claimed Hours</th>
+                <th>Status</th>
+                <th class="text-right">Action</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-line">
+            <tbody>
               <% reports.forEach(function(rep) { %>
-                <tr class="hover:bg-white/[0.02] transition-colors">
-                  <td class="px-6 py-4 font-semibold text-fg">
-                    <%= rep.student_name %>
-                    <div class="text-xs text-muted font-normal"><%= rep.student_email %></div>
+                <tr>
+                  <td>
+                    <strong class="text-xs text-fg block"><%= rep.student_name %></strong>
+                    <span class="mono text-[10px] text-muted"><%= rep.student_email %></span>
                   </td>
-                  <td class="px-6 py-4 font-mono text-xs text-fg">
-                    <%= rep.roll_number || 'N/A' %>
+                  <td class="mono text-xs text-fg">
+                    <%= rep.roll_number || '41125' %>
                   </td>
-                  <td class="px-6 py-4 text-xs text-muted">
-                    <%= rep.department || 'Eng' %> (Yr <%= rep.student_year || '1' %>)
+                  <td class="text-xs text-muted">
+                    <%= rep.department || 'CE' %> (Yr <%= rep.student_year || '2' %>)
                   </td>
-                  <td class="px-6 py-4 text-xs font-mono">
+                  <td class="mono text-xs">
                     Sem <%= rep.semester %> (<%= rep.academic_year %>)
                   </td>
-                  <td class="px-6 py-4 text-center font-mono font-bold text-lime">
-                    <%= rep.total_hours %> hrs
+                  <td class="text-center mono font-bold text-lime">
+                    <%= parseFloat(rep.total_hours || 0).toFixed(1) %> hrs
                   </td>
-                  <td class="px-6 py-4">
-                    <span class="inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full uppercase
-                      <%= rep.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
-                          rep.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/40' :
-                          rep.status === 'reverification' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
-                          'bg-sky-500/20 text-sky-400 border border-sky-500/40' %>">
-                      <%= rep.status === 'approved' ? '✓ VERIFIED' :
-                          rep.status === 'rejected' ? '✗ REJECTED' :
-                          rep.status === 'reverification' ? '↺ RE-VERIFY' : 'PENDING' %>
+                  <td>
+                    <span class="badge <%= rep.status === 'approved' ? 'badge-green' : rep.status === 'rejected' ? 'badge-red' : rep.status === 'reverification' ? 'badge-amber' : 'badge-lime' %> font-mono text-[8px]">
+                      <%= rep.status === 'approved' ? '✓ VERIFIED' : rep.status === 'rejected' ? '✕ REJECTED' : rep.status === 'reverification' ? '↺ RE-VERIFY' : 'PENDING' %>
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-right">
-                    <a href="/faculty/reports/<%= rep.id %>" class="btn-lime text-xs font-semibold px-3.5 py-1.5 bg-lime text-black rounded hover:opacity-90 inline-flex items-center gap-1">
-                      <span>Inspect &amp; Verify</span> &rarr;
+                  <td class="text-right">
+                    <a href="/faculty/reports/<%= rep.id %>" class="button button-primary text-[9px] py-1.5 px-3.5 text-decoration-none">
+                      Inspect &amp; Verify →
                     </a>
                   </td>
                 </tr>

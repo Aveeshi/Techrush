@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head') %>
+  <%- include('../partials/head', { title: 'Faculty Activity Report Generator — CampusBuzz' }) %>
   <style>
     @media print {
       body { background: #ffffff !important; color: #000000 !important; }
       header, .no-print { display: none !important; }
       .print-box { border: 2px solid #000000 !important; background: #ffffff !important; color: #000000 !important; }
-      .text-fg, .text-muted { color: #000000 !important; }
+      .text-fg, .text-muted, th, td { color: #000000 !important; }
       .border-line { border-color: #888888 !important; }
     }
   </style>
@@ -17,71 +17,84 @@
     <%- include('../partials/nav') %>
   </div>
 
-  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
     <div class="no-print mb-6 flex items-center justify-between">
-      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Command Center</a>
+      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+        ← Back to Faculty Desk
+      </a>
       <% if (reportData) { %>
-        <button onclick="window.print()" class="btn-lime text-xs font-semibold px-4 py-2 bg-lime text-black rounded-md flex items-center gap-1.5 shadow">
-          <span>🖨️</span> Print Generated Report
+        <button onclick="window.print()" class="button button-primary text-xs flex items-center gap-1.5">
+          <span>🖨️</span> Print / Save Report PDF
         </button>
       <% } %>
     </div>
 
-    <div class="no-print flex items-center gap-3 mb-2">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// FACULTY REPORTING ENGINE</span>
+    <div class="no-print mb-8">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        <span class="overline text-[10px] tracking-widest text-amber-400">// AUDIT &amp; ACCREDITATION ENGINE</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-fg mb-2">
+        Club Activity Report Generator
+      </h1>
+      <p class="text-sm text-muted max-w-2xl">
+        Generate signed yearly, monthly, weekly, or individual event attendance reports for <strong class="text-lime"><%= club ? club.name : 'ACM Student Chapter (PASC)' %></strong>.
+      </p>
     </div>
-    <h1 class="no-print font-display text-3xl sm:text-4xl mb-3">Club Activity Report Generator</h1>
-    <p class="no-print text-muted text-sm max-w-2xl mb-8">
-      Generate official yearly, monthly, weekly, or individual event attendance reports for <strong class="text-lime"><%= club ? club.name : 'Your Club' %></strong>.
-    </p>
 
-    <!-- Report Filter Form (Hidden on Print) -->
-    <div class="no-print border border-line rounded-xl bg-panel p-6 mb-10 shadow-xl">
+    <!-- Report Filter Form (CampusBuzz UI Design) -->
+    <div class="no-print panel p-6 sm:p-8 mb-8 bg-surface-2 border border-line">
       <form method="GET" action="/faculty/generate-report" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
         <input type="hidden" name="run" value="1" />
 
         <div>
-          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">TIMEFRAME</label>
-          <select name="timeframe" id="tf-select" onchange="updateFormFields()" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
-            <option value="monthly" <%= timeframe === 'monthly' ? 'selected' : '' %>>Monthly Report</option>
-            <option value="yearly" <%= timeframe === 'yearly' ? 'selected' : '' %>>Yearly Report</option>
-            <option value="weekly" <%= timeframe === 'weekly' ? 'selected' : '' %>>Weekly Report (Last 7 Days)</option>
-            <option value="event" <%= timeframe === 'event' ? 'selected' : '' %>>Individual Event Report</option>
-          </select>
+          <label class="field-label mb-1.5">
+            REPORT TIMEFRAME
+            <select name="timeframe" id="tf-select" onchange="updateFormFields()" class="bg-surface border border-line text-xs py-2.5">
+              <option value="yearly" <%= timeframe === 'yearly' ? 'selected' : '' %>>Yearly Report (Annual Dossier)</option>
+              <option value="monthly" <%= timeframe === 'monthly' ? 'selected' : '' %>>Monthly Report</option>
+              <option value="weekly" <%= timeframe === 'weekly' ? 'selected' : '' %>>Weekly Report (Last 7 Days)</option>
+              <option value="event" <%= timeframe === 'event' ? 'selected' : '' %>>Individual Event Roster</option>
+            </select>
+          </label>
         </div>
 
         <div id="year-field">
-          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">YEAR</label>
-          <select name="year" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
-            <option value="2026" <%= String(year) === '2026' ? 'selected' : '' %>>2026</option>
-            <option value="2025" <%= String(year) === '2025' ? 'selected' : '' %>>2025</option>
-            <option value="2024" <%= String(year) === '2024' ? 'selected' : '' %>>2024</option>
-          </select>
+          <label class="field-label mb-1.5">
+            ACADEMIC YEAR
+            <select name="year" class="bg-surface border border-line text-xs py-2.5">
+              <option value="2026" <%= String(year) === '2026' ? 'selected' : '' %>>2026</option>
+              <option value="2025" <%= String(year) === '2025' ? 'selected' : '' %>>2025</option>
+            </select>
+          </label>
         </div>
 
         <div id="month-field">
-          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">MONTH</label>
-          <select name="month" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
-            <% const months = ['January','February','March','April','May','June','July','August','September','October','November','December']; %>
-            <% months.forEach(function(m, idx) { %>
-              <option value="<%= idx + 1 %>" <%= Number(month) === (idx + 1) ? 'selected' : '' %>><%= m %></option>
-            <% }); %>
-          </select>
+          <label class="field-label mb-1.5">
+            CALENDAR MONTH
+            <select name="month" class="bg-surface border border-line text-xs py-2.5">
+              <% const months = ['January','February','March','April','May','June','July','August','September','October','November','December']; %>
+              <% months.forEach(function(m, idx) { %>
+                <option value="<%= idx + 1 %>" <%= Number(month) === (idx + 1) ? 'selected' : '' %>><%= m %></option>
+              <% }); %>
+            </select>
+          </label>
         </div>
 
         <div id="event-field" style="display: none;">
-          <label class="block font-mono text-[11px] tracking-[0.15em] text-muted mb-2">INDIVIDUAL EVENT</label>
-          <select name="eventId" class="w-full px-4 py-3 bg-black/40 border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
-            <% allEvents.forEach(function(ev) { %>
-              <option value="<%= ev.id %>" <%= eventId === ev.id ? 'selected' : '' %>><%= ev.title %> (<%= new Date(ev.start_time).toLocaleDateString() %>)</option>
-            <% }); %>
-          </select>
+          <label class="field-label mb-1.5">
+            SELECT EVENT
+            <select name="eventId" class="bg-surface border border-line text-xs py-2.5">
+              <% allEvents.forEach(function(ev) { %>
+                <option value="<%= ev.id %>" <%= eventId === ev.id ? 'selected' : '' %>><%= ev.title %></option>
+              <% }); %>
+            </select>
+          </label>
         </div>
 
         <div>
-          <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md text-xs shadow hover:opacity-90 transition-opacity">
-            Generate Report &rarr;
+          <button type="submit" class="button button-primary w-full text-xs font-bold py-2.5">
+            Generate Audit Dossier →
           </button>
         </div>
       </form>
@@ -97,22 +110,22 @@
       updateFormFields();
     </script>
 
-    <!-- Generated Report Output -->
+    <!-- Generated Report Output (Paper & PDF Sheet) -->
     <% if (reportData) { %>
-      <div class="print-box border-2 border-line bg-panel p-8 sm:p-12 rounded-2xl shadow-2xl">
+      <div class="print-box panel p-8 sm:p-12 border-2 border-line bg-surface mb-8 shadow-2xl">
         <!-- Letterhead -->
         <div class="text-center border-b-2 border-line pb-6 mb-8">
-          <div class="flex items-center justify-center gap-3 mb-2">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" class="shrink-0">
-              <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#d7ff2b"/>
-            </svg>
-            <span class="font-display text-2xl font-bold tracking-tight">PICT • FACULTY COORDINATOR AUDIT REPORT</span>
+          <div class="text-[11px] text-muted tracking-wider uppercase font-semibold">
+            Society for Computer Technology &amp; Research's
           </div>
-          <div class="font-mono text-xs tracking-[0.2em] uppercase text-muted">
-            <%= club ? club.name : 'CLUB' %> • <%= timeframe.toUpperCase() %> ACTIVITY &amp; PARTICIPATION SUMMARY
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-fg my-1">
+            PUNE INSTITUTE OF COMPUTER TECHNOLOGY
+          </h2>
+          <div class="font-mono text-xs uppercase text-lime tracking-widest mt-1">
+            <%= club ? club.name : 'ACM Student Chapter (PASC)' %> • <%= timeframe.toUpperCase() %> AUDIT REPORT
           </div>
-          <div class="text-xs text-muted/80 mt-1">
-            Faculty Incharge: <strong><%= fc.name %></strong> (<%= fc.department %>) • Generated: <%= new Date().toLocaleDateString() %>
+          <div class="text-xs text-muted mt-1">
+            Faculty In-Charge: <strong><%= fc.name %></strong> (<%= fc.department %>) • Generated: <%= new Date().toLocaleDateString() %>
           </div>
         </div>
 
@@ -128,69 +141,88 @@
           });
         %>
 
-        <div class="grid grid-cols-3 gap-4 mb-8 text-center bg-black/20 p-4 rounded-xl border border-line text-xs font-mono">
-          <div>
-            <span class="text-muted block text-[10px] uppercase">EVENTS CONDUCTED</span>
-            <span class="text-2xl font-bold text-fg"><%= totalEvents %></span>
-          </div>
-          <div>
-            <span class="text-muted block text-[10px] uppercase">TOTAL STUDENT ATTENDANCES</span>
-            <span class="text-2xl font-bold text-lime"><%= totalStudentsAttended %></span>
-          </div>
-          <div>
-            <span class="text-muted block text-[10px] uppercase">TOTAL STUDENT HOURS AWARDED</span>
-            <span class="text-2xl font-bold text-emerald-400"><%= totalHoursGenerated %> hrs</span>
-          </div>
+        <div class="admin-stats mb-8">
+          <article class="panel stat-wide s0">
+            <span class="metric-icon">📅</span>
+            <div>
+              <p>EVENTS CONDUCTED</p>
+              <h2><%= totalEvents %></h2>
+            </div>
+            <span class="badge badge-green font-mono">VERIFIED</span>
+          </article>
+
+          <article class="panel stat-wide s1">
+            <span class="metric-icon">👥</span>
+            <div>
+              <p>VERIFIED ATTENDANCES</p>
+              <h2><%= totalStudentsAttended %></h2>
+            </div>
+            <span class="badge badge-lime font-mono">ROSTER LOGGED</span>
+          </article>
+
+          <article class="panel stat-wide s2">
+            <span class="metric-icon">⏱️</span>
+            <div>
+              <p>TOTAL HOURS AWARDED</p>
+              <h2><%= totalHoursGenerated %> <small class="text-xs">hrs</small></h2>
+            </div>
+            <span class="badge badge-green font-mono">ACCREDITED</span>
+          </article>
         </div>
 
         <% if (reportData.length === 0) { %>
-          <div class="p-8 text-center text-muted text-sm border border-line rounded-lg">
+          <div class="p-8 text-center text-muted text-sm border border-line rounded-xl">
             No events found for the selected timeframe.
           </div>
         <% } else { %>
           <div class="space-y-8">
             <% reportData.forEach(function(ev, idx) { %>
-              <div class="border border-line rounded-xl overflow-hidden bg-black/10">
-                <div class="p-5 border-b border-line bg-black/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="panel border border-line rounded-xl overflow-hidden">
+                <div class="p-5 border-b border-line bg-surface-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span class="font-mono text-xs text-lime font-bold">#<%= idx + 1 %></span>
-                    <h3 class="font-display text-lg font-bold inline ml-1"><%= ev.title %></h3>
-                    <div class="text-xs text-muted mt-0.5">
-                      Date: <%= new Date(ev.start_time).toLocaleDateString() %> • Venue: <%= ev.venue || 'Campus' %> • Assigned Credit: <strong class="text-lime"><%= ev.credit_hours || 0 %> hrs</strong>
+                    <span class="mono text-xs text-lime font-bold">#<%= idx + 1 %></span>
+                    <h3 class="font-bold text-base text-fg inline ml-1"><%= ev.title %></h3>
+                    <div class="text-xs text-muted mt-1 space-x-2">
+                      <span>Date: <%= new Date(ev.start_time).toLocaleDateString() %></span>
+                      <span>•</span>
+                      <span>Venue: <%= ev.venue || 'PICT Campus' %></span>
+                      <span>•</span>
+                      <span>Credit Hours: <strong class="mono text-lime">+<%= ev.credit_hours || 4 %> hrs</strong></span>
                     </div>
                   </div>
-                  <div class="font-mono text-xs bg-lime/10 text-lime px-2.5 py-1 rounded border border-lime/30 font-semibold self-start sm:self-auto">
+
+                  <span class="badge badge-green font-mono text-[9px] self-start sm:self-auto">
                     <%= ev.attendees.length %> Students Attended
-                  </div>
+                  </span>
                 </div>
 
                 <!-- Attendee List -->
                 <% if (ev.attendees.length === 0) { %>
                   <div class="p-4 text-xs text-muted text-center">
-                    No verified attendee check-ins for this event.
+                    No verified attendee check-ins recorded for this event.
                   </div>
                 <% } else { %>
-                  <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                      <thead class="bg-black/30 font-mono text-[10px] text-muted uppercase border-b border-line">
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
                         <tr>
-                          <th class="p-3 border-r border-line">#</th>
-                          <th class="p-3 border-r border-line">Roll No</th>
-                          <th class="p-3 border-r border-line">Student Name</th>
-                          <th class="p-3 border-r border-line">Dept &amp; Year</th>
-                          <th class="p-3 border-r border-line">Check-in Time</th>
-                          <th class="p-3 text-right">Hours Awarded</th>
+                          <th style="width: 40px;">#</th>
+                          <th>Roll Number</th>
+                          <th>Student Name</th>
+                          <th>Department &amp; Year</th>
+                          <th>Check-in Timestamp</th>
+                          <th class="text-right">Credit Awarded</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-line">
+                      <tbody>
                         <% ev.attendees.forEach(function(att, aIdx) { %>
                           <tr>
-                            <td class="p-3 border-r border-line font-mono text-muted"><%= aIdx + 1 %></td>
-                            <td class="p-3 border-r border-line font-mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
-                            <td class="p-3 border-r border-line font-semibold text-fg"><%= att.student_name %></td>
-                            <td class="p-3 border-r border-line text-muted"><%= att.department || 'Eng' %> (Yr <%= att.year || '1' %>)</td>
-                            <td class="p-3 border-r border-line font-mono text-muted"><%= new Date(att.checked_in_at).toLocaleTimeString() %></td>
-                            <td class="p-3 text-right font-mono font-bold text-lime">+<%= att.credit_hours %> hrs</td>
+                            <td class="mono font-bold"><%= aIdx + 1 %></td>
+                            <td class="mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
+                            <td><strong class="text-fg text-xs"><%= att.student_name %></strong></td>
+                            <td class="text-xs text-muted"><%= att.department || 'CE' %> (Yr <%= att.year || '2' %>)</td>
+                            <td class="mono text-xs text-muted"><%= new Date(att.checked_in_at).toLocaleTimeString() %></td>
+                            <td class="mono font-bold text-lime text-right">+<%= att.credit_hours %> hrs</td>
                           </tr>
                         <% }); %>
                       </tbody>
@@ -205,16 +237,16 @@
         <!-- Signature Block -->
         <div class="pt-10 mt-10 border-t-2 border-line grid grid-cols-2 gap-8 text-center text-xs">
           <div>
-            <div class="h-10"></div>
-            <div class="border-t border-muted/50 pt-2 font-mono text-[10px] uppercase text-muted">
-              <%= fc.name %> (Faculty Incharge)
+            <div class="h-12 border-b border-dashed border-line flex items-end justify-center pb-1">
+              <span class="font-mono text-[11px] text-lime font-bold"><%= fc.name %></span>
             </div>
+            <span class="text-[10px] text-muted mt-2 block uppercase tracking-wider">Faculty In-Charge Signature</span>
           </div>
           <div>
-            <div class="h-10"></div>
-            <div class="border-t border-muted/50 pt-2 font-mono text-[10px] uppercase text-muted">
-              Institutional Coordinator / Vice Principal
+            <div class="h-12 border-b border-dashed border-line flex items-end justify-center pb-1">
+              <span class="font-mono text-[11px] text-fg font-bold">Directorate of Student Welfare</span>
             </div>
+            <span class="text-[10px] text-muted mt-2 block uppercase tracking-wider">Institutional Dean / Principal</span>
           </div>
         </div>
       </div>

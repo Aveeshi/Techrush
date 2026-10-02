@@ -1,202 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: team.name + ' · Manage' }) %>
+  <%- include('partials/head', { title: team.name + ' · Squad Leadership — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
-    <a href="javascript:history.back()" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK</a>
-
-    <div class="mt-6 mb-10">
-      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-        MANAGE TEAM
-      </span>
-      <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= team.name %></h1>
-      <% if (team.description) { %>
-        <p class="text-muted max-w-2xl mb-3"><%= team.description %></p>
-      <% } %>
-      <% if (requiredSkills.length > 0) { %>
-        <div class="flex flex-wrap gap-2 mb-3">
-          <% requiredSkills.forEach(function(s) { %>
-            <span class="chip-label"><%= s.name %></span>
-          <% }); %>
-        </div>
-      <% } %>
-      <a href="/teams/<%= team.id %>#chat" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
-        VIEW TEAM CHAT →
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="javascript:history.back()" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← BACK
       </a>
+      <span class="badge badge-lime font-mono text-[9px]">SQUAD LEADERSHIP DESK</span>
     </div>
 
-    <!-- Members + assign head -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+    <!-- Header Section -->
+    <div class="welcome-row mb-8 items-start">
       <div>
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">
-          MEMBERS (<%= members.length %><%= team.max_size ? ' / ' + team.max_size : '' %>)
-          <% if (team.max_size && members.length >= team.max_size) { %>
-            <span class="text-red-400">· TEAM FULL</span>
-          <% } %>
-        </h2>
+        <span class="overline text-lime">// VOLUNTEER CADRE &amp; TASK DISPATCH</span>
+        <h1 class="text-3xl font-extrabold text-fg my-1"><%= team.name %></h1>
+        <% if (team.description) { %>
+          <p class="text-xs text-muted max-w-2xl mb-3"><%= team.description %></p>
+        <% } %>
+        <% if (requiredSkills.length > 0) { %>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <% requiredSkills.forEach(function(s) { %>
+              <span class="badge badge-lime text-[8px]"><%= s.name %></span>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="/teams/<%= team.id %>#chat" class="button button-quiet text-xs text-decoration-none">
+          💬 Squad Chat →
+        </a>
+      </div>
+    </div>
+
+    <!-- Members + Assign Head Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Members List Panel -->
+      <div class="panel p-6">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <span class="overline">// ENROLLED CADRE</span>
+          <span class="badge <%= team.max_size && members.length >= team.max_size ? 'badge-red' : 'badge-neutral' %> font-mono text-[8px]">
+            <%= members.length %><%= team.max_size ? ' / ' + team.max_size : '' %> VOLUNTEERS
+          </span>
+        </div>
+
         <% if (members.length === 0) { %>
-          <p class="text-muted text-sm">No volunteers on this team yet.</p>
+          <p class="text-xs text-muted py-4">No volunteers on this team yet.</p>
         <% } else { %>
-          <div class="border border-line rounded-lg divide-y divide-line">
+          <div class="divide-y divide-line">
             <% members.forEach(function(m) { %>
-              <div class="px-4 py-3 flex items-center justify-between text-sm">
-                <span><%= m.name %></span>
-                <span class="text-muted text-xs"><%= m.email %></span>
+              <div class="py-2.5 flex items-center justify-between text-xs">
+                <strong class="text-fg"><%= m.name %></strong>
+                <span class="mono text-[10px] text-muted"><%= m.email %></span>
               </div>
             <% }); %>
           </div>
         <% } %>
       </div>
 
-      <div>
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">TEAM HEAD<%= heads.length === 1 ? '' : 'S' %></h2>
+      <!-- Appointed Team Heads Panel -->
+      <div class="panel p-6">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <span class="overline">// SQUAD DIRECTORS</span>
+          <span class="badge badge-amber font-mono text-[8px]"><%= heads.length %> HEADS</span>
+        </div>
+
         <% if (heads.length > 0) { %>
           <div class="flex flex-wrap gap-2 mb-4">
             <% heads.forEach(function(h) { %>
-              <span class="chip-label"><%= h.name %></span>
+              <span class="badge badge-amber text-xs py-1 px-3">★ Head: <%= h.name %></span>
             <% }); %>
           </div>
         <% } %>
+
         <% if (members.length > 0) { %>
-          <form action="/teams/<%= team.id %>/head" method="POST" class="flex gap-2">
-            <select name="studentId" class="flex-1 px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime">
+          <form action="/teams/<%= team.id %>/head" method="POST" class="flex gap-2 items-center">
+            <select name="studentId" class="flex-1 bg-surface-2 border border-line rounded-lg text-xs py-2 px-3 text-fg">
               <% members.forEach(function(m) { %>
                 <option value="<%= m.id %>"><%= m.name %></option>
               <% }); %>
             </select>
-            <button type="submit" class="btn-outline border border-line px-4 py-2 rounded-md text-sm">Assign head</button>
+            <button type="submit" class="button button-quiet text-xs font-bold py-2">
+              Assign Head
+            </button>
           </form>
         <% } %>
       </div>
     </div>
 
-    <!-- New task -->
-    <div class="mb-10 border border-line rounded-lg p-6">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">NEW TASK</h2>
-      <form action="/teams/<%= team.id %>/tasks" method="POST">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-          <input type="text" name="title" placeholder="Task title" required
-                 class="px-3 py-2 bg-panel border border-line rounded-md text-fg placeholder-muted text-sm focus:outline-none focus:border-lime sm:col-span-2" />
-          <input type="number" step="0.5" name="assignedHours" placeholder="Hours" required
-                 class="px-3 py-2 bg-panel border border-line rounded-md text-fg placeholder-muted text-sm focus:outline-none focus:border-lime" />
-        </div>
-        <textarea name="description" placeholder="Description" rows="2"
-                  class="w-full px-3 py-2 mb-2 bg-panel border border-line rounded-md text-fg placeholder-muted text-sm focus:outline-none focus:border-lime"></textarea>
-        <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">DEADLINE</label>
-        <input type="datetime-local" name="dueAt"
-               class="w-full px-3 py-2 mb-3 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
+    <!-- Create New Task Panel -->
+    <div class="panel p-6 mb-8 bg-surface-2 border border-line">
+      <div class="panel-head px-0 pt-0 pb-4 mb-4">
+        <span class="overline text-lime">// DISPATCH NEW TASK</span>
+        <h3 class="text-base font-bold text-fg">Assign Deliverable &amp; Credit Hours</h3>
+      </div>
 
-        <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">SKILLS REQUIRED</label>
-        <p class="text-muted text-xs mb-2">Same list volunteers picked from at signup — checking any of these ranks a matching volunteer as recommended below.</p>
-        <div class="flex flex-wrap gap-2 mb-4">
-          <% skillTags.forEach(function(tag) { %>
-            <input type="checkbox" name="skillTagIds" id="task-skill-<%= tag.id %>" value="<%= tag.id %>" class="chip-input task-skill-checkbox" />
-            <label for="task-skill-<%= tag.id %>" class="chip-label"><%= tag.name %></label>
-          <% }); %>
+      <form action="/teams/<%= team.id %>/tasks" method="POST" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="field-label sm:col-span-2">
+            TASK TITLE
+            <input type="text" name="title" placeholder="e.g. Stage Sound &amp; Mic Testing" required />
+          </label>
+          <label class="field-label sm:col-span-1">
+            CREDIT AWARD (HRS)
+            <input type="number" step="0.5" name="assignedHours" placeholder="e.g. 3.0" required />
+          </label>
         </div>
 
-        <div class="flex items-center gap-4 mb-3 text-sm">
+        <label class="field-label">
+          DELIVERABLE INSTRUCTIONS &amp; CRITERIA
+          <textarea name="description" placeholder="Specify instructions and expected deliverables..." rows="2"></textarea>
+        </label>
+
+        <label class="field-label">
+          DUE DEADLINE
+          <input type="datetime-local" name="dueAt" />
+        </label>
+
+        <div>
+          <label class="overline text-muted text-[8px] block mb-1">SKILLS REQUIRED (AUTO-MATCHING)</label>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <% skillTags.forEach(function(tag) { %>
+              <label class="badge badge-neutral hover:badge-lime cursor-pointer text-[8px] flex items-center gap-1.5 py-1 px-2.5">
+                <input type="checkbox" name="skillTagIds" value="<%= tag.id %>" class="task-skill-checkbox accent-lime" />
+                <span><%= tag.name %></span>
+              </label>
+            <% }); %>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs font-bold text-fg">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="radio" name="assignMode" value="whole_team" class="new-task-assign-mode accent-lime" checked />
-            Whole team
+            Whole Squad
           </label>
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="radio" name="assignMode" value="specific" class="new-task-assign-mode accent-lime" />
-            Specific volunteers
+            Specific Volunteers
           </label>
         </div>
 
-        <div id="new-task-specific-volunteers" class="hidden mb-3">
+        <div id="new-task-specific-volunteers" class="hidden">
           <div class="flex items-center justify-between mb-2">
-            <label class="font-mono text-[10px] tracking-[0.1em] text-muted">VOLUNTEERS</label>
-            <select id="volunteer-year-filter" class="px-2 py-1 bg-panel border border-line rounded-md text-fg text-xs focus:outline-none focus:border-lime">
-              <option value="">All years</option>
+            <span class="overline text-[8px] text-muted">SELECT CANDIDATES</span>
+            <select id="volunteer-year-filter" class="bg-surface border border-line text-xs py-1 px-2 text-fg">
+              <option value="">All Academic Years</option>
               <% [...new Set(members.map(function(m) { return m.year; }).filter(Boolean))].sort().forEach(function(y) { %>
                 <option value="<%= y %>">Year <%= y %></option>
               <% }); %>
             </select>
           </div>
-          <% if (members.length === 0) { %>
-            <p class="text-muted text-xs">No volunteers on this team yet.</p>
-          <% } else { %>
-            <div id="volunteer-rows" class="border border-line rounded-lg divide-y divide-line max-h-72 overflow-y-auto">
-              <% members.forEach(function(m) { %>
-                <label class="volunteer-row flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer hover:bg-panel"
-                       data-year="<%= m.year || '' %>"
-                       data-skills="<%= (m.skills || []).map(function(s) { return s.id; }).join(',') %>">
-                  <input type="checkbox" name="studentIds" value="<%= m.id %>" class="accent-lime shrink-0" />
-                  <span class="flex-1 min-w-0">
-                    <span class="block"><%= m.name %></span>
-                    <span class="block text-muted text-xs">Year <%= m.year || '—' %> · <%= m.department || '—' %></span>
-                  </span>
-                  <span class="volunteer-match-badge hidden shrink-0 font-mono text-[10px] tracking-[0.08em] text-lime border border-lime rounded px-2 py-1"></span>
-                </label>
-              <% }); %>
-            </div>
-          <% } %>
+
+          <div id="volunteer-rows" class="border border-line rounded-xl divide-y divide-line max-h-60 overflow-y-auto bg-surface">
+            <% members.forEach(function(m) { %>
+              <label class="volunteer-row flex items-center gap-3 px-4 py-2.5 text-xs cursor-pointer hover:bg-surface-3 transition-colors"
+                     data-year="<%= m.year || '' %>"
+                     data-skills="<%= (m.skills || []).map(function(s) { return s.id; }).join(',') %>">
+                <input type="checkbox" name="studentIds" value="<%= m.id %>" class="accent-lime shrink-0" />
+                <div class="flex-1">
+                  <strong class="text-fg block"><%= m.name %></strong>
+                  <span class="text-[10px] text-muted mono">Year <%= m.year || '—' %> · <%= m.department || '—' %></span>
+                </div>
+                <span class="volunteer-match-badge hidden badge badge-lime font-mono text-[7px]"></span>
+              </label>
+            <% }); %>
+          </div>
         </div>
 
-        <button type="submit" class="btn-lime bg-lime text-black font-semibold px-4 py-2 rounded-md text-sm">
-          Create task
-        </button>
+        <div class="pt-2">
+          <button type="submit" class="button button-primary text-xs font-bold py-2.5 px-6">
+            Dispatch Task &rarr;
+          </button>
+        </div>
       </form>
     </div>
 
-    <!-- Incomplete tasks -->
-    <div class="mb-10">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">INCOMPLETE TASKS (<%= incompleteTasks.length %>)</h2>
+    <!-- Incomplete Tasks Panel -->
+    <div class="panel p-6 mb-8">
+      <div class="panel-head px-0 pt-0 pb-4 mb-4">
+        <div>
+          <span class="overline text-amber-400">// PENDING EXECUTION</span>
+          <h3 class="text-base font-bold text-fg">Incomplete Tasks (<%= incompleteTasks.length %>)</h3>
+        </div>
+        <span class="badge badge-amber font-mono text-[8px]"><%= incompleteTasks.length %> Active</span>
+      </div>
+
       <% if (incompleteTasks.length === 0) { %>
-        <p class="text-muted text-sm">Nothing outstanding.</p>
+        <p class="text-xs text-muted py-4">All assigned deliverables are completed.</p>
       <% } else { %>
-        <div class="space-y-4">
+        <div class="space-y-3">
           <% incompleteTasks.forEach(function(task) { %>
-            <div class="border border-line rounded-lg p-5">
-              <div class="flex items-start justify-between gap-4 mb-3">
-                <div>
-                  <h3 class="font-display text-lg"><%= task.title %></h3>
-                  <p class="text-muted text-xs mt-1">
-                    ⏱ <%= task.assigned_hours %>h
-                    <% if (task.due_at) { %> · Due <%= new Date(task.due_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %><% } %>
-                  </p>
+            <div class="panel p-5 bg-surface-2 border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h4 class="text-sm font-bold text-fg mb-1"><%= task.title %></h4>
+                <div class="text-xs text-muted flex items-center gap-3">
+                  <span class="mono text-lime font-bold">⏱ +<%= task.assigned_hours %> hrs</span>
+                  <% if (task.due_at) { %>
+                    <span>•</span>
+                    <span>Due: <%= new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></span>
+                  <% } %>
                 </div>
-                <button type="button" onclick="openCompleteModal('<%= task.id %>')" class="btn-lime bg-lime text-black font-semibold px-4 py-2 rounded-md text-sm shrink-0">
-                  Mark complete
-                </button>
+                <% if (task.assignees.length > 0) { %>
+                  <div class="flex flex-wrap gap-1.5 mt-2">
+                    <% task.assignees.forEach(function(a) { %>
+                      <span class="badge badge-neutral text-[8px]"><%= a.name %> · <%= a.status %></span>
+                    <% }); %>
+                  </div>
+                <% } %>
               </div>
-              <% if (task.assignees.length === 0) { %>
-                <p class="text-muted text-xs">No one assigned yet.</p>
-              <% } else { %>
-                <div class="flex flex-wrap gap-2">
-                  <% task.assignees.forEach(function(a) { %>
-                    <span class="chip-label"><%= a.name %> · <%= a.status %></span>
-                  <% }); %>
-                </div>
-              <% } %>
+
+              <button type="button" onclick="openCompleteModal('<%= task.id %>')" class="button button-green text-xs font-bold shrink-0">
+                ✓ Mark Complete &amp; Credit
+              </button>
             </div>
           <% }); %>
         </div>
       <% } %>
     </div>
 
-    <!-- Completed tasks -->
-    <div class="mb-10">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">COMPLETED TASKS (<%= completedTasks.length %>)</h2>
+    <!-- Completed Tasks Panel -->
+    <div class="panel p-6">
+      <div class="panel-head px-0 pt-0 pb-4 mb-4">
+        <div>
+          <span class="overline text-lime">// COMPLETED DELIVERABLES</span>
+          <h3 class="text-base font-bold text-fg">Verified &amp; Credited Tasks (<%= completedTasks.length %>)</h3>
+        </div>
+        <span class="badge badge-green font-mono text-[8px]">CREDITED</span>
+      </div>
+
       <% if (completedTasks.length === 0) { %>
-        <p class="text-muted text-sm">No tasks completed yet.</p>
+        <p class="text-xs text-muted py-4">No tasks marked complete yet.</p>
       <% } else { %>
-        <div class="space-y-4">
+        <div class="space-y-3">
           <% completedTasks.forEach(function(task) { %>
-            <div class="border border-line rounded-lg p-5">
-              <h3 class="font-display text-lg mb-2"><%= task.title %></h3>
-              <div class="flex flex-wrap gap-2">
+            <div class="panel p-4 bg-surface-2 border border-line">
+              <h4 class="text-sm font-bold text-fg mb-2"><%= task.title %></h4>
+              <div class="flex flex-wrap gap-1.5">
                 <% task.assignees.forEach(function(a) { %>
-                  <span class="chip-label">
-                    <%= a.name %> ·
-                    <%= a.attendance === 'present' ? `✅ ${a.hours_logged}h` : '❌ absent' %>
+                  <span class="badge <%= a.attendance === 'present' ? 'badge-green' : 'badge-red' %> text-[8px] font-mono">
+                    <%= a.name %> · <%= a.attendance === 'present' ? `+${a.hours_logged}h Credited` : 'Absent' %>
                   </span>
                 <% }); %>
               </div>
@@ -207,17 +254,18 @@
     </div>
   </main>
 
-  <!-- "Who showed up?" modal -->
-  <div id="complete-modal" class="hidden fixed inset-0 z-50 items-center justify-center px-4">
-    <div class="absolute inset-0 bg-black/70" onclick="closeCompleteModal()"></div>
-    <div class="relative border border-line bg-bg rounded-lg max-w-md w-full p-6">
+  <!-- Complete Task Modal -->
+  <div id="complete-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeCompleteModal()"></div>
+    <div class="relative panel border border-line bg-surface rounded-2xl max-w-md w-full p-6 shadow-2xl">
       <button type="button" onclick="closeCompleteModal()" class="absolute top-4 right-4 text-muted hover:text-fg text-sm">✕</button>
-      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">WHO SHOWED UP?</span>
-      <p class="text-muted text-sm mb-4">Only the volunteers you check here get credited hours for this task — everyone else is marked absent.</p>
+      <span class="badge badge-lime text-[9px] font-mono mb-2">VERIFICATION ROSTER</span>
+      <h3 class="text-base font-bold text-fg mb-2">Who executed this deliverable?</h3>
+      <p class="text-xs text-muted mb-4">Only volunteers checked will receive accredited hours automatically on their transcript.</p>
       <form id="complete-form" method="POST">
-        <div id="complete-modal-checkboxes" class="space-y-2 mb-5 max-h-64 overflow-y-auto"></div>
-        <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3 rounded-md text-sm">
-          Confirm & credit hours
+        <div id="complete-modal-checkboxes" class="space-y-2 mb-5 max-h-56 overflow-y-auto"></div>
+        <button type="submit" class="button button-primary w-full text-xs font-bold py-3">
+          Confirm Execution &amp; Credit Hours →
         </button>
       </form>
     </div>
@@ -230,20 +278,11 @@
       });
     });
 
-    // Recommended-volunteer matching: plain skill-tag overlap, computed in
-    // the browser as the organizer checks "skills required" boxes — no
-    // server round trip needed since every member's skills are already on
-    // the row (data-skills). A volunteer is "recommended" the moment they
-    // share ANY checked skill; among recommended volunteers, more shared
-    // skills sorts higher (ties keep alphabetical order, Array#sort is
-    // stable). This mirrors SkillTag.findMatchingVolunteers' overlap-count
-    // ranking server-side, just done client-side for instant feedback.
     const volunteerRowsContainer = document.getElementById('volunteer-rows');
     const yearFilter = document.getElementById('volunteer-year-filter');
 
     function refreshVolunteerList() {
       if (!volunteerRowsContainer) return;
-
       const selectedSkillIds = Array.from(document.querySelectorAll('.task-skill-checkbox:checked')).map((c) => c.value);
       const year = yearFilter ? yearFilter.value : '';
       const rows = Array.from(volunteerRowsContainer.querySelectorAll('.volunteer-row'));
@@ -255,7 +294,7 @@
 
         const badge = row.querySelector('.volunteer-match-badge');
         if (matchCount > 0) {
-          badge.textContent = `★ RECOMMENDED · ${matchCount} MATCH${matchCount > 1 ? 'ES' : ''}`;
+          badge.textContent = `★ ${matchCount} MATCH`;
           badge.classList.remove('hidden');
         } else {
           badge.classList.add('hidden');
@@ -284,11 +323,11 @@
 
       const box = document.getElementById('complete-modal-checkboxes');
       box.innerHTML = task.assignees.map((a) => `
-        <label class="flex items-center gap-3 border border-line rounded-md px-4 py-2.5 cursor-pointer hover:border-lime/55">
-          <input type="checkbox" name="presentStudentIds" value="${a.student_id}" class="accent-lime w-4 h-4" />
-          <span class="text-sm">${a.name}</span>
+        <label class="flex items-center gap-3 p-3 bg-surface-2 border border-line rounded-lg cursor-pointer hover:border-lime/40">
+          <input type="checkbox" name="presentStudentIds" value="${a.student_id}" checked class="accent-lime w-4 h-4" />
+          <span class="text-xs text-fg font-medium">${a.name}</span>
         </label>
-      `).join('') || '<p class="text-muted text-sm">No one is assigned to this task.</p>';
+      `).join('') || '<p class="text-muted text-xs">No one assigned.</p>';
 
       const modal = document.getElementById('complete-modal');
       modal.classList.remove('hidden');

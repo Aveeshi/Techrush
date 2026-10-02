@@ -1,47 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head') %>
+  <%- include('../partials/head', { title: 'Event Attendance Audit — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-[1200px] mx-auto px-4 sm:px-8 py-10">
+  <main class="page max-w-5xl mx-auto pt-8 pb-20">
     <div class="mb-6 flex items-center justify-between">
-      <a href="/institutional/clubs/<%= club ? club.id : '' %>" class="text-xs font-mono text-muted hover:text-fg">
-        &larr; Back to <%= club ? club.name : 'Club' %> Dossier
+      <a href="/institutional/clubs/<%= club ? club.id : '' %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+        ← Back to <%= club ? club.name : 'Club' %> Dossier
       </a>
-      <span class="font-mono text-xs px-2.5 py-1 rounded bg-lime/10 text-lime font-bold">
-        <%= attendees.length %> Verified Present
+      <span class="badge badge-green font-mono text-[9px]">
+        <%= attendees.length %> VERIFIED ATTENDEES
       </span>
     </div>
 
     <!-- Event Header -->
-    <div class="border border-line rounded-xl bg-panel p-6 sm:p-8 mb-8 shadow-xl">
-      <div class="flex items-center gap-3 mb-2">
-        <span class="w-6 h-px bg-lime"></span>
-        <span class="font-mono text-xs tracking-[0.2em] text-lime">// OFFICIAL ATTENDANCE AUDIT</span>
+    <div class="panel p-6 sm:p-8 mb-8 shadow-xl">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="badge badge-lime text-[8px]"><%= club ? club.name : 'Club' %></span>
+        <span class="mono text-[10px] text-muted">// OFFICIAL ATTENDANCE AUDIT</span>
       </div>
-      <h1 class="font-display text-3xl font-bold mb-2"><%= event.title %></h1>
-      <div class="text-xs text-muted space-x-2">
-        <span>Organized by: <strong class="text-lime"><%= club ? club.name : 'Club' %></strong></span>
+
+      <h1 class="text-2xl sm:text-3xl font-bold text-fg mb-3"><%= event.title %></h1>
+
+      <div class="flex flex-wrap items-center gap-3 text-xs text-muted mb-4">
+        <span>Date: <strong class="text-fg font-mono"><%= new Date(event.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></strong></span>
         <span>•</span>
-        <span>Date: <strong class="text-fg"><%= new Date(event.start_time).toLocaleDateString() %></strong></span>
+        <span>Venue: <strong class="text-fg"><%= event.venue || 'PICT Campus' %></strong></span>
         <span>•</span>
-        <span>Venue: <strong class="text-fg"><%= event.venue || 'Campus' %></strong></span>
-        <span>•</span>
-        <span>Assigned Credit: <strong class="text-lime font-mono"><%= event.credit_hours || 0 %> hrs</strong></span>
+        <span>Credit Hours: <strong class="text-lime font-mono">+<%= parseFloat(event.credit_hours || 4).toFixed(1) %> hrs</strong></span>
       </div>
+
       <% if (event.description) { %>
-        <p class="text-xs text-muted/80 mt-3 pt-3 border-t border-line whitespace-pre-line"><%= event.description %></p>
+        <p class="text-xs text-muted leading-relaxed pt-3 border-t border-line whitespace-pre-line"><%= event.description %></p>
       <% } %>
     </div>
 
     <!-- Attendees Table -->
-    <div class="border border-line rounded-xl bg-panel overflow-hidden">
-      <div class="p-6 border-b border-line flex items-center justify-between">
-        <h2 class="font-display text-lg">Verified Attendance Roster (Who All Were Present)</h2>
-        <span class="text-xs font-mono text-muted">Audited by Institutional Council</span>
+    <article class="panel mb-8">
+      <div class="panel-head">
+        <div>
+          <span class="overline">ACCREDITED ATTENDANCE ROSTER</span>
+          <h3>Who All Were Present</h3>
+        </div>
+        <span class="badge badge-lime font-mono text-[8px]">GEOFENCED QR VERIFIED</span>
       </div>
 
       <% if (attendees.length === 0) { %>
@@ -49,40 +53,38 @@
           No students checked into this event.
         </div>
       <% } else { %>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-black/30 font-mono text-[10px] text-muted uppercase border-b border-line">
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th class="p-4 border-r border-line">#</th>
-                <th class="p-4 border-r border-line">Roll Number</th>
-                <th class="p-4 border-r border-line">Student Name</th>
-                <th class="p-4 border-r border-line">Email</th>
-                <th class="p-4 border-r border-line">Department &amp; Year</th>
-                <th class="p-4 border-r border-line">Check-in Timestamp</th>
-                <th class="p-4 text-right">Hours Credited</th>
+                <th style="width: 40px;">#</th>
+                <th>Roll Number</th>
+                <th>Student Name</th>
+                <th>Institutional Email</th>
+                <th>Department &amp; Year</th>
+                <th>Check-In Timestamp</th>
+                <th class="text-right">Hours Logged</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-line">
+            <tbody>
               <% attendees.forEach(function(att, idx) { %>
-                <tr class="hover:bg-white/[0.02]">
-                  <td class="p-4 border-r border-line font-mono text-muted"><%= idx + 1 %></td>
-                  <td class="p-4 border-r border-line font-mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
-                  <td class="p-4 border-r border-line font-semibold text-fg">
-                    <a href="/student/dashboard/<%= att.student_id %>" class="hover:text-lime transition-colors" title="Inspect student activity record">
-                      <%= att.student_name %> &rarr;
-                    </a>
+                <tr>
+                  <td class="mono font-bold"><%= idx + 1 %></td>
+                  <td class="mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
+                  <td>
+                    <strong class="text-xs text-fg"><%= att.student_name %></strong>
                   </td>
-                  <td class="p-4 border-r border-line text-muted font-mono"><%= att.email %></td>
-                  <td class="p-4 border-r border-line text-muted"><%= att.department || 'Eng' %> (Yr <%= att.year || '1' %>)</td>
-                  <td class="p-4 border-r border-line font-mono text-muted"><%= new Date(att.checked_in_at).toLocaleTimeString() %></td>
-                  <td class="p-4 text-right font-mono font-bold text-lime">+<%= att.credit_hours %> hrs</td>
+                  <td class="mono text-xs text-muted"><%= att.email %></td>
+                  <td class="text-xs text-muted"><%= att.department || 'CE' %> (Yr <%= att.year || '2' %>)</td>
+                  <td class="mono text-xs text-muted"><%= new Date(att.checked_in_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %></td>
+                  <td class="mono font-bold text-lime text-right">+<%= parseFloat(att.credit_hours || event.credit_hours || 4).toFixed(1) %> hrs</td>
                 </tr>
               <% }); %>
             </tbody>
           </table>
         </div>
       <% } %>
-    </div>
+    </article>
   </main>
 </body>
 </html>

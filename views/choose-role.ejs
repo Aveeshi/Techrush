@@ -1,47 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head') %>
+  <%- include('partials/head', { title: 'Complete Profile — CampusBuzz' }) %>
   <style>
     #tab-student, #tab-organizer { position: absolute; opacity: 0; width: 0; height: 0; }
-    .tab-label {
+    .role-btn {
       flex: 1;
       text-align: center;
-      padding: 0.75rem;
-      border: 1px solid #242424;
+      padding: 0.85rem;
+      border: 1px solid var(--line);
       cursor: pointer;
-      color: #8a8a8a;
-      font-size: 0.875rem;
-      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--surface);
+      border-radius: 10px;
       transition: all .15s ease;
     }
-    #tab-student:checked ~ .tab-bar label[for="tab-student"],
-    #tab-organizer:checked ~ .tab-bar label[for="tab-organizer"] {
-      background-color: #d7ff2b;
-      border-color: #d7ff2b;
-      color: #0a0a0a;
+    #tab-student:checked ~ .role-tabs label[for="tab-student"],
+    #tab-organizer:checked ~ .role-tabs label[for="tab-organizer"] {
+      background: var(--lime);
+      color: var(--lime-ink);
+      border-color: var(--lime);
     }
     #student-panel, #organizer-panel { display: none; }
     #tab-student:checked ~ #student-panel { display: block; }
     #tab-organizer:checked ~ #organizer-panel { display: block; }
   </style>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-xl mx-auto px-8 py-16">
-    <div class="flex items-center gap-3 mb-6">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// ONE MORE STEP</span>
+  <main class="page max-w-xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <span class="overline text-lime">// ONBOARDING INITIALIZATION</span>
+      <span class="badge badge-lime font-mono text-[9px]">STEP 2 OF 2</span>
     </div>
-    <h1 class="font-display text-4xl mb-2">Complete your profile</h1>
-    <p class="text-muted mb-8">
-      Signed in as <span class="text-fg"><%= pendingUser.name %></span> (<%= pendingUser.email %>).
-      Pick a role to finish setting up your account.
-    </p>
+
+    <div class="welcome-row mb-8">
+      <div>
+        <h1 class="text-3xl font-extrabold text-fg mb-1">Complete Your Profile</h1>
+        <p class="text-xs text-muted">
+          Authenticated as <strong class="text-fg"><%= pendingUser.name %></strong> (<%= pendingUser.email %>). Choose your institutional role to finalize your workspace.
+        </p>
+      </div>
+    </div>
 
     <% if (errors && errors.length > 0) { %>
-      <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mb-6 text-sm">
+      <div class="panel p-4 mb-6 bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
         <ul class="list-disc list-inside space-y-1">
           <% errors.forEach(function(error) { %>
             <li><%= error %></li>
@@ -50,100 +56,109 @@
       </div>
     <% } %>
 
-    <!-- Tab toggle drives which form (different action) renders below -->
+    <!-- Tab Radios -->
     <input type="radio" name="roleTab" id="tab-student" value="student"
            <%= (typeof oldInput.roleTab === 'undefined' || oldInput.roleTab !== 'organizer') ? 'checked' : '' %> />
     <input type="radio" name="roleTab" id="tab-organizer" value="organizer"
            <%= oldInput.roleTab === 'organizer' ? 'checked' : '' %> />
 
-    <div class="tab-bar flex mb-8 rounded-md overflow-hidden">
-      <label for="tab-student" class="tab-label">I'M A STUDENT</label>
-      <label for="tab-organizer" class="tab-label">I'M AN ORGANIZER</label>
+    <div class="role-tabs flex gap-3 mb-8">
+      <label for="tab-student" class="role-btn">STUDENT ACCOUNT</label>
+      <label for="tab-organizer" class="role-btn">ORGANIZER / LEAD</label>
     </div>
 
-    <!-- STUDENT PANEL: own form + own action -->
+    <!-- Student Panel -->
     <div id="student-panel">
-      <form action="/auth/choose-role/student" method="POST" enctype="multipart/form-data">
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <input type="text" name="rollNumber" placeholder="Roll number"
-                 value="<%= oldInput.rollNumber || '' %>"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
-          <input type="text" name="department" placeholder="Department"
-                 value="<%= oldInput.department || '' %>"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
-        </div>
-        <div class="grid grid-cols-2 gap-4 mb-6">
-          <input type="number" name="year" placeholder="Year (1-6)" min="1" max="6"
-                 value="<%= oldInput.year || '' %>"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
-          <input type="tel" name="phone" placeholder="Phone (10 digits)"
-                 value="<%= oldInput.phone || '' %>"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
+      <form action="/auth/choose-role/student" method="POST" enctype="multipart/form-data" class="panel p-6 sm:p-8 space-y-4 border border-line bg-surface">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="field-label">
+            ROLL NUMBER / PRN
+            <input type="text" name="rollNumber" placeholder="e.g. 41151" value="<%= oldInput.rollNumber || '' %>" required />
+          </label>
+          <label class="field-label">
+            DEPARTMENT
+            <input type="text" name="department" placeholder="e.g. CE / IT / ENTC" value="<%= oldInput.department || '' %>" required />
+          </label>
         </div>
 
-        <div class="mb-6">
-          <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">PROFILE PHOTO (OPTIONAL)</label>
-          <p class="text-muted text-xs mb-2">Skip this and we'll assign you a default avatar — you can change it any time from your account page.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="field-label">
+            ACADEMIC YEAR (1-4)
+            <input type="number" name="year" placeholder="e.g. 2" min="1" max="6" value="<%= oldInput.year || '' %>" required />
+          </label>
+          <label class="field-label">
+            PHONE NUMBER
+            <input type="tel" name="phone" placeholder="10 digits" value="<%= oldInput.phone || '' %>" required />
+          </label>
+        </div>
+
+        <label class="field-label">
+          PROFILE PHOTO (OPTIONAL)
           <input type="file" name="profilePhoto" accept="image/*"
-                 class="w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-lime file:text-black file:font-semibold file:cursor-pointer" />
+                 class="text-xs text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-lime file:text-black file:font-bold file:cursor-pointer" />
+        </label>
+
+        <div>
+          <span class="overline text-muted text-[8px] block mb-2">// VOLUNTEER SKILLS</span>
+          <div class="flex flex-wrap gap-1.5">
+            <% skillTags.forEach(function(tag) { %>
+              <label class="badge badge-neutral hover:badge-lime cursor-pointer text-[8px] flex items-center gap-1.5 py-1 px-2.5">
+                <input type="checkbox" name="skillTagIds" value="<%= tag.id %>" class="accent-lime" />
+                <span><%= tag.name %></span>
+              </label>
+            <% }); %>
+          </div>
         </div>
 
-        <p class="text-muted text-xs mb-6">
-          Your clubs are figured out automatically from your club's member
-          list once you sign up — no need to pick them here.
-        </p>
-
-        <p class="font-mono text-xs tracking-[0.15em] text-muted mb-3">SKILLS YOU'D VOLUNTEER WITH</p>
-        <div class="flex flex-wrap gap-2 mb-6">
-          <% skillTags.forEach(function(tag) { %>
-            <input type="checkbox" name="skillTagIds" id="sskill-<%= tag.id %>" value="<%= tag.id %>" class="chip-input" />
-            <label for="sskill-<%= tag.id %>" class="chip-label"><%= tag.name %></label>
-          <% }); %>
+        <div>
+          <span class="overline text-muted text-[8px] block mb-2">// EVENT INTERESTS</span>
+          <div class="flex flex-wrap gap-1.5">
+            <% eventTypes.forEach(function(type) { %>
+              <label class="badge badge-neutral hover:badge-lime cursor-pointer text-[8px] flex items-center gap-1.5 py-1 px-2.5">
+                <input type="checkbox" name="eventTypeInterestIds" value="<%= type.id %>" class="accent-lime" />
+                <span><%= type.name %></span>
+              </label>
+            <% }); %>
+          </div>
         </div>
 
-        <p class="font-mono text-xs tracking-[0.15em] text-muted mb-3">EVENTS YOU'RE INTERESTED IN</p>
-        <div class="flex flex-wrap gap-2 mb-8">
-          <% eventTypes.forEach(function(type) { %>
-            <input type="checkbox" name="eventTypeInterestIds" id="setype-<%= type.id %>" value="<%= type.id %>" class="chip-input" />
-            <label for="setype-<%= type.id %>" class="chip-label"><%= type.name %></label>
-          <% }); %>
+        <div class="pt-4">
+          <button type="submit" class="button button-primary w-full text-xs py-3 font-bold">
+            Complete Onboarding &rarr;
+          </button>
         </div>
-
-        <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md">
-          Finish setting up my account
-        </button>
       </form>
     </div>
 
-    <!-- ORGANIZER PANEL: own form + own action -->
+    <!-- Organizer Panel -->
     <div id="organizer-panel">
-      <form action="/auth/choose-role/organizer" method="POST">
-        <p class="font-mono text-xs tracking-[0.15em] text-muted mb-3">WHICH CLUB DO YOU REPRESENT?</p>
-        <select name="clubId"
-                class="w-full px-4 py-3 mb-4 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" required>
-          <option value="">Select a club</option>
-          <% openSlots.forEach(function(slot) { %>
-            <option value="<%= slot.clubId %>" <%= oldInput.clubId === slot.clubId ? 'selected' : '' %>>
-              <%= slot.clubName %> (<%= slot.openRoles.map(r => r === 'president' ? 'President' : 'VP').join(' + ') %> open)
-            </option>
-          <% }); %>
-        </select>
+      <form action="/auth/choose-role/organizer" method="POST" class="panel p-6 sm:p-8 space-y-4 border border-line bg-surface">
+        <label class="field-label">
+          AFFILIATED STUDENT CLUB
+          <select name="clubId" required>
+            <option value="">Select a club</option>
+            <% openSlots.forEach(function(slot) { %>
+              <option value="<%= slot.clubId %>" <%= oldInput.clubId === slot.clubId ? 'selected' : '' %>>
+                <%= slot.clubName %> (<%= slot.openRoles.map(r => r === 'president' ? 'President' : 'VP').join(' + ') %> open)
+              </option>
+            <% }); %>
+          </select>
+        </label>
 
-        <p class="font-mono text-xs tracking-[0.15em] text-muted mb-3">YOUR ROLE</p>
-        <select name="role"
-                class="w-full px-4 py-3 mb-2 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" required>
-          <option value="">Select a role</option>
-          <option value="president" <%= oldInput.role === 'president' ? 'selected' : '' %>>President</option>
-          <option value="vice_president" <%= oldInput.role === 'vice_president' ? 'selected' : '' %>>Vice President</option>
-        </select>
-        <p class="text-xs text-muted mb-8">
-          Only President and Vice President can hold an organizer account —
-          only clubs with an open slot are listed above.
-        </p>
+        <label class="field-label">
+          EXECUTIVE ROLE
+          <select name="role" required>
+            <option value="">Select a role</option>
+            <option value="president" <%= oldInput.role === 'president' ? 'selected' : '' %>>President</option>
+            <option value="vice_president" <%= oldInput.role === 'vice_president' ? 'selected' : '' %>>Vice President</option>
+          </select>
+        </label>
 
-        <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md">
-          Finish setting up my account
-        </button>
+        <div class="pt-4">
+          <button type="submit" class="button button-primary w-full text-xs py-3 font-bold">
+            Complete Organizer Setup &rarr;
+          </button>
+        </div>
       </form>
     </div>
   </main>

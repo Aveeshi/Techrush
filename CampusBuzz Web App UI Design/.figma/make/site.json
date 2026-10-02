@@ -1,0 +1,10 @@
+{
+  "description": "Manage college club activities and credit tracking with a sleek dashboard for students, faculty, and admins, enhancing engagement and organization.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

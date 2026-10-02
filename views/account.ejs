@@ -1,203 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: 'My Account' }) %>
+  <%- include('partials/head', { title: 'My Account — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
-    <div class="flex items-center gap-3 mb-6">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// ACCOUNT</span>
-    </div>
-    <div class="flex items-center gap-6 mb-12">
-      <% if (user.type === 'student') { %>
-        <img src="<%= user.profile_photo_url || '/avatars/avatar-1.svg' %>" alt="" class="w-20 h-20 rounded-full border border-line object-cover" />
-      <% } %>
-      <h1 class="font-display text-5xl"><%= user.name %></h1>
+  <main class="page max-w-5xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="<%= user.type === 'student' ? '/student/dashboard' : user.type === 'faculty' ? '/faculty/dashboard' : user.type === 'institutional' ? '/institutional/dashboard' : '/club' %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Dashboard
+      </a>
+      <span class="badge <%= user.type === 'faculty' ? 'badge-amber' : user.type === 'institutional' ? 'badge-blue' : 'badge-lime' %> font-mono text-[9px] uppercase">
+        <%= user.type %> ACCOUNT
+      </span>
     </div>
 
-    <% if (user.type === 'student') { %>
-      <form action="/account/photo" method="POST" enctype="multipart/form-data" class="mb-10 flex items-center gap-3">
-        <input type="file" name="profilePhoto" accept="image/*" required
-               class="text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:bg-panel file:border file:border-line file:text-fg file:cursor-pointer" />
-        <button type="submit" class="btn-outline border border-line font-semibold px-4 py-2 rounded-md text-sm">
-          Change photo
-        </button>
-      </form>
-    <% } %>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">EMAIL</span>
-        <p class="mt-2 text-sm"><%= user.email %></p>
-      </div>
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">ACCOUNT TYPE</span>
-        <p class="mt-2 text-sm capitalize"><%= user.type %></p>
+    <!-- User Profile Header -->
+    <div class="welcome-row mb-8 items-center">
+      <div class="flex items-center gap-5">
+        <% if (user.type === 'student') { %>
+          <div class="relative">
+            <img src="<%= user.profile_photo_url || '/avatars/avatar-1.svg' %>" alt="<%= user.name %>" class="w-20 h-20 rounded-2xl border-2 border-line-strong object-cover bg-surface-2" />
+            <span class="w-3.5 h-3.5 rounded-full bg-lime border-2 border-surface absolute -bottom-1 -right-1"></span>
+          </div>
+        <% } else { %>
+          <div class="avatar-lg bg-surface-2 border border-line-strong rounded-2xl flex items-center justify-center font-bold text-lg text-lime">
+            <%= user.name.slice(0, 2).toUpperCase() %>
+          </div>
+        <% } %>
+        <div>
+          <span class="overline">// ACCREDITED ID PROFILE</span>
+          <h1 class="text-3xl font-extrabold text-fg my-1"><%= user.name %></h1>
+          <p class="text-xs text-muted font-mono"><%= user.email %></p>
+        </div>
       </div>
 
       <% if (user.type === 'student') { %>
-        <% if (user.roll_number) { %>
-          <div class="stat-card border border-line rounded-lg p-5">
-            <span class="font-mono text-[11px] tracking-[0.15em] text-muted">ROLL NUMBER</span>
-            <p class="mt-2 text-sm"><%= user.roll_number %></p>
-          </div>
-        <% } %>
-        <% if (user.department) { %>
-          <div class="stat-card border border-line rounded-lg p-5">
-            <span class="font-mono text-[11px] tracking-[0.15em] text-muted">DEPARTMENT</span>
-            <p class="mt-2 text-sm"><%= user.department %><% if (user.year) { %> · Year <%= user.year %><% } %></p>
-          </div>
-        <% } %>
-        <div class="stat-card border border-line rounded-lg p-5">
-          <span class="font-mono text-[11px] tracking-[0.15em] text-muted">CREDITED HOURS</span>
-          <p class="mt-2 text-sm"><%= creditedHours %>h verified</p>
-        </div>
+        <form action="/account/photo" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+          <input type="file" name="profilePhoto" accept="image/*" required id="profilePhotoInput" class="hidden" onchange="this.form.submit()" />
+          <button type="button" onclick="document.getElementById('profilePhotoInput').click()" class="button button-quiet text-xs">
+            📷 Update Photo
+          </button>
+        </form>
       <% } %>
+    </div>
 
-      <% if (user.type === 'organizer') { %>
-        <div class="stat-card border border-line rounded-lg p-5">
-          <span class="font-mono text-[11px] tracking-[0.15em] text-muted">CLUB</span>
-          <p class="mt-2 text-sm"><%= clubName %></p>
+    <!-- Credentials & Metric Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div class="panel p-5">
+        <span class="overline text-[8px] text-muted block mb-1">ACCOUNT TYPE</span>
+        <strong class="text-sm text-fg block capitalize"><%= user.type %></strong>
+      </div>
+      <div class="panel p-5">
+        <span class="overline text-[8px] text-muted block mb-1">CONTACT EMAIL</span>
+        <strong class="text-sm text-fg block truncate" title="<%= user.email %>"><%= user.email %></strong>
+      </div>
+
+      <% if (user.type === 'student') { %>
+        <div class="panel p-5">
+          <span class="overline text-[8px] text-muted block mb-1">ROLL / PRN</span>
+          <strong class="mono text-sm text-fg block"><%= user.roll_number || 'N/A' %></strong>
         </div>
-        <div class="stat-card border border-line rounded-lg p-5">
-          <span class="font-mono text-[11px] tracking-[0.15em] text-muted">ROLE</span>
-          <p class="mt-2 text-sm"><%= user.role === 'president' ? 'President' : 'Vice President' %></p>
+        <div class="panel p-5">
+          <span class="overline text-[8px] text-muted block mb-1">TOTAL CREDITED</span>
+          <strong class="mono text-sm text-lime block"><%= creditedHours %> hrs</strong>
+        </div>
+      <% } else if (user.type === 'organizer') { %>
+        <div class="panel p-5">
+          <span class="overline text-[8px] text-muted block mb-1">CLUB</span>
+          <strong class="text-sm text-fg block truncate"><%= clubName %></strong>
+        </div>
+        <div class="panel p-5">
+          <span class="overline text-[8px] text-muted block mb-1">ROLE</span>
+          <strong class="text-sm text-fg block"><%= user.role === 'president' ? 'President' : 'Vice President' %></strong>
         </div>
       <% } %>
     </div>
 
+    <!-- Form Section -->
     <% if (user.type === 'organizer') { %>
-      <div class="mb-10 border border-line rounded-lg p-6">
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">EDIT YOUR INFO</h2>
-        <form action="/account" method="POST" class="flex flex-col gap-4 max-w-sm">
-          <input type="text" name="name" value="<%= user.name %>" placeholder="Full name"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
-          <input type="email" name="email" value="<%= user.email %>" placeholder="Email"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" required />
-          <button type="submit" class="btn-lime bg-lime text-black font-semibold px-5 py-3 rounded-md text-sm self-start">
-            Save changes
-          </button>
+      <div class="panel p-6 mb-8">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <span class="overline">// ORGANIZER INFORMATION</span>
+          <h3 class="text-sm font-bold text-fg">Update Executive Details</h3>
+        </div>
+        <form action="/account" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+          <label class="field-label">
+            FULL NAME
+            <input type="text" name="name" value="<%= user.name %>" required />
+          </label>
+          <label class="field-label">
+            OFFICIAL EMAIL
+            <input type="email" name="email" value="<%= user.email %>" required />
+          </label>
+          <div class="sm:col-span-2 pt-2">
+            <button type="submit" class="button button-primary text-xs">
+              Save Profile Changes →
+            </button>
+          </div>
         </form>
       </div>
 
-      <div class="flex flex-wrap gap-4 mb-10">
-        <a href="/club" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
-          Club
+      <div class="flex items-center gap-3 mb-10">
+        <a href="/club" class="button button-quiet text-xs text-decoration-none">
+          Manage Club &amp; Roster →
         </a>
-        <a href="/club-events" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
-          Club events
+        <a href="/club-events" class="button button-quiet text-xs text-decoration-none">
+          View Club Events &amp; Tasks →
         </a>
       </div>
     <% } %>
 
     <% if (user.type === 'student') { %>
-      <div class="mb-10 border border-line rounded-lg p-6">
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">EDIT YOUR INFO</h2>
-        <form action="/account" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
-          <input type="text" name="name" value="<%= user.name %>" placeholder="Full name" required
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime sm:col-span-2" />
-          <input type="text" name="rollNumber" value="<%= user.roll_number || '' %>" placeholder="Roll number"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
-          <input type="text" name="department" value="<%= user.department || '' %>" placeholder="Department"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
-          <input type="number" name="year" value="<%= user.year || '' %>" placeholder="Year"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
-          <input type="text" name="phone" value="<%= user.phone || '' %>" placeholder="Phone"
-                 class="px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
-          <button type="submit" class="btn-lime bg-lime text-black font-semibold px-5 py-3 rounded-md text-sm self-start sm:col-span-2">
-            Save changes
-          </button>
+      <!-- Edit Profile Card -->
+      <div class="panel p-6 mb-8">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <span class="overline">// ACADEMIC CREDENTIALS</span>
+          <h3 class="text-sm font-bold text-fg">Update Student Profile</h3>
+        </div>
+        <form action="/account" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="field-label sm:col-span-2">
+            FULL NAME
+            <input type="text" name="name" value="<%= user.name %>" required />
+          </label>
+          <label class="field-label">
+            ROLL NUMBER / PRN
+            <input type="text" name="rollNumber" value="<%= user.roll_number || '' %>" placeholder="e.g. 41151" />
+          </label>
+          <label class="field-label">
+            DEPARTMENT
+            <input type="text" name="department" value="<%= user.department || '' %>" placeholder="e.g. CE / IT / ENTC" />
+          </label>
+          <label class="field-label">
+            ACADEMIC YEAR (1-4)
+            <input type="number" name="year" value="<%= user.year || '' %>" placeholder="e.g. 2" />
+          </label>
+          <label class="field-label">
+            PHONE NUMBER
+            <input type="text" name="phone" value="<%= user.phone || '' %>" placeholder="+91..." />
+          </label>
+          <div class="sm:col-span-2 pt-2">
+            <button type="submit" class="button button-primary text-xs">
+              Save Academic Profile →
+            </button>
+          </div>
         </form>
       </div>
 
-      <div class="mb-10">
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">MY CLUBS</h2>
+      <!-- Enrolled Clubs -->
+      <div class="panel p-6 mb-8">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <span class="overline">// AFFILIATIONS</span>
+          <h3 class="text-sm font-bold text-fg">Enrolled Student Chapters &amp; Clubs</h3>
+        </div>
         <% if (clubs.length === 0) { %>
-          <p class="text-muted text-sm">You haven't joined any clubs yet.</p>
+          <p class="text-xs text-muted">You haven't joined any clubs yet.</p>
         <% } else { %>
           <div class="flex flex-wrap gap-2">
             <% clubs.forEach(function(club) { %>
-              <span class="chip-label"><%= club.name %></span>
+              <span class="badge badge-lime text-xs px-3 py-1.5"><%= club.name %></span>
             <% }); %>
           </div>
         <% } %>
       </div>
 
+      <!-- Hours by Club -->
       <% if (hoursByClub.length > 0) { %>
-        <div class="mb-10">
-          <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">HOURS BY CLUB</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="panel p-6 mb-8">
+          <div class="panel-head px-0 pt-0 pb-4 mb-4">
+            <span class="overline">// ACCREDITED LEDGER SUMMARY</span>
+            <h3 class="text-sm font-bold text-fg">Verified Hours by Club</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <% hoursByClub.forEach(function(hc) { %>
-              <div class="stat-card border border-line rounded-lg p-5">
-                <span class="font-mono text-[11px] tracking-[0.15em] text-muted"><%= hc.club_name.toUpperCase() %></span>
-                <p class="mt-2 text-sm"><%= hc.total_hours %>h verified</p>
+              <div class="panel p-4 bg-surface-2 border border-line">
+                <span class="overline text-[8px] text-muted block mb-1"><%= hc.club_name.toUpperCase() %></span>
+                <p class="mono text-lg font-bold text-lime mt-1"><%= hc.total_hours %> hrs</p>
               </div>
             <% }); %>
           </div>
         </div>
       <% } %>
 
-      <div class="mb-10">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="font-mono text-xs tracking-[0.15em] text-muted">MY HOURS</h2>
-          <span id="hours-live-status" class="font-mono text-[10px] tracking-[0.1em] text-muted"></span>
+      <!-- Live Hours Ledger -->
+      <div class="panel p-6 mb-8">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <div>
+            <span class="overline">// LIVE LOGGED TASKS</span>
+            <h3 class="text-sm font-bold text-fg">Task &amp; Volunteer Verification Log</h3>
+          </div>
+          <span id="hours-live-status" class="badge badge-green font-mono text-[8px]"></span>
         </div>
+
         <% if (hoursBreakdown.length === 0) { %>
-          <p id="hours-empty" class="text-muted text-sm">No verified hours yet — they'll show up here as soon as a team head marks a task complete for you.</p>
+          <p id="hours-empty" class="text-xs text-muted py-4">No verified volunteer task hours yet — they will appear here once confirmed by your team lead.</p>
         <% } %>
-        <div class="border border-line rounded-lg overflow-hidden overflow-x-auto <%= hoursBreakdown.length === 0 ? 'hidden' : '' %>" id="hours-table-wrap">
-          <table class="w-full text-sm">
+
+        <div class="table-wrap <%= hoursBreakdown.length === 0 ? 'hidden' : '' %>" id="hours-table-wrap">
+          <table>
             <thead>
-              <tr class="border-b border-line text-left">
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">TASK</th>
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">TEAM</th>
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">CLUB</th>
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">HOURS</th>
+              <tr>
+                <th>Task Title</th>
+                <th>Team</th>
+                <th>Club</th>
+                <th>Hours Credited</th>
               </tr>
             </thead>
             <tbody id="hours-table-body">
               <% hoursBreakdown.forEach(function(h) { %>
-                <tr class="border-b border-line last:border-b-0">
-                  <td class="px-4 py-3"><%= h.task_title %></td>
-                  <td class="px-4 py-3 text-muted"><%= h.team_name %></td>
-                  <td class="px-4 py-3 text-muted"><%= h.club_name %></td>
-                  <td class="px-4 py-3"><%= h.hours_logged %>h</td>
+                <tr>
+                  <td><strong><%= h.task_title %></strong></td>
+                  <td class="text-xs text-muted"><%= h.team_name %></td>
+                  <td class="text-xs text-muted"><%= h.club_name %></td>
+                  <td class="mono font-bold text-lime">+<%= h.hours_logged %>h</td>
                 </tr>
               <% }); %>
             </tbody>
           </table>
         </div>
       </div>
-
-      <div class="flex flex-wrap gap-4">
-        <a href="/registered-events" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
-          Registered events
-        </a>
-        <a href="/teams" class="btn-outline border border-line font-semibold px-5 py-3 rounded-md text-sm">
-          My teams
-        </a>
-      </div>
     <% } %>
 
-    <form action="/auth/logout" method="POST" class="mt-12 border-t border-line pt-8">
-      <button type="submit" class="text-xs tracking-[0.1em] text-muted hover:text-fg transition-colors">
-        LOGOUT
-      </button>
-    </form>
+    <!-- Logout -->
+    <div class="border-t border-line pt-6 flex items-center justify-between">
+      <form action="/auth/logout" method="POST">
+        <button type="submit" class="button button-quiet text-xs text-red-400 hover:text-red-300">
+          Sign Out of CampusBuzz
+        </button>
+      </form>
+      <span class="mono text-[10px] text-muted">A.Y. 2025-2026 // SPPU ACCREDITATION</span>
+    </div>
   </main>
 
   <% if (user.type === 'student') { %>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      // Live "My Hours" — the moment a team head marks a task complete for
-      // this student (see teamController.completeTask emitting
-      // 'hours:updated' to their own user:<id> room), re-fetch the fresh
-      // breakdown as JSON and prepend whatever's new — no page reload.
-      // partials/nav.ejs already loads socket.io.js/nav-live.js, but this
-      // page needs its own listener since the table only lives here.
       (function () {
         if (typeof io !== 'function') return;
         const socket = io({ withCredentials: true });
@@ -207,8 +245,8 @@
         const empty = document.getElementById('hours-empty');
         let knownIds = new Set(<%- JSON.stringify(hoursBreakdown.map((h) => h.id)) %>);
 
-        socket.on('connect', () => { status.textContent = 'LIVE'; });
-        socket.on('disconnect', () => { status.textContent = ''; });
+        socket.on('connect', () => { if (status) status.textContent = 'CONNECTED'; });
+        socket.on('disconnect', () => { if (status) status.textContent = ''; });
 
         socket.on('hours:updated', async () => {
           try {
@@ -220,22 +258,19 @@
 
             newRows.forEach((h) => knownIds.add(h.id));
             if (empty) empty.classList.add('hidden');
-            wrap.classList.remove('hidden');
+            if (wrap) wrap.classList.remove('hidden');
 
             newRows.forEach((h) => {
               const tr = document.createElement('tr');
-              tr.className = 'border-b border-line last:border-b-0';
               tr.innerHTML = `
-                <td class="px-4 py-3">${h.task_title}</td>
-                <td class="px-4 py-3 text-muted">${h.team_name}</td>
-                <td class="px-4 py-3 text-muted">${h.club_name}</td>
-                <td class="px-4 py-3">${h.hours_logged}h</td>
+                <td><strong>${h.task_title}</strong></td>
+                <td class="text-xs text-muted">${h.team_name}</td>
+                <td class="text-xs text-muted">${h.club_name}</td>
+                <td class="mono font-bold text-lime">+${h.hours_logged}h</td>
               `;
               body.insertBefore(tr, body.firstChild);
             });
-          } catch (err) {
-            // Silent — the table just stays as it was until the next event/reload.
-          }
+          } catch (err) {}
         });
       })();
     </script>

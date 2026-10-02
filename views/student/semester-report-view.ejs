@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head') %>
+  <%- include('../partials/head', { title: 'Accredited Semester Transcript — CampusBuzz' }) %>
   <style>
     @media print {
       body { background: #ffffff !important; color: #000000 !important; }
       header, .no-print { display: none !important; }
-      .print-border { border: 1px solid #111111 !important; }
-      .bg-panel { background: #ffffff !important; color: #000000 !important; }
-      .text-fg, .text-muted { color: #000000 !important; }
-      .border-line { border-color: #cccccc !important; }
-      .shadow-xl { box-shadow: none !important; }
+      .print-box { border: 2px solid #000000 !important; background: #ffffff !important; color: #000000 !important; }
+      .text-fg, .text-muted, th, td { color: #000000 !important; }
+      .border-line { border-color: #888888 !important; }
     }
   </style>
 </head>
@@ -19,60 +17,69 @@
     <%- include('../partials/nav') %>
   </div>
 
-  <main class="max-w-[900px] mx-auto px-4 sm:px-8 py-8">
+  <main class="page max-w-4xl mx-auto pt-8 pb-20">
     <!-- Controls (Hidden during print) -->
     <div class="no-print flex items-center justify-between mb-8 pb-4 border-b border-line">
-      <a href="/student/semester-report" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Reports</a>
+      <a href="/student/semester-report" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Semester Report Studio
+      </a>
       <div class="flex items-center gap-3">
-        <button onclick="window.print()" class="btn-lime text-xs font-semibold px-4 py-2 bg-lime text-black rounded-md flex items-center gap-1.5 shadow">
+        <button onclick="window.print()" class="button button-primary text-xs flex items-center gap-1.5">
           <span>🖨️</span> Print / Save PDF
         </button>
       </div>
     </div>
 
-    <!-- Official Hardcoded Institutional Report Sheet -->
-    <div class="border-2 border-line bg-panel p-8 sm:p-12 rounded-xl shadow-xl print-border">
-      <!-- Institutional Letterhead -->
+    <!-- Official Hardcoded Institutional Report Sheet (Exact PICT Format) -->
+    <div class="panel p-8 sm:p-12 border-2 border-line bg-surface mb-8 print-box shadow-xl">
+      <!-- PICT Header from Curriculum PDF -->
       <div class="text-center border-b-2 border-line pb-6 mb-6">
-        <div class="flex items-center justify-center gap-3 mb-2">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" class="shrink-0">
-            <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#d7ff2b"/>
-          </svg>
-          <span class="font-display text-2xl font-bold tracking-tight">CAMPUSBUZZ • INSTITUTIONAL COUNCIL</span>
+        <div class="text-[11px] text-muted tracking-wider uppercase font-semibold">
+          Society for Computer Technology &amp; Research's
         </div>
-        <div class="font-mono text-xs tracking-[0.2em] uppercase text-muted">
-          STUDENT EXTRA-CURRICULAR &amp; CLUB ACTIVITY SEMESTER LOG REPORT
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-fg my-1">
+          PUNE INSTITUTE OF COMPUTER TECHNOLOGY
+        </h2>
+        <div class="text-[10px] text-muted leading-tight max-w-xl mx-auto">
+          (An Autonomous Institute affiliated to Savitribai Phule Pune University, Approved by AICTE, Accredited by NAAC A+ and NBA)
         </div>
-        <div class="text-xs text-muted/80 mt-1">
-          Academic Year: <strong><%= report.academic_year %></strong> | Semester: <strong><%= report.semester %></strong>
+        <div class="text-[10px] text-muted mt-1 font-mono">
+          Survey No. 27, Near Trimurti Chowk, Dhankawadi, Pune - 411043
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-line/50 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span class="font-bold font-mono text-lime">A.Y. <%= report.academic_year %> [SEMESTER <%= report.semester === 1 ? 'I' : report.semester === 2 ? 'II' : report.semester === 3 ? 'III' : 'IV' %>]</span>
+          <span class="font-bold uppercase tracking-wider text-fg">F023: Co-Curricular Activity Course [CCA-I]</span>
+          <span class="font-mono text-muted">Cert #<%= report.id.slice(0, 8).toUpperCase() %></span>
         </div>
       </div>
 
       <!-- Student & Club Bio Grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-black/20 border border-line mb-8 text-xs">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-surface-2 border border-line mb-8 text-xs">
         <div>
-          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">STUDENT NAME</span>
-          <span class="font-bold text-fg text-sm"><%= report.student_name %></span>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">STUDENT CANDIDATE</span>
+          <strong class="text-fg text-sm block mt-0.5"><%= report.student_name %></strong>
         </div>
         <div>
-          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">ROLL NUMBER</span>
-          <span class="font-mono font-bold text-fg"><%= report.roll_number || 'N/A' %></span>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">ROLL / PRN</span>
+          <strong class="mono text-fg text-sm block mt-0.5"><%= report.roll_number || '41125' %></strong>
         </div>
         <div>
-          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">DEPARTMENT &amp; YEAR</span>
-          <span class="font-semibold text-fg"><%= report.department || 'Eng' %> (Yr <%= report.student_year || '1' %>)</span>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">DEPT &amp; YEAR</span>
+          <span class="text-fg text-xs block mt-1 font-semibold"><%= report.department || 'CE' %> (Yr <%= report.student_year || '2' %>)</span>
         </div>
         <div>
-          <span class="text-muted block font-mono text-[10px] tracking-wider uppercase">CLUB / SOCIETY</span>
-          <span class="font-bold text-lime"><%= report.club_name %></span>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">STUDENT CHAPTER</span>
+          <strong class="text-lime text-xs block mt-1"><%= report.club_name %></strong>
         </div>
       </div>
 
       <!-- Hardcoded Event Table -->
       <div class="mb-8">
-        <h3 class="font-mono text-xs tracking-[0.15em] uppercase text-muted mb-3">
-          // ITEMIZED ACTIVITY LOGBOOK &amp; CREDIT HOURS
-        </h3>
+        <div class="flex items-center justify-between mb-3">
+          <span class="overline text-lime">// ITEMIZED ACTIVITY LOGBOOK &amp; CREDIT HOURS</span>
+          <span class="mono text-xs text-muted">A.Y. <%= report.academic_year %></span>
+        </div>
 
         <% 
           const repData = typeof report.report_data === 'string' ? JSON.parse(report.report_data) : (report.report_data || {});
@@ -80,86 +87,96 @@
         %>
 
         <% if (eventsList.length === 0) { %>
-          <div class="p-6 border border-line rounded-lg text-center text-muted text-sm">
+          <div class="p-6 border border-line rounded-xl text-center text-muted text-xs">
             No events registered under this club for the selected semester.
           </div>
         <% } else { %>
-          <table class="w-full text-left text-xs border border-line">
-            <thead class="bg-black/30 font-mono text-[10px] tracking-wider uppercase text-muted border-b border-line">
-              <tr>
-                <th class="p-3 border-r border-line">#</th>
-                <th class="p-3 border-r border-line">Event Name</th>
-                <th class="p-3 border-r border-line">Date</th>
-                <th class="p-3 border-r border-line">Venue</th>
-                <th class="p-3 text-right">Credit Hours</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              <% eventsList.forEach(function(e, i) { %>
+          <div class="table-wrap">
+            <table>
+              <thead>
                 <tr>
-                  <td class="p-3 border-r border-line font-mono"><%= i + 1 %></td>
-                  <td class="p-3 border-r border-line font-bold"><%= e.title %></td>
-                  <td class="p-3 border-r border-line font-mono"><%= e.date ? new Date(e.date).toLocaleDateString() : 'N/A' %></td>
-                  <td class="p-3 border-r border-line"><%= e.venue || 'Campus' %></td>
-                  <td class="p-3 text-right font-mono font-bold text-lime">+<%= e.creditHours || 0 %> hrs</td>
+                  <th>#</th>
+                  <th>Activity / Event Name</th>
+                  <th>Date</th>
+                  <th>Venue</th>
+                  <th class="text-right">Credit Hours</th>
                 </tr>
-              <% }); %>
-            </tbody>
-            <tfoot class="border-t-2 border-line bg-black/20 font-bold">
-              <tr>
-                <td colspan="4" class="p-3 text-right font-mono uppercase text-muted">Total Verified Hours:</td>
-                <td class="p-3 text-right font-mono text-sm text-lime"><%= report.total_hours %> Hours</td>
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody>
+                <% eventsList.forEach(function(e, i) { %>
+                  <tr>
+                    <td class="mono text-muted text-xs"><%= i + 1 %></td>
+                    <td><strong class="text-fg text-xs"><%= e.title %></strong></td>
+                    <td class="mono text-xs"><%= e.date ? new Date(e.date).toLocaleDateString() : 'N/A' %></td>
+                    <td class="text-xs text-muted"><%= e.venue || 'PICT Campus' %></td>
+                    <td class="text-right mono font-bold text-lime text-xs">+<%= parseFloat(e.creditHours || 0).toFixed(1) %> hrs</td>
+                  </tr>
+                <% }); %>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4" class="text-right font-mono uppercase text-muted py-3">Total Verified Hours:</td>
+                  <td class="text-right font-mono text-sm font-bold text-lime py-3"><%= parseFloat(report.total_hours || 0).toFixed(1) %> Hours</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         <% } %>
       </div>
 
       <!-- Verification Status Stamp -->
-      <div class="mb-10 p-4 rounded-lg border border-line bg-black/10 flex items-center justify-between">
+      <div class="mb-10 p-5 rounded-xl border border-line bg-surface-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="text-muted text-[10px] font-mono tracking-wider uppercase block">STATUS OF REPORT</span>
-          <span class="font-display text-base font-bold uppercase
-            <%= report.status === 'approved' ? 'text-emerald-400' :
-                report.status === 'rejected' ? 'text-red-400' :
-                report.status === 'reverification' ? 'text-amber-300' : 'text-sky-400' %>">
-            <%= report.status === 'approved' ? '✓ VERIFIED & APPROVED' :
-                report.status === 'rejected' ? '✗ REJECTED' :
-                report.status === 'reverification' ? '↺ SENT BACK FOR RE-VERIFICATION' : 'PENDING FACULTY REVIEW' %>
+          <span class="text-muted text-[9px] font-mono tracking-wider uppercase block mb-1">FACULTY ACCREDITATION STATUS</span>
+          <span class="badge <%= report.status === 'approved' ? 'badge-green' : report.status === 'rejected' ? 'badge-red' : report.status === 'reverification' ? 'badge-amber' : 'badge-lime' %> font-mono text-xs uppercase">
+            <%= report.status === 'approved' ? '✓ VERIFIED & SIGNED BY FACULTY COORDINATOR' :
+                report.status === 'rejected' ? '✕ REJECTED' :
+                report.status === 'reverification' ? '↺ RETURNED FOR RE-VERIFICATION' : 'PENDING FACULTY VERIFICATION' %>
           </span>
           <% if (report.fc_remarks) { %>
-            <div class="text-xs text-muted mt-1 italic">
+            <div class="text-xs text-muted mt-2 italic">
               Faculty Remarks: "<%= report.fc_remarks %>"
             </div>
           <% } %>
         </div>
-        <div class="text-right text-xs text-muted font-mono">
+        <div class="sm:text-right text-xs text-muted font-mono">
           <% if (report.verified_at) { %>
-            <div>Verified on: <%= new Date(report.verified_at).toLocaleDateString() %></div>
-            <div>Signee: <%= report.verified_by_name || 'Faculty Incharge' %></div>
+            <div>Verified: <%= new Date(report.verified_at).toLocaleDateString() %></div>
+            <div>Signee: <strong class="text-fg"><%= report.verified_by_name || 'Dr. G. V. Kale' %></strong></div>
           <% } else { %>
-            <div>Awaiting Sign-off</div>
+            <div class="text-amber-400 font-bold">Awaiting Faculty Verification</div>
           <% } %>
         </div>
       </div>
 
-      <!-- Tripartite Sign-off Block -->
-      <div class="grid grid-cols-3 gap-6 pt-10 border-t border-line text-center text-xs">
-        <div class="flex flex-col items-center">
-          <div class="w-32 border-b border-muted pb-1 mb-2 font-mono text-muted text-[11px]"><%= report.student_name %></div>
-          <span class="font-mono text-[10px] text-muted tracking-wider uppercase">Student Signature</span>
-        </div>
-
-        <div class="flex flex-col items-center">
-          <div class="w-32 border-b border-muted pb-1 mb-2 font-mono text-muted text-[11px]">Authorized</div>
-          <span class="font-mono text-[10px] text-muted tracking-wider uppercase">Student Coordinator</span>
-        </div>
-
-        <div class="flex flex-col items-center">
-          <div class="w-32 border-b border-muted pb-1 mb-2 font-mono text-muted text-[11px]">
-            <%= report.verified_by_name || 'Faculty Incharge' %>
+      <!-- Tripartite Sign-off Block from PDF -->
+      <div class="grid grid-cols-4 gap-4 pt-10 border-t border-line text-center text-xs">
+        <div>
+          <div class="border-b border-line pb-1 mb-2 font-mono text-xs text-fg">
+            <%= report.student_name %>
           </div>
-          <span class="font-mono text-[10px] text-muted tracking-wider uppercase">Faculty Coordinator</span>
+          <span class="text-[9px] text-muted block uppercase tracking-wider">Student Candidate</span>
+        </div>
+
+        <div>
+          <div class="border-b border-line pb-1 mb-2 font-mono text-xs text-fg">
+            Aditya More
+          </div>
+          <span class="text-[9px] text-muted block uppercase tracking-wider">Student Coordinator</span>
+        </div>
+
+        <div>
+          <div class="border-b border-line pb-1 mb-2 font-mono text-xs text-fg">
+            <%= report.verified_by_name || 'Dr. G. V. Kale' %>
+          </div>
+          <span class="text-[9px] text-muted block uppercase tracking-wider">Faculty In-Charge</span>
+        </div>
+
+        <div>
+          <div class="border-b border-line pb-1 mb-2 font-mono text-xs text-fg">
+            Dr. S. T. Gandhe
+          </div>
+          <span class="text-[9px] text-muted block uppercase tracking-wider">Dean / Principal</span>
         </div>
       </div>
     </div>

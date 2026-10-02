@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: club.name + ' — Official Accreditation Report' }) %>
+  <style>
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; font-size: 11px !important; }
+      header, .no-print, nav { display: none !important; }
+      .page { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      .panel { background: #ffffff !important; border: 1px solid #cccccc !important; box-shadow: none !important; color: #000000 !important; margin-bottom: 1.5rem !important; break-inside: avoid; }
+      .panel-head { border-bottom: 1px solid #cccccc !important; }
+      table { border-collapse: collapse !important; width: 100% !important; }
+      th, td { border: 1px solid #e0e0e0 !important; color: #000000 !important; padding: 6px 10px !important; }
+      th { background: #f5f5f5 !important; font-weight: bold !important; }
+      .text-fg, .text-muted, .mono { color: #000000 !important; }
+      .badge { border: 1px solid #666666 !important; color: #000000 !important; background: transparent !important; }
+      .badge-lime, .badge-green { color: #000000 !important; border-color: #000000 !important; }
+      .text-lime { color: #000000 !important; font-weight: bold !important; }
+      .print-signatures { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; margin-top: 40px !important; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <div class="no-print">
+    <%- include('../partials/nav') %>
+  </div>
+
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
+    <!-- Top Action Navigation -->
+    <div class="no-print mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <a href="/institutional/clubs/<%= club.id %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+          ← Back to <%= club.name %> Dossier
+        </a>
+        <span class="text-line">•</span>
+        <a href="/institutional/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+          All Clubs
+        </a>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="window.print()" class="button button-primary text-xs font-bold flex items-center gap-2">
+          <span>🖨️</span> Print / Save Accredited PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Club Selector Toolbar (No-Print) -->
+    <div class="no-print panel p-6 mb-8 bg-surface-2 border border-line">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-line/60">
+        <div>
+          <span class="overline text-[9px] text-lime">// INSTITUTIONAL ACCREDITATION DESK</span>
+          <h2 class="text-lg font-bold text-fg">Institutional Activity Report Generator</h2>
+        </div>
+        <span class="badge badge-lime font-mono text-[8px]">PICT AUTONOMOUS COUNCIL</span>
+      </div>
+
+      <form method="GET" action="/institutional/clubs/<%= club.id %>/report" id="report-filter-form" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+        <div>
+          <label class="field-label mb-1.5">
+            SELECT STUDENT BODY
+            <select onchange="window.location.href='/institutional/clubs/' + this.value + '/report'" class="bg-surface border border-line text-xs py-2.5">
+              <% allClubs.forEach(function(c) { %>
+                <option value="<%= c.id %>" <%= c.id === club.id ? 'selected' : '' %>><%= c.name %></option>
+              <% }); %>
+            </select>
+          </label>
+        </div>
+
+        <div>
+          <label class="field-label mb-1.5">
+            REPORT TIMEFRAME
+            <select name="timeframe" id="tf-select" onchange="updateTimeframeFields()" class="bg-surface border border-line text-xs py-2.5">
+              <option value="all" <%= timeframe === 'all' ? 'selected' : '' %>>All-Time Comprehensive Dossier</option>
+              <option value="yearly" <%= timeframe === 'yearly' ? 'selected' : '' %>>Academic Year Dossier</option>
+              <option value="monthly" <%= timeframe === 'monthly' ? 'selected' : '' %>>Calendar Month</option>
+              <option value="weekly" <%= timeframe === 'weekly' ? 'selected' : '' %>>Weekly Snapshot (Last 7 Days)</option>
+              <option value="event" <%= timeframe === 'event' ? 'selected' : '' %>>Individual Event Roster</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="year-field" style="<%= (timeframe === 'yearly' || timeframe === 'monthly') ? '' : 'display: none;' %>">
+          <label class="field-label mb-1.5">
+            YEAR
+            <select name="year" class="bg-surface border border-line text-xs py-2.5">
+              <option value="2026" <%= String(year) === '2026' ? 'selected' : '' %>>2026</option>
+              <option value="2025" <%= String(year) === '2025' ? 'selected' : '' %>>2025</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="month-field" style="<%= timeframe === 'monthly' ? '' : 'display: none;' %>">
+          <label class="field-label mb-1.5">
+            MONTH
+            <select name="month" class="bg-surface border border-line text-xs py-2.5">
+              <% const months = ['January','February','March','April','May','June','July','August','September','October','November','December']; %>
+              <% months.forEach(function(m, idx) { %>
+                <option value="<%= idx + 1 %>" <%= Number(month) === (idx + 1) ? 'selected' : '' %>><%= m %></option>
+              <% }); %>
+            </select>
+          </label>
+        </div>
+
+        <div id="event-field" style="<%= timeframe === 'event' ? '' : 'display: none;' %>">
+          <label class="field-label mb-1.5">
+            SELECT EVENT
+            <select name="eventId" class="bg-surface border border-line text-xs py-2.5">
+              <% (allEvents || []).forEach(function(ev) { %>
+                <option value="<%= ev.id %>" <%= eventId === ev.id ? 'selected' : '' %>><%= ev.title %></option>
+              <% }); %>
+            </select>
+          </label>
+        </div>
+
+        <div>
+          <button type="submit" class="button button-primary w-full text-xs font-bold py-2.5">
+            Generate Report →
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Official Report Document (Visible in Browser & Printable) -->
+    <div class="panel p-8 sm:p-10 mb-8 border border-line shadow-2xl bg-surface">
+      <!-- Institutional Letterhead -->
+      <div class="border-b-2 border-line pb-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+        <div class="flex items-center gap-5">
+          <span class="club-insignia" style="width: 58px; height: 58px; font-size: 18px;">
+            <%= club.name.substring(0, 2).toUpperCase() %>
+          </span>
+          <div>
+            <div class="text-[10px] tracking-widest uppercase font-mono text-muted">SOCIETY FOR COMPUTER TECHNOLOGY AND RESEARCH'S</div>
+            <h1 class="text-xl sm:text-2xl font-black text-fg tracking-tight">PUNE INSTITUTE OF COMPUTER TECHNOLOGY</h1>
+            <p class="text-xs text-muted">Affiliated to SPPU • Accredited by NAAC (A+ Grade) &amp; NBA • Pune, Maharashtra</p>
+          </div>
+        </div>
+
+        <div class="text-right sm:border-l border-line sm:pl-6">
+          <span class="badge badge-lime font-mono text-[9px] mb-1.5 inline-block">AUDITED BY INSTITUTION</span>
+          <div class="text-[11px] mono text-fg font-bold">DOC: PICT/STU/ACC/<%= new Date().getFullYear() %></div>
+          <div class="text-[10px] mono text-muted">Issued: <%= new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></div>
+        </div>
+      </div>
+
+      <!-- Report Subject & Organization Identity -->
+      <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl bg-surface-2 border border-line">
+        <div>
+          <span class="overline text-[9px]">// ACCREDITED ACTIVITY &amp; ATTENDANCE DOSSIER</span>
+          <h2 class="text-2xl font-extrabold text-fg mt-0.5"><%= club.name %></h2>
+          <p class="text-xs text-muted mt-1">
+            Academic Mentor: <strong class="text-fg"><%= club.faculty_name || 'Dr. G. V. Kale' %></strong> 
+            (<%= club.faculty_designation || 'Faculty In-Charge' %>, <%= club.faculty_department || 'CE' %>) • 
+            Official Contact: <span class="mono text-lime"><%= club.faculty_email || 'fc.acm@pict.edu' %></span>
+          </p>
+        </div>
+
+        <div class="text-left md:text-right">
+          <span class="badge badge-green font-mono text-[8px] uppercase">
+            Scope: <%= timeframe.toUpperCase() %> REPORT <%= (timeframe === 'yearly' || timeframe === 'monthly') ? year : '' %>
+          </span>
+          <div class="text-[11px] text-muted mt-1 font-mono">
+            Generated by: <strong class="text-fg"><%= admin.name %></strong> (Institutional Coordinator)
+          </div>
+        </div>
+      </div>
+
+      <!-- Executive Metrics Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+          <span class="text-muted block text-[10px] font-mono uppercase tracking-wider">CONVENTIONAL EVENTS</span>
+          <span class="text-2xl sm:text-3xl font-black text-lime mono"><%= totalEvents %></span>
+          <span class="text-[9px] text-muted block mt-0.5">Faculty Approved</span>
+        </div>
+
+        <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+          <span class="text-muted block text-[10px] font-mono uppercase tracking-wider">STUDENT ATTENDEES</span>
+          <span class="text-2xl sm:text-3xl font-black text-fg mono"><%= totalAttendees %></span>
+          <span class="text-[9px] text-muted block mt-0.5">Verified Geofenced QR</span>
+        </div>
+
+        <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+          <span class="text-muted block text-[10px] font-mono uppercase tracking-wider">ACCREDITED HOURS</span>
+          <span class="text-2xl sm:text-3xl font-black text-emerald-400 mono">+<%= totalHoursGranted.toFixed(1) %></span>
+          <span class="text-[9px] text-muted block mt-0.5">Autonomous Credits</span>
+        </div>
+
+        <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+          <span class="text-muted block text-[10px] font-mono uppercase tracking-wider">UNIQUE PARTICIPANTS</span>
+          <span class="text-2xl sm:text-3xl font-black text-amber-400 mono"><%= uniqueStudentsCount %></span>
+          <span class="text-[9px] text-muted block mt-0.5">Autonomous Cohort</span>
+        </div>
+      </div>
+
+      <!-- Detailed Event-by-Event Roster -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-line">
+          <div>
+            <span class="overline text-[9px]">// AUDITED SESSIONS &amp; WORKSHOPS</span>
+            <h3 class="text-base font-bold text-fg">Activity Roster &amp; Verified Attendees</h3>
+          </div>
+          <span class="badge badge-lime font-mono text-[8px]"><%= reportData.length %> SESSIONS RECORDED</span>
+        </div>
+
+        <% if (reportData.length === 0) { %>
+          <div class="p-8 text-center text-muted text-xs border border-line rounded-xl">
+            No activity records found matching this timeframe filter.
+          </div>
+        <% } else { %>
+          <div class="space-y-6">
+            <% reportData.forEach(function(ev, evIdx) { %>
+              <div class="panel p-5 bg-surface-2 border border-line rounded-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-3 border-b border-line/60">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="mono font-bold text-muted text-xs">#<%= evIdx + 1 %></span>
+                      <h4 class="text-sm font-bold text-fg"><%= ev.title %></h4>
+                      <span class="badge badge-green font-mono text-[7px]">APPROVED</span>
+                    </div>
+                    <p class="text-xs text-muted mt-0.5">
+                      Date: <strong class="text-fg mono"><%= new Date(ev.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></strong> • 
+                      Venue: <span class="text-fg"><%= ev.venue || 'PICT Campus' %></span> • 
+                      Accredited Weight: <strong class="text-lime mono">+<%= parseFloat(ev.credit_hours || 4).toFixed(1) %> hrs</strong>
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    <span class="mono text-xs font-bold text-fg"><%= ev.attendees ? ev.attendees.length : 0 %> Attendees Verified</span>
+                  </div>
+                </div>
+
+                <!-- Attendee List Table -->
+                <% if (!ev.attendees || ev.attendees.length === 0) { %>
+                  <div class="p-3 text-center text-muted text-xs">
+                    No students checked in for this activity.
+                  </div>
+                <% } else { %>
+                  <div class="table-wrap">
+                    <table class="w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th style="width: 40px;">#</th>
+                          <th>Roll Number</th>
+                          <th>Student Name</th>
+                          <th>Institutional Email</th>
+                          <th>Dept &amp; Year</th>
+                          <th>Check-In Timestamp</th>
+                          <th class="text-right">Hours Granted</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% ev.attendees.forEach(function(att, aIdx) { %>
+                          <tr>
+                            <td class="mono font-bold text-muted"><%= aIdx + 1 %></td>
+                            <td class="mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
+                            <td>
+                              <a href="/institutional/clubs/<%= club.id %>/members/<%= att.student_id %>" class="text-fg hover:text-lime font-bold text-decoration-none">
+                                <%= att.student_name %>
+                              </a>
+                            </td>
+                            <td class="mono text-muted text-[11px]"><%= att.email %></td>
+                            <td class="text-muted"><%= att.department || 'CE' %> (Yr <%= att.year || '2' %>)</td>
+                            <td class="mono text-muted text-[11px]"><%= new Date(att.checked_in_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %></td>
+                            <td class="mono font-bold text-lime text-right">+<%= parseFloat(att.credit_hours || ev.credit_hours || 4).toFixed(1) %> hrs</td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% } %>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Institutional Audit Signatures -->
+      <div class="pt-8 border-t-2 border-line print-signatures grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+        <div class="p-4 rounded-xl border border-line/60">
+          <div class="h-12 border-b border-dashed border-line mb-2 flex items-center justify-center">
+            <span class="mono text-[11px] text-lime">Digitally Verified</span>
+          </div>
+          <strong class="text-xs text-fg block"><%= club.faculty_name || 'Dr. G. V. Kale' %></strong>
+          <span class="text-[10px] text-muted font-mono block">Faculty In-Charge, <%= club.name %></span>
+        </div>
+
+        <div class="p-4 rounded-xl border border-line/60">
+          <div class="h-12 border-b border-dashed border-line mb-2 flex items-center justify-center">
+            <span class="mono text-[11px] text-lime">Roster Confirmed</span>
+          </div>
+          <strong class="text-xs text-fg block"><%= club.student_coordinators && club.student_coordinators[0] ? club.student_coordinators[0].student_name : 'Student Chapter Chair' %></strong>
+          <span class="text-[10px] text-muted font-mono block">Student Coordinator Lead</span>
+        </div>
+
+        <div class="p-4 rounded-xl border border-line/60">
+          <div class="h-12 border-b border-dashed border-line mb-2 flex items-center justify-center">
+            <span class="mono text-[11px] text-lime">Accredited by Council</span>
+          </div>
+          <strong class="text-xs text-fg block"><%= admin.name %></strong>
+          <span class="text-[10px] text-muted font-mono block">Dean (Student Affairs) / Inst. Coordinator</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function updateTimeframeFields() {
+      const tf = document.getElementById('tf-select').value;
+      const yf = document.getElementById('year-field');
+      const mf = document.getElementById('month-field');
+      const ef = document.getElementById('event-field');
+
+      yf.style.display = (tf === 'yearly' || tf === 'monthly') ? 'block' : 'none';
+      mf.style.display = (tf === 'monthly') ? 'block' : 'none';
+      ef.style.display = (tf === 'event') ? 'block' : 'none';
+    }
+  </script>
+</body>
+</html>

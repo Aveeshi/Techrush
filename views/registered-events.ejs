@@ -1,60 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: 'Registered Events' }) %>
+  <%- include('partials/head', { title: 'Registered Events — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
-    <div class="flex items-center gap-3 mb-6">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// STUDENT · ATTENDEE</span>
-    </div>
-    <h1 class="font-display text-5xl mb-12">Registered events</h1>
+  <main class="page">
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline">// STUDENT ATTENDANCE &amp; PASSES</span>
+        <h1>Registered Events</h1>
+        <p>Your upcoming and attended event passes with verified check-in status.</p>
+      </div>
+
+      <a href="/events" class="button button-primary text-decoration-none">
+        + Browse More Events
+      </a>
+    </section>
 
     <% if (registrations.length === 0) { %>
-      <p class="text-muted">You haven't registered as an attendee for any event yet.</p>
-      <a href="/events" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md mt-6">
-        Browse events
-      </a>
-    <% } %>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <% registrations.forEach(function(reg) { %>
-        <a href="<%= reg.sub_event_id ? '/events/' + reg.parent_event_id + '/sub-events/' + reg.sub_event_id : '/events/' + reg.parent_event_id %>" class="event-card block border border-line rounded-lg overflow-hidden">
-          <div class="h-44 bg-panel">
-            <% if (reg.banner_url) { %>
-              <img src="<%= reg.banner_url %>" alt="" class="w-full h-full object-cover" />
-            <% } %>
-          </div>
-          <div class="p-6">
-            <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-              <%= (reg.event_type_name || 'EVENT').toUpperCase() %>
-            </span>
-            <h3 class="font-display text-xl mb-1"><%= reg.title %></h3>
-            <p class="text-muted text-sm mb-4"><%= reg.club_name %></p>
-
-            <div class="space-y-1.5 text-sm text-muted mb-5">
-              <div class="flex items-center gap-2">
-                <span class="font-mono">📅</span>
-                <%= new Date(reg.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %>
-              </div>
-              <% if (reg.venue) { %>
-                <div class="flex items-center gap-2">
-                  <span class="font-mono">📍</span>
-                  <%= reg.venue %>
+      <article class="panel p-12 text-center text-muted">
+        <p class="text-base mb-4">You have not registered for any events yet.</p>
+        <a href="/events" class="button button-primary text-decoration-none">
+          Explore Upcoming Campus Events →
+        </a>
+      </article>
+    <% } else { %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% registrations.forEach(function(reg) { %>
+          <% 
+            const evDate = new Date(reg.start_time);
+            const dayNum = String(evDate.getDate()).padStart(2, '0');
+            const monthStr = evDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+          %>
+          <article class="panel flex flex-col justify-between overflow-hidden group hover:border-lime/40 transition-all">
+            <div class="h-40 bg-surface-2 relative overflow-hidden border-b border-line">
+              <% if (reg.banner_url) { %>
+                <img src="<%= reg.banner_url %>" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              <% } else { %>
+                <div class="w-full h-full flex flex-col justify-center items-center p-6 bg-gradient-to-br from-surface-3 to-surface">
+                  <span class="text-2xl mb-1">🎫</span>
+                  <span class="font-mono text-[10px] text-muted tracking-widest uppercase">EVENT PASS</span>
                 </div>
               <% } %>
+
+              <div class="date-tile absolute top-3 left-3 shadow-lg">
+                <strong><%= dayNum %></strong>
+                <small><%= monthStr %></small>
+              </div>
+
+              <div class="absolute top-3 right-3">
+                <span class="badge <%= reg.status === 'checked_in' ? 'badge-green' : 'badge-lime' %> font-mono text-[9px] shadow-lg">
+                  <%= reg.status.toUpperCase() %>
+                </span>
+              </div>
             </div>
 
-            <span class="font-mono text-xs tracking-[0.1em] text-lime">
-              STATUS: <%= reg.status.toUpperCase() %>
-            </span>
-          </div>
-        </a>
-      <% }); %>
-    </div>
+            <div class="p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <span class="badge badge-lime text-[8px] mb-2 inline-block">
+                  <%= reg.club_name || 'STUDENT CLUB' %>
+                </span>
+                <h3 class="text-base font-bold text-fg mb-2 leading-snug group-hover:text-lime transition-colors">
+                  <%= reg.title %>
+                </h3>
+
+                <div class="space-y-1 text-xs text-muted mb-4">
+                  <div>📍 <%= reg.venue || 'Campus Auditorium' %></div>
+                  <div class="mono text-[11px]">🕒 <%= evDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %></div>
+                </div>
+              </div>
+
+              <a href="<%= reg.sub_event_id ? '/events/' + reg.parent_event_id + '/sub-events/' + reg.sub_event_id : '/events/' + reg.parent_event_id %>"
+                 class="button button-quiet w-full text-center text-xs font-bold text-decoration-none group-hover:border-lime group-hover:text-lime transition-colors">
+                View Event Pass &amp; QR →
+              </a>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
   </main>
 </body>
 </html>

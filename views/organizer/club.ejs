@@ -1,103 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head', { title: club.name + ' · Club' }) %>
+  <%- include('../partials/head', { title: club.name + ' — Club Hub' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
-    <div class="flex items-center gap-3 mb-6">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// ORGANIZER · CLUB</span>
+  <main class="page max-w-5xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/events" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Events
+      </a>
+      <span class="badge badge-lime font-mono text-[9px]">ORGANIZER DESK</span>
     </div>
 
     <% if (uploaded) { %>
-      <div class="border border-lime/40 bg-lime/5 text-lime px-4 py-3 rounded-md mb-6 text-sm">
-        Roster updated — <%= roster.length %> member<%= roster.length === 1 ? '' : 's' %> on file.
+      <div class="panel p-4 mb-6 bg-lime/10 border border-lime/40 text-lime text-xs flex items-center gap-2">
+        <span class="font-bold">✓</span> Roster updated — <%= roster.length %> member<%= roster.length === 1 ? '' : 's' %> on file.
       </div>
     <% } %>
 
-    <div class="flex items-start gap-5 mb-10">
-      <div class="w-20 h-20 rounded-lg bg-panel border border-line shrink-0 overflow-hidden">
-        <% if (club.logo_url) { %>
-          <img src="<%= club.logo_url %>" alt="" class="w-full h-full object-cover" />
-        <% } %>
+    <!-- Club Overview Header -->
+    <div class="welcome-row mb-8 items-start">
+      <div class="flex items-start gap-5">
+        <div class="w-20 h-20 rounded-2xl bg-surface-2 border border-line shrink-0 overflow-hidden flex items-center justify-center">
+          <% if (club.logo_url) { %>
+            <img src="<%= club.logo_url %>" alt="<%= club.name %>" class="w-full h-full object-cover" />
+          <% } else { %>
+            <span class="font-display font-extrabold text-2xl text-lime"><%= club.name.slice(0, 2).toUpperCase() %></span>
+          <% } %>
+        </div>
+        <div>
+          <span class="overline text-lime">// ACCREDITED CHAPTER PROFILE</span>
+          <h1 class="text-3xl font-extrabold text-fg my-1"><%= club.name %></h1>
+          <p class="text-xs text-muted leading-relaxed max-w-xl"><%= club.description || 'No institutional description provided.' %></p>
+        </div>
       </div>
-      <div>
-        <h1 class="font-display text-4xl mb-2"><%= club.name %></h1>
-        <p class="text-muted leading-relaxed"><%= club.description || 'No description yet.' %></p>
+
+      <div class="flex items-center gap-3">
+        <a href="/club-events/new" class="button button-primary text-xs text-decoration-none font-bold">
+          + New Event Proposal
+        </a>
       </div>
     </div>
 
-    <!-- Roster upload -->
-    <div class="border border-line rounded-lg p-6 mb-10">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-1">MEMBER ROSTER</h2>
-      <p class="text-muted text-sm mb-4">
-        Upload an .xlsx with <span class="text-fg">Name</span> and
-        <span class="text-fg">Email</span> columns. Every upload
-        <span class="text-fg">replaces</span> the current roster — this is
-        what verifies who's actually allowed to join <%= club.name %> when
-        they sign up (no more self-declared club checkboxes).
+    <!-- Member Roster Upload Panel -->
+    <div class="panel p-6 mb-8">
+      <div class="panel-head px-0 pt-0 pb-4 mb-4">
+        <div>
+          <span class="overline">// VERIFIED ENROLLMENT</span>
+          <h3 class="text-base font-bold text-fg">Member Roster Upload</h3>
+        </div>
+        <span class="badge badge-neutral text-[9px] font-mono"><%= roster.length %> Verified Members</span>
+      </div>
+
+      <p class="text-xs text-muted mb-5 leading-relaxed">
+        Upload an .xlsx or .xls file containing <strong class="text-fg">Name</strong> and <strong class="text-fg">Email</strong> columns. Every upload validates membership eligibility when students register for events or access logbook records.
       </p>
-      <form action="/club/roster" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+
+      <form action="/club/roster" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3 mb-6">
         <input type="file" name="roster" accept=".xlsx,.xls" required
-               class="text-sm text-muted file:mr-3 file:py-2 file:px-4 file:rounded-md file:border file:border-line file:bg-panel file:text-fg file:text-sm file:font-medium file:cursor-pointer" />
-        <button type="submit" class="btn-lime bg-lime text-black font-semibold px-5 py-2.5 rounded-md text-sm">
-          Upload / replace roster
+               class="text-xs text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-line file:bg-surface-2 file:text-fg file:text-xs file:font-semibold file:cursor-pointer" />
+        <button type="submit" class="button button-quiet text-xs font-bold">
+          Upload / Replace Roster
         </button>
       </form>
     </div>
 
-    <!-- CCA Activity Logbook toggle -->
-    <div class="border border-line rounded-lg p-6 mb-10">
-      <div class="flex items-center justify-between gap-4">
+    <!-- CCA Logbook Feature Panel -->
+    <div class="panel p-6 mb-8 bg-surface-2 border border-line">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-1">ACTIVITY LOGBOOK</h2>
-          <p class="text-muted text-sm">
-            When on, every member of <%= club.name %> gets a "Generate Logbook"
-            option on their dashboard — an auto-filled CCA Activity Logbook
-            (.docx) built from their verified task hours and event check-ins
-            under this club.
+          <span class="badge badge-lime text-[8px] font-mono mb-1">COURSE F023 CCA-I</span>
+          <h3 class="text-base font-bold text-fg">Institutional Activity Logbook Engine</h3>
+          <p class="text-xs text-muted mt-1 max-w-xl">
+            When enabled, student members can generate pre-filled Co-Curricular Activity Logbook (.docx) dossiers from their verified event check-in stamps and logged task hours.
           </p>
         </div>
-        <form action="/club/logbook-toggle" method="POST" class="shrink-0">
-          <input type="hidden" name="enabled" value="<%= club.logbook_enabled ? '0' : '1' %>" />
-          <button
-            type="submit"
-            aria-pressed="<%= club.logbook_enabled ? 'true' : 'false' %>"
-            class="relative inline-flex items-center h-7 w-14 rounded-full transition-colors <%= club.logbook_enabled ? 'bg-lime' : 'bg-panel border border-line' %>"
-          >
-            <span class="inline-block h-5 w-5 transform rounded-full bg-black transition-transform <%= club.logbook_enabled ? 'translate-x-8 bg-black' : 'translate-x-1 bg-muted' %>"></span>
+
+        <form action="/club/logbook-toggle" method="POST">
+          <input type="hidden" name="enabled" value="<%= club.logbook_enabled ? 'false' : 'true' %>" />
+          <button type="submit" class="button <%= club.logbook_enabled ? 'button-green' : 'button-quiet' %> text-xs font-bold">
+            <%= club.logbook_enabled ? '✓ Enabled for Members' : 'Enable Logbook' %>
           </button>
         </form>
       </div>
-      <p class="font-mono text-[11px] tracking-[0.1em] mt-3 <%= club.logbook_enabled ? 'text-lime' : 'text-muted' %>">
-        <%= club.logbook_enabled ? 'ENABLED — GENERATE LOGBOOK IS LIVE FOR MEMBERS' : 'DISABLED' %>
-      </p>
     </div>
 
-    <!-- Members (from club_members — reconciled from the roster automatically) -->
-    <div>
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">
-        CLUB MEMBERS (<%= members.length %>)
-      </h2>
-      <% if (members.length === 0) { %>
-        <p class="text-muted text-sm">
-          No members yet — once you upload a roster, anyone on it with an
-          existing account joins automatically, and anyone who signs up
-          later using a rostered email joins on signup.
-        </p>
-      <% } else { %>
-        <div class="border border-line rounded-lg divide-y divide-line">
-          <% members.forEach(function(m) { %>
-            <div class="flex items-center justify-between px-5 py-3 text-sm">
-              <span><%= m.name %></span>
-              <span class="text-muted"><%= m.email %></span>
-            </div>
-          <% }); %>
-        </div>
-      <% } %>
+    <div class="flex items-center gap-3">
+      <a href="/club-events" class="button button-quiet text-xs text-decoration-none">
+        Manage All Club Events →
+      </a>
+      <a href="/events" class="button button-quiet text-xs text-decoration-none">
+        View Public Event Directory →
+      </a>
     </div>
   </main>
 </body>

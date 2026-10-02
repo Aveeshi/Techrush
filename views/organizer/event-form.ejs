@@ -3,33 +3,39 @@
 <head>
   <%-
     include('../partials/head', {
-      title: (mode === 'create' ? 'New ' : 'Edit ') + (containerType === 'sub_event' ? 'Sub-Event' : 'Event')
+      title: (mode === 'create' ? 'New ' : 'Edit ') + (containerType === 'sub_event' ? 'Sub-Event' : 'Event') + ' — CampusBuzz'
     })
   %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-2xl mx-auto px-8 pt-16 pb-20">
-    <a href="<%= parentEvent ? `/club-events/${parentEvent.id}` : '/club-events' %>"
-       class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">
-      ← BACK
-    </a>
-
-    <div class="mt-6 mb-10">
-      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-        <%= containerType === 'sub_event' ? 'SUB-EVENT' : 'EVENT' %>
+  <main class="page max-w-3xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="<%= parentEvent ? `/club-events/${parentEvent.id}` : '/club-events' %>"
+         class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← BACK TO <%= parentEvent ? 'PARENT EVENT' : 'CLUB EVENTS' %>
+      </a>
+      <span class="badge badge-lime font-mono text-[9px]">
+        <%= containerType === 'sub_event' ? 'SUB-TRACK FORM' : 'FLAGSHIP EVENT FORM' %>
       </span>
-      <h1 class="font-display text-4xl mb-2">
-        <%= mode === 'create' ? 'Create' : 'Edit' %> <%= containerType === 'sub_event' ? 'sub-event' : 'event' %>
-      </h1>
-      <% if (parentEvent) { %>
-        <p class="text-muted">Under <span class="text-fg"><%= parentEvent.title %></span></p>
-      <% } %>
+    </div>
+
+    <!-- Header -->
+    <div class="welcome-row mb-8">
+      <div>
+        <span class="overline text-lime">// EVENT SPECIFICATIONS</span>
+        <h1 class="text-3xl font-extrabold text-fg my-1">
+          <%= mode === 'create' ? 'Create' : 'Edit' %> <%= containerType === 'sub_event' ? 'Sub-Event Track' : 'Campus Event' %>
+        </h1>
+        <% if (parentEvent) { %>
+          <p class="text-xs text-muted">Affiliated under flagship: <strong class="text-fg"><%= parentEvent.title %></strong></p>
+        <% } %>
+      </div>
     </div>
 
     <% if (errors && errors.length > 0) { %>
-      <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mb-6 text-sm">
+      <div class="panel p-4 mb-6 bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
         <ul class="list-disc list-inside space-y-1">
           <% errors.forEach(function(error) { %><li><%= error %></li><% }); %>
         </ul>
@@ -43,124 +49,120 @@
       const val = (field) => (event && event[field] != null ? event[field] : '');
     %>
 
-    <%
-      // Only the flagship event routes (POST /club-events and
-      // POST /club-events/:eventId/edit) have the Cloudinary upload
-      // middleware wired — sub-events don't get an image gallery (see
-      // the file inputs below, also gated on containerType === 'event').
-      // Submitting the sub-event form as multipart/form-data anyway would
-      // leave req.body undefined server-side, since express.urlencoded()/
-      // express.json() can't parse multipart bodies and nothing else on
-      // that route does either.
-    %>
-    <form action="<%= actionUrl %>" method="POST" <%- containerType === 'event' ? 'enctype="multipart/form-data"' : '' %> class="space-y-4">
-      <input type="text" name="title" placeholder="Title" value="<%= val('title') %>" required
-             class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+    <form action="<%= actionUrl %>" method="POST" <%- containerType === 'event' ? 'enctype="multipart/form-data"' : '' %> class="panel p-6 sm:p-8 space-y-5 bg-surface border border-line">
+      <label class="field-label">
+        EVENT / TRACK TITLE
+        <input type="text" name="title" placeholder="e.g. Git &amp; GitHub Special Interest Group (SIG)" value="<%= val('title') %>" required />
+      </label>
 
-      <textarea name="description" placeholder="Description" rows="4"
-                class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime"><%= val('description') %></textarea>
+      <label class="field-label">
+        DETAILED SYLLABUS &amp; DESCRIPTION
+        <textarea name="description" placeholder="Describe workshop topics, hands-on activities, prerequisites, and learning outcomes..." rows="4"><%= val('description') %></textarea>
+      </label>
 
-      <input type="text" name="venue" placeholder="Venue" value="<%= val('venue') %>"
-             class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+      <label class="field-label">
+        CAMPUS VENUE / LAB
+        <input type="text" name="venue" placeholder="e.g. Lab A1-305, PICT Campus" value="<%= val('venue') %>" />
+      </label>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">START</label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="field-label">
+          START TIME
           <input type="datetime-local" name="startTime" required
-                 value="<%= event && event.start_time ? new Date(event.start_time).toISOString().slice(0,16) : '' %>"
-                 class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" />
-        </div>
-        <div>
-          <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">END</label>
+                 value="<%= event && event.start_time ? new Date(event.start_time).toISOString().slice(0,16) : '' %>" />
+        </label>
+        <label class="field-label">
+          END TIME
           <input type="datetime-local" name="endTime" required
-                 value="<%= event && event.end_time ? new Date(event.end_time).toISOString().slice(0,16) : '' %>"
-                 class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" />
-        </div>
+                 value="<%= event && event.end_time ? new Date(event.end_time).toISOString().slice(0,16) : '' %>" />
+        </label>
       </div>
 
-      <div>
-        <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">REGISTRATION DEADLINE (OPTIONAL)</label>
-        <input type="datetime-local" name="registrationDeadline"
-               value="<%= event && event.registration_deadline ? new Date(event.registration_deadline).toISOString().slice(0,16) : '' %>"
-               class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="field-label">
+          REGISTRATION DEADLINE (OPTIONAL)
+          <input type="datetime-local" name="registrationDeadline"
+                 value="<%= event && event.registration_deadline ? new Date(event.registration_deadline).toISOString().slice(0,16) : '' %>" />
+        </label>
+
+        <label class="field-label">
+          ASSIGNED CREDIT HOURS (F023 CCA-I)
+          <input type="number" step="0.5" min="0" name="creditHours" placeholder="e.g. 4.0"
+                 value="<%= val('credit_hours') %>" />
+        </label>
       </div>
 
-      <div>
-        <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">CREDIT HOURS (OPTIONAL)</label>
-        <p class="text-muted text-xs mb-2">
-          Same idea as a task's assigned hours — whoever registers as an
-          <span class="text-fg">attendee</span> and actually checks in gets
-          this many hours credited automatically. Leave blank for no credit.
-        </p>
-        <input type="number" step="0.5" min="0" name="creditHours" placeholder="e.g. 2"
-               value="<%= val('credit_hours') %>"
-               class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="field-label">
+          EVENT CATEGORY / TYPE
+          <select name="eventTypeId">
+            <option value="">Select Category (Optional)</option>
+            <% eventTypes.forEach(function(et) { %>
+              <option value="<%= et.id %>" <%= val('event_type_id') === et.id ? 'selected' : '' %>><%= et.name %></option>
+            <% }); %>
+          </select>
+        </label>
+
+        <% if (containerType === 'event') { %>
+          <label class="field-label">
+            VISIBILITY SCOPE
+            <select name="visibility">
+              <option value="public" <%= val('visibility') !== 'club_only' ? 'selected' : '' %>>Public (All PICT Students)</option>
+              <option value="club_only" <%= val('visibility') === 'club_only' ? 'selected' : '' %>>Club Members Only</option>
+            </select>
+          </label>
+        <% } %>
       </div>
 
-      <select name="eventTypeId"
-              class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime">
-        <option value="">Event type (optional)</option>
-        <% eventTypes.forEach(function(et) { %>
-          <option value="<%= et.id %>" <%= val('event_type_id') === et.id ? 'selected' : '' %>><%= et.name %></option>
-        <% }); %>
-      </select>
-
-      <input type="text" name="bannerUrl" placeholder="Or paste a banner image URL instead (optional)" value="<%= val('banner_url') %>"
-             class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
+      <label class="field-label">
+        BANNER IMAGE URL (OPTIONAL)
+        <input type="text" name="bannerUrl" placeholder="https://..." value="<%= val('banner_url') %>" />
+      </label>
 
       <% if (containerType === 'event') { %>
-        <div class="border border-line rounded-lg p-5 space-y-4">
-          <div>
-            <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">PRIMARY IMAGE / THUMBNAIL</label>
-            <p class="text-muted text-xs mb-2">Shown on the event card in the events feed, and as the banner on the event page. Uploading a new one replaces the current thumbnail.</p>
+        <div class="p-4 rounded-xl bg-surface-2 border border-line space-y-4">
+          <label class="field-label">
+            PRIMARY POSTER / THUMBNAIL
             <input type="file" name="primaryImage" accept="image/*"
-                   class="w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-lime file:text-black file:font-semibold file:cursor-pointer" />
-          </div>
-          <div>
-            <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-2">ADDITIONAL IMAGES (OPTIONAL)</label>
-            <p class="text-muted text-xs mb-2">More photos for the event page's gallery — pick as many as you like.</p>
-            <input type="file" name="additionalImages" accept="image/*" multiple
-                   class="w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:bg-panel file:border file:border-line file:text-fg file:cursor-pointer" />
-          </div>
-        </div>
-      <% } %>
+                   class="text-xs text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-lime file:text-black file:font-bold file:cursor-pointer" />
+          </label>
 
-      <% if (containerType === 'event') { %>
-        <select name="visibility"
-                class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg focus:outline-none focus:border-lime">
-          <option value="public" <%= val('visibility') !== 'club_only' ? 'selected' : '' %>>Public</option>
-          <option value="club_only" <%= val('visibility') === 'club_only' ? 'selected' : '' %>>Club members only</option>
-        </select>
+          <label class="field-label">
+            ADDITIONAL GALLERY PHOTOS (OPTIONAL)
+            <input type="file" name="additionalImages" accept="image/*" multiple
+                   class="text-xs text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-line file:bg-surface-3 file:text-fg file:cursor-pointer" />
+          </label>
+        </div>
       <% } %>
 
       <% if (mode === 'create') { %>
-        <div class="border-t border-line pt-6 mt-6">
-          <label class="font-mono text-[11px] tracking-[0.15em] text-muted block mb-3">EVENT HEAD</label>
-          <p class="text-muted text-xs mb-3">
-            Pick who runs this <%= containerType === 'sub_event' ? 'sub-event' : 'event' %> —
-            creates its teams, assigns team heads, edits its info, and assigns
-            tasks. You can pick yourself, since you're a club member too.
+        <div class="border-t border-line pt-5 mt-5">
+          <label class="overline text-lime block mb-2">// DESIGNATE EVENT HEAD</label>
+          <p class="text-xs text-muted mb-3">
+            Pick an appointed Student Coordinator or member to manage check-ins, tasks, and volunteer teams for this event.
           </p>
-          <input type="text" id="head-search" placeholder="Search club members…"
-                 class="w-full px-4 py-3 mb-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime" />
-          <div id="head-list" class="border border-line rounded-md max-h-56 overflow-y-auto divide-y divide-line">
+          <input type="text" id="head-search" placeholder="Search club members by name..."
+                 class="w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg text-fg placeholder-muted focus:outline-none focus:border-lime mb-3" />
+          <div id="head-list" class="border border-line rounded-xl max-h-52 overflow-y-auto divide-y divide-line bg-surface-2">
             <% members.forEach(function(m) { %>
-              <label class="head-option flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-white/5" data-name="<%= m.name.toLowerCase() %>">
+              <label class="head-option flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-surface-3 transition-colors" data-name="<%= m.name.toLowerCase() %>">
                 <input type="radio" name="eventHeadStudentId" value="<%= m.id %>" class="accent-lime" />
-                <span class="text-sm"><%= m.name %></span>
-                <span class="text-muted text-xs ml-auto"><%= m.email %></span>
+                <strong class="text-xs text-fg"><%= m.name %></strong>
+                <span class="text-muted text-[10px] mono ml-auto"><%= m.email %></span>
               </label>
             <% }); %>
             <% if (members.length === 0) { %>
-              <p class="text-muted text-sm px-4 py-3">No club members yet — upload a roster from the Club tab first.</p>
+              <p class="text-muted text-xs p-4">No club members available. Upload a roster first.</p>
             <% } %>
           </div>
         </div>
       <% } %>
 
-      <button type="submit" class="btn-lime w-full bg-lime text-black font-semibold py-3.5 rounded-md mt-4">
-        <%= mode === 'create' ? 'Create' : 'Save changes' %>
-      </button>
+      <div class="pt-4">
+        <button type="submit" class="button button-primary w-full text-xs py-3 font-bold">
+          <%= mode === 'create' ? 'Publish Event Proposal →' : 'Save Changes →' %>
+        </button>
+      </div>
     </form>
   </main>
 

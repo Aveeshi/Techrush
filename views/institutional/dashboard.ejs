@@ -1,121 +1,236 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head') %>
+  <%- include('../partials/head', { title: 'Institutional Command & Audit — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-6 border-b border-line">
+  <main class="page">
+    <!-- Welcome Header Row (CampusBuzz UI Design) -->
+    <section class="welcome-row">
       <div>
-        <div class="flex items-center gap-3 mb-2">
-          <span class="w-6 h-px bg-lime"></span>
-          <span class="font-mono text-xs tracking-[0.2em] text-lime">// INSTITUTIONAL GOVERNANCE PORTAL</span>
-        </div>
-        <h1 class="font-display text-3xl sm:text-4xl"><%= admin.name %></h1>
-        <p class="text-muted text-sm mt-1">
-          Central Administration Oversight • All Campus Societies, Student Coordinators &amp; Event Audits
-        </p>
+        <span class="overline">// INSTITUTIONAL COMMAND CONSOLE</span>
+        <h1>Campus overview.</h1>
+        <p>Live co-curricular intelligence &amp; accreditation ledger across all student organizations.</p>
       </div>
 
-      <div class="flex items-center gap-2">
-        <span class="font-mono text-xs px-3 py-1.5 rounded-full bg-lime/10 text-lime border border-lime/30 font-semibold">
-          <%= clubs.length %> Registered Campus Clubs
+      <div class="institution">
+        <span class="emblem">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 21h18M6 21V7l6-4 6 4v14"></path>
+            <path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"></path>
+          </svg>
         </span>
-      </div>
-    </div>
-
-    <!-- Institutional High-level Metric Strip -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-      <div class="border border-line bg-panel p-6 rounded-xl">
-        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">CAMPUS CLUBS &amp; CHAPTERS</span>
-        <span class="font-display text-4xl font-bold mt-2 block text-fg"><%= clubs.length %></span>
-        <span class="text-xs text-muted">Active societies under institutional charter</span>
-      </div>
-
-      <div class="border border-line bg-panel p-6 rounded-xl">
-        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">TOTAL CAMPUS EVENTS</span>
-        <span class="font-display text-4xl font-bold mt-2 block text-lime"><%= totalEventsAcrossClubs %></span>
-        <span class="text-xs text-muted">Flagship, workshops, and technical events</span>
-      </div>
-
-      <div class="border border-line bg-panel p-6 rounded-xl">
-        <span class="font-mono text-[10px] tracking-[0.15em] text-muted block uppercase">ACTIVE STUDENT PARTICIPATIONS</span>
-        <span class="font-display text-4xl font-bold mt-2 block text-emerald-400"><%= totalMembersAcrossClubs %></span>
-        <span class="text-xs text-muted">Enrolled student club members</span>
-      </div>
-    </div>
-
-    <!-- All Clubs Directory Grid (Requirement 2 & 6: Option of all clubs, click on any club for all info) -->
-    <div class="mb-12">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 class="font-display text-2xl font-bold">Institution-Wide Clubs Directory</h2>
-          <p class="text-xs text-muted mt-0.5">
-            Click on any club card to inspect its Faculty Coordinator, Student Coordinators, conducted events, and attendee rosters.
-          </p>
+          <strong>Pune Institute of Computer Technology</strong>
+          <p class="mono">Autonomous · NAAC A++ Node · <%= admin.name %></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Admin Stats (3 Wide Cards - CampusBuzz UI Design) -->
+    <section class="admin-stats">
+      <article class="panel stat-wide s0">
+        <span class="metric-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 21h18M6 21V7l6-4 6 4v14"></path>
+          </svg>
+        </span>
+        <div>
+          <p>ACTIVE STUDENT CLUBS</p>
+          <h2><%= clubs ? clubs.length : 8 %></h2>
+        </div>
+        <span class="badge badge-green">100% OPERATIONAL</span>
+      </article>
+
+      <article class="panel stat-wide s1">
+        <span class="metric-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+            <path d="M16 3v4M8 3v4M3 10h18"></path>
+          </svg>
+        </span>
+        <div>
+          <p>TOTAL VERIFIED EVENTS</p>
+          <h2><%= totalEventsAcrossClubs %></h2>
+        </div>
+        <span class="badge badge-lime">CAMPUS-WIDE</span>
+      </article>
+
+      <article class="panel stat-wide s2">
+        <span class="metric-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+          </svg>
+        </span>
+        <div>
+          <p>REGISTERED PARTICIPATIONS</p>
+          <h2><%= totalMembersAcrossClubs %></h2>
+        </div>
+        <span class="badge badge-green"><%= totalCoordinators %> APPOINTED LEADS</span>
+      </article>
+    </section>
+
+    <!-- Admin Layout: Club Directory Table (Left) + Selected Club Dossier Audit (Right) -->
+    <section class="admin-layout">
+      <!-- Left: Master Club Directory -->
+      <article class="panel directory">
+        <div class="panel-head">
+          <div>
+            <span class="overline">REGISTERED ORGANIZATIONS</span>
+            <h3>All-Clubs Master Directory</h3>
+          </div>
+          <div class="inline-tools">
+            <div class="search small">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+              <input type="text" id="clubFilter" placeholder="Filter clubs..." onkeyup="filterClubs()" />
+            </div>
+          </div>
         </div>
 
-        <input type="text" id="club-search" placeholder="Search clubs..." onkeyup="filterClubs()"
-               class="px-4 py-2 bg-panel border border-line rounded-md text-xs text-fg placeholder-muted focus:outline-none focus:border-lime w-64" />
-      </div>
+        <div class="table-wrap">
+          <table id="clubsTable">
+            <thead>
+              <tr>
+                <th>Club Name</th>
+                <th>Events</th>
+                <th>Members</th>
+                <th>Faculty In-Charge</th>
+                <th>Coordinators</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!clubs || clubs.length === 0) { %>
+                <tr>
+                  <td colspan="6" class="text-center py-8 text-muted">
+                    No active student clubs discovered in the database.
+                  </td>
+                </tr>
+              <% } else { %>
+                <% clubs.forEach(function(c, idx) { %>
+                  <tr class="<%= idx === 0 ? 'selected' : '' %>" onclick="window.location.href='/institutional/clubs/<%= c.id %>'">
+                    <td>
+                      <span class="club-cell">
+                        <i><%= c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() %></i>
+                        <strong><%= c.name %></strong>
+                      </span>
+                    </td>
+                    <td class="mono font-bold text-fg"><%= c.total_events || 0 %></td>
+                    <td class="mono text-muted"><%= c.total_members || 0 %></td>
+                    <td class="text-xs">
+                      <%= c.faculty_coordinator_name ? c.faculty_coordinator_name : 'Pending Appointment' %>
+                    </td>
+                    <td>
+                      <span class="avatar-stack">
+                        <i></i><i></i><i></i>
+                        <%= c.student_coordinators_count || 0 %> Leads
+                      </span>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <a href="/institutional/clubs/<%= c.id %>" class="text-lime hover:underline font-mono text-xs text-decoration-none">
+                          Inspect →
+                        </a>
+                        <span class="text-line">|</span>
+                        <a href="/institutional/clubs/<%= c.id %>/report" class="text-muted hover:text-fg font-mono text-xs text-decoration-none" title="Generate Club Report">
+                          Report 📊
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </article>
 
-      <div id="clubs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <% clubs.forEach(function(club) { %>
-          <a href="/institutional/clubs/<%= club.id %>" class="club-card border border-line rounded-xl bg-panel p-6 hover:border-lime/60 transition-all block group relative overflow-hidden">
-            <div class="flex items-start justify-between gap-4 mb-4">
-              <div class="flex items-center gap-3">
-                <% if (club.logo_url) { %>
-                  <img src="<%= club.logo_url %>" alt="" class="w-12 h-12 rounded-lg object-cover border border-line" />
-                <% } else { %>
-                  <div class="w-12 h-12 rounded-lg bg-lime/10 border border-lime/30 flex items-center justify-center font-bold text-lime font-display text-lg">
-                    <%= club.name.substring(0, 2).toUpperCase() %>
-                  </div>
-                <% } %>
-                <div>
-                  <h3 class="font-display text-xl font-bold text-fg group-hover:text-lime transition-colors">
-                    <%= club.name %>
-                  </h3>
-                  <div class="text-xs text-muted font-mono">
-                    <%= club.total_events || 0 %> Events • <%= club.total_members || 0 %> Members
-                  </div>
-                </div>
-              </div>
-              <span class="text-muted group-hover:text-lime group-hover:translate-x-1 transition-all text-sm font-mono">&rarr;</span>
+      <!-- Right: Primary Club Dossier Summary (CampusBuzz UI Design) -->
+      <% const featuredClub = clubs && clubs.length > 0 ? clubs[0] : null; %>
+      <% if (featuredClub) { %>
+        <article class="panel dossier">
+          <div class="dossier-head">
+            <span class="club-insignia">
+              <%= featuredClub.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() %>
+            </span>
+            <div>
+              <span class="badge badge-green mb-1">IN GOOD STANDING</span>
+              <h3><%= featuredClub.name %></h3>
+              <p class="mono text-[10px] text-muted">Club Audit Dossier · 2025–2026</p>
             </div>
+            <a href="/institutional/clubs/<%= featuredClub.id %>" class="icon-button text-decoration-none" title="View Full Roster">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M13 6l6 6-6 6"></path>
+              </svg>
+            </a>
+          </div>
 
-            <p class="text-xs text-muted/80 line-clamp-2 mb-4 leading-relaxed">
-              <%= club.description || 'Institutional student technical & cultural society.' %>
-            </p>
-
-            <div class="pt-4 border-t border-line/60 flex items-center justify-between text-xs">
-              <div class="truncate max-w-[200px]">
-                <span class="text-[10px] font-mono uppercase text-muted block">FACULTY INCHARGE</span>
-                <span class="font-semibold text-fg text-xs truncate">
-                  <%= club.faculty_name || 'Not Assigned' %>
-                </span>
-              </div>
-              <div class="text-right">
-                <span class="text-[10px] font-mono uppercase text-muted block">STUDENT COORDS</span>
-                <span class="font-mono text-lime font-bold text-xs">
-                  <%= club.student_coordinators_count || 0 %> Appointed
-                </span>
-              </div>
+          <div class="dossier-stats">
+            <div>
+              <span>EVENTS</span>
+              <strong><%= featuredClub.total_events || 0 %></strong>
             </div>
-          </a>
-        <% }); %>
-      </div>
-    </div>
+            <div>
+              <span>MEMBERS</span>
+              <strong><%= featuredClub.total_members || 0 %></strong>
+            </div>
+            <div>
+              <span>COORDINATORS</span>
+              <strong><%= featuredClub.student_coordinators_count || 0 %></strong>
+            </div>
+          </div>
+
+          <div class="audit-title">
+            <span>FACULTY &amp; OPERATIONAL OVERSIGHT</span>
+            <span class="badge badge-lime text-[7px]">VERIFIED NODE</span>
+          </div>
+
+          <div class="faculty-line">
+            <span class="avatar">FC</span>
+            <div>
+              <small>FACULTY IN-CHARGE</small>
+              <strong><%= featuredClub.faculty_coordinator_name || 'Dr. Faculty Convener' %></strong>
+            </div>
+            <span class="badge badge-green text-[7px]">CONFIRMED</span>
+          </div>
+
+          <div class="p-3 bg-surface-2 rounded-xl border border-line text-xs text-muted mb-4 leading-relaxed">
+            <%= featuredClub.description ? featuredClub.description.slice(0, 160) + '...' : 'Student technical organization conducting hackathons, hands-on workshops, and skill-building projects.' %>
+          </div>
+
+          <div class="space-y-2">
+            <a href="/institutional/clubs/<%= featuredClub.id %>" class="button button-primary block text-center w-full text-decoration-none text-xs font-bold py-2.5">
+              Open Full Club Audit Dossier →
+            </a>
+            <a href="/institutional/clubs/<%= featuredClub.id %>/report" class="button button-quiet block text-center w-full text-decoration-none text-xs font-bold py-2 hover:text-lime">
+              Generate Accreditation Report 📊
+            </a>
+          </div>
+        </article>
+      <% } %>
+    </section>
   </main>
 
   <script>
     function filterClubs() {
-      const q = document.getElementById('club-search').value.toLowerCase();
-      document.querySelectorAll('.club-card').forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(q) ? 'block' : 'none';
-      });
+      const input = document.getElementById("clubFilter");
+      const filter = input.value.toLowerCase();
+      const table = document.getElementById("clubsTable");
+      const tr = table.getElementsByTagName("tr");
+
+      for (let i = 1; i < tr.length; i++) {
+        const td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+          const txtValue = td.textContent || td.innerText;
+          tr[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+        }
+      }
     }
   </script>
 </body>

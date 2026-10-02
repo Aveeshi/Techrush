@@ -1,71 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head', { title: 'Club Events' }) %>
+  <%- include('../partials/head', { title: 'Club Events Operations — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
-    <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-3">
-        <span class="w-6 h-px bg-lime"></span>
-        <span class="font-mono text-xs tracking-[0.2em] text-lime">// ORGANIZER · CLUB EVENTS</span>
-      </div>
-      <a href="/club-events/new" class="btn-lime bg-lime text-black font-semibold px-5 py-2.5 rounded-md text-sm">
-        + New event
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/club" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Club Dashboard
+      </a>
+      <a href="/club-events/new" class="button button-primary text-xs text-decoration-none font-bold">
+        + Create New Event
       </a>
     </div>
-    <h1 class="font-display text-5xl mb-12">Club Events</h1>
+
+    <!-- Header Section -->
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline text-lime">// EVENT PIPELINE &amp; OPERATIONS</span>
+        <h1>Club Events &amp; Sub-Tracks</h1>
+        <p>Manage main flagship events, sub-tracks, check-in gates, and volunteer task allocations.</p>
+      </div>
+
+      <div class="date-tile">
+        <strong><%= events.length %></strong>
+        <small>EVENTS</small>
+      </div>
+    </section>
 
     <% if (events.length === 0) { %>
-      <p class="text-muted">No events yet — create your first one.</p>
-    <% } %>
+      <article class="panel p-12 text-center text-muted text-xs">
+        <p class="text-sm mb-3">No events scheduled yet for this club.</p>
+        <a href="/club-events/new" class="button button-primary text-xs text-decoration-none">
+          + Draft Your First Event
+        </a>
+      </article>
+    <% } else { %>
+      <div class="space-y-6">
+        <% events.forEach(function(event) { %>
+          <div class="panel overflow-hidden border border-line">
+            <div class="p-6 bg-surface hover:bg-surface-2 transition-colors">
+              <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="badge <%= event.status === 'published' ? 'badge-green' : 'badge-neutral' %> font-mono text-[8px] uppercase">
+                      <%= (event.status || 'draft').toUpperCase() %>
+                    </span>
+                    <span class="text-xs font-mono text-muted">
+                      <%= new Date(event.start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %>
+                      <% if (event.venue) { %> · <%= event.venue %><% } %>
+                    </span>
+                  </div>
 
-    <div class="space-y-6">
-      <% events.forEach(function(event) { %>
-        <div class="border border-line rounded-lg overflow-hidden">
-          <a href="/club-events/<%= event.id %>" class="block p-6 hover:bg-white/5 transition-colors">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-3">
-                  <%= (event.status || 'draft').toUpperCase() %>
-                </span>
-                <h3 class="font-display text-2xl mb-1"><%= event.title %></h3>
-                <p class="text-muted text-sm">
-                  <%= new Date(event.start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %>
-                  <% if (event.venue) { %> · <%= event.venue %><% } %>
-                </p>
+                  <h3 class="text-xl font-bold text-fg mb-1">
+                    <a href="/club-events/<%= event.id %>" class="text-fg hover:text-lime text-decoration-none">
+                      <%= event.title %>
+                    </a>
+                  </h3>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                  <a href="/club-events/<%= event.id %>" class="button button-quiet text-xs text-decoration-none font-bold">
+                    Manage Event →
+                  </a>
+                </div>
               </div>
-              <span class="font-mono text-xs tracking-[0.1em] text-lime shrink-0">MANAGE →</span>
             </div>
-          </a>
 
-          <% if (event.subEvents.length > 0) { %>
-            <div class="border-t border-line divide-y divide-line">
-              <% event.subEvents.forEach(function(sub) { %>
-                <a href="/club-events/<%= event.id %>/sub-events/<%= sub.id %>"
-                   class="flex items-center justify-between px-6 py-3 pl-10 text-sm hover:bg-white/5 transition-colors">
-                  <span>
-                    <span class="text-muted font-mono text-xs mr-2">SUB-EVENT</span>
-                    <%= sub.title %>
-                  </span>
-                  <span class="text-muted text-xs">
-                    <%= new Date(sub.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
-                  </span>
-                </a>
-              <% }); %>
+            <!-- Sub-Events Accordion / List -->
+            <% if (event.subEvents && event.subEvents.length > 0) { %>
+              <div class="border-t border-line bg-surface-2 divide-y divide-line">
+                <% event.subEvents.forEach(function(sub) { %>
+                  <div class="flex items-center justify-between px-6 py-3.5 text-xs hover:bg-surface transition-colors">
+                    <div class="flex items-center gap-3">
+                      <span class="badge badge-lime text-[8px] font-mono">SUB-TRACK</span>
+                      <strong class="text-fg"><%= sub.title %></strong>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <span class="text-muted font-mono text-[11px]">
+                        <%= new Date(sub.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                      </span>
+                      <a href="/club-events/<%= event.id %>/sub-events/<%= sub.id %>" class="text-xs font-bold text-lime hover:underline text-decoration-none">
+                        Manage Sub-Track →
+                      </a>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            <% } %>
+
+            <div class="border-t border-line px-6 py-3 bg-surface-3 flex items-center justify-between">
+              <a href="/club-events/<%= event.id %>/sub-events/new" class="mono text-[11px] text-lime hover:underline text-decoration-none font-bold">
+                + ADD SUB-EVENT TRACK
+              </a>
+              <span class="text-[10px] mono text-muted">Course F023 Compatible</span>
             </div>
-          <% } %>
-
-          <div class="border-t border-line px-6 py-2.5">
-            <a href="/club-events/<%= event.id %>/sub-events/new" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
-              + ADD SUB-EVENT
-            </a>
           </div>
-        </div>
-      <% }); %>
-    </div>
+        <% }); %>
+      </div>
+    <% } %>
   </main>
 </body>
 </html>

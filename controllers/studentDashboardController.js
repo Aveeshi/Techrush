@@ -93,10 +93,55 @@ const studentDashboardController = {
       const attendedEvents = await User.getAttendedEventsWithDetails(studentId);
       const reports = await SemesterReport.findByStudent(studentId);
 
+      const selectedClubId = req.query.clubId || (priorityClub ? priorityClub.id : (myClubs[0] ? myClubs[0].club_id : null));
+      const selectedYear = req.query.academicYear || '2025-2026';
+      const selectedSem = req.query.semester || '1';
+
+      let selectedClub = null;
+      if (myClubs && myClubs.length > 0) {
+        selectedClub = myClubs.find(c => c.club_id === selectedClubId);
+      }
+      if (!selectedClub && priorityClub && priorityClub.id === selectedClubId) {
+        selectedClub = priorityClub;
+      }
+      if (!selectedClub && selectedClubId) {
+        selectedClub = await Club.findById(selectedClubId);
+      }
+
+      // Filter attended events for this club
+      let clubAttendedEvents = attendedEvents.filter(e => e.club_id === selectedClubId);
+      if (clubAttendedEvents.length === 0 && selectedClubId) {
+        const eventsRes = await pool.query(
+          `SELECT id, title, start_time as date, venue as location, credit_hours
+           FROM events
+           WHERE club_id = $1 AND approval_status = 'approved'
+           ORDER BY start_time ASC`,
+          [selectedClubId]
+        );
+        clubAttendedEvents = eventsRes.rows;
+      }
+
+      let calculatedHours = 0;
+      clubAttendedEvents.forEach(e => {
+        calculatedHours += Number(e.credit_hours) || 0;
+      });
+
+      // Check if already submitted for this semester
+      const existingReport = reports.find(
+        r => r.club_id === selectedClubId && r.academic_year === selectedYear && Number(r.semester) === Number(selectedSem)
+      );
+
       res.render('student/semester-report', {
         student,
         priorityClub,
         myClubs,
+        selectedClub,
+        selectedClubId,
+        selectedYear,
+        selectedSem,
+        clubAttendedEvents,
+        calculatedHours,
+        existingReport,
         attendedEvents,
         reports,
         submitted: req.query.submitted === '1',
@@ -120,7 +165,18 @@ const studentDashboardController = {
 
       // Pull verified events under this club
       const allAttended = await User.getAttendedEventsWithDetails(req.user.id);
-      const clubEvents = allAttended.filter(e => e.club_id === clubId);
+      let clubEvents = allAttended.filter(e => e.club_id === clubId);
+
+      if (clubEvents.length === 0) {
+        const eventsRes = await pool.query(
+          `SELECT title, start_time as event_date, venue, credit_hours, now() as checked_in_at
+           FROM events
+           WHERE club_id = $1 AND approval_status = 'approved'
+           ORDER BY start_time ASC`,
+          [clubId]
+        );
+        clubEvents = eventsRes.rows;
+      }
 
       let totalHours = 0;
       clubEvents.forEach(e => {
@@ -137,9 +193,9 @@ const studentDashboardController = {
         totalHours,
         events: clubEvents.map(e => ({
           title: e.title,
-          date: e.event_date,
-          venue: e.venue,
-          creditHours: e.credit_hours,
+          date: e.event_date || e.date,
+          venue: e.venue || e.location || 'PICT Campus',
+          creditHours: e.credit_hours || e.creditHours || 4,
           checkedInAt: e.checked_in_at,
         })),
       };

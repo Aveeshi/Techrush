@@ -1,20 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head', { title: event.title }) %>
+  <%- include('../partials/head', { title: event.title + ' — Event Management' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
     <%
-      // Organizers manage every event in their club (/club-events), and a
-      // sub-event's page naturally breadcrumbs back to its parent event's
-      // page for them. A student got here from ONE place — the "My
-      // Events & Teams" card grid — no matter which role tag (event head,
-      // sub-event head, team head, volunteer) got them there, so their
-      // back button always returns to that same list, never to a parent
-      // event's management page they may not even have standalone access to.
       const backUrl = user.type === 'organizer'
         ? (parentEvent ? `/club-events/${parentEvent.id}` : '/club-events')
         : '/my-events';
@@ -22,60 +15,76 @@
         ? (parentEvent ? parentEvent.title.toUpperCase() : 'CLUB EVENTS')
         : 'MY EVENTS & TEAMS';
     %>
-    <a href="<%= backUrl %>"
-       class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">
-      ← <%= backLabel %>
-    </a>
+    <div class="mb-6 flex items-center justify-between">
+      <a href="<%= backUrl %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← BACK TO <%= backLabel %>
+      </a>
+      <span class="badge <%= event.status === 'published' ? 'badge-green' : 'badge-neutral' %> font-mono text-[9px] uppercase">
+        <%= containerType === 'sub_event' ? 'SUB-EVENT' : 'FLAGSHIP' %> · <%= (event.status || 'draft').toUpperCase() %>
+      </span>
+    </div>
 
-    <div class="mt-6 mb-10 flex items-start justify-between gap-4">
-      <div>
-        <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-          <%= containerType === 'sub_event' ? 'SUB-EVENT' : 'EVENT' %> · <%= (event.status || 'draft').toUpperCase() %>
-        </span>
-        <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= event.title %></h1>
-        <p class="text-muted">
+    <!-- Header Panel -->
+    <div class="welcome-row mb-8 items-start">
+      <div class="flex-1">
+        <span class="overline text-lime">// EVENT OPERATIONS HUB</span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-fg my-1"><%= event.title %></h1>
+        <p class="text-xs text-muted">
           <%= new Date(event.start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %>
-          <% if (event.venue) { %> · <%= event.venue %><% } %>
+          <% if (event.venue) { %> · 📍 <%= event.venue %><% } %>
         </p>
       </div>
-      <div class="flex flex-wrap gap-3 shrink-0">
+
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
         <% if (user.type === 'organizer') { %>
-          <form action="<%= manageBasePath %>/publish" method="POST">
-            <button type="submit" class="btn-outline border border-line font-semibold px-5 py-2.5 rounded-md text-sm">
+          <form action="<%= manageBasePath %>/publish" method="POST" class="inline">
+            <button type="submit" class="button button-quiet text-xs">
               <%= event.status === 'published' ? 'Unpublish' : 'Publish' %>
             </button>
           </form>
         <% } %>
+
         <a href="<%= containerType === 'sub_event' ? `/events/${event.event_id}/sub-events/${event.id}/scan` : `/events/${event.id}/scan` %>"
-           class="btn-lime bg-lime text-black font-semibold px-5 py-2.5 rounded-md text-sm">
-          Scan attendee QR codes
+           class="button button-primary text-xs text-decoration-none font-bold">
+          📱 Scan Attendee QR Codes
         </a>
-        <a href="<%= manageBasePath %>/edit" class="btn-outline border border-line font-semibold px-5 py-2.5 rounded-md text-sm">
-          Edit info
+
+        <a href="<%= manageBasePath %>/edit" class="button button-quiet text-xs text-decoration-none">
+          Edit Info
         </a>
       </div>
     </div>
 
     <% if (event.description) { %>
-      <p class="text-fg leading-relaxed whitespace-pre-line mb-10 max-w-2xl"><%= event.description %></p>
+      <div class="panel p-6 mb-8 text-xs text-muted leading-relaxed whitespace-pre-line">
+        <%= event.description %>
+      </div>
     <% } %>
 
     <% if (containerType === 'event') { %>
-      <div class="mb-10">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="font-mono text-xs tracking-[0.15em] text-muted">SUB-EVENTS (<%= subEvents.length %>)</h2>
-          <a href="/club-events/<%= event.id %>/sub-events/new" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
-            + ADD SUB-EVENT
+      <!-- Sub-Events Section -->
+      <div class="panel p-6 mb-8">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <div>
+            <span class="overline">// SUB-TRACKS &amp; MODULES</span>
+            <h3 class="text-base font-bold text-fg">Sub-Events (<%= subEvents.length %>)</h3>
+          </div>
+          <a href="/club-events/<%= event.id %>/sub-events/new" class="button button-quiet text-xs text-decoration-none">
+            + Add Sub-Track
           </a>
         </div>
+
         <% if (subEvents.length === 0) { %>
-          <p class="text-muted text-sm">No sub-events yet.</p>
+          <p class="text-xs text-muted py-4">No sub-events created yet for this flagship event.</p>
         <% } else { %>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <% subEvents.forEach(function(sub) { %>
-              <a href="/club-events/<%= event.id %>/sub-events/<%= sub.id %>" class="event-card block border border-line rounded-lg p-5">
-                <h3 class="font-display text-lg mb-1"><%= sub.title %></h3>
-                <p class="text-muted text-xs"><%= new Date(sub.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></p>
+              <a href="/club-events/<%= event.id %>/sub-events/<%= sub.id %>" class="panel p-5 bg-surface-2 hover:border-lime/40 transition-colors text-decoration-none block">
+                <span class="badge badge-lime text-[8px] font-mono mb-2">TRACK</span>
+                <h4 class="text-sm font-bold text-fg mb-1"><%= sub.title %></h4>
+                <p class="text-[10px] text-muted mono">
+                  <%= new Date(sub.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                </p>
               </a>
             <% }); %>
           </div>
@@ -83,124 +92,143 @@
       </div>
     <% } %>
 
-    <div class="mb-10">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">EVENT HEAD<%= heads.length === 1 ? '' : 'S' %> (<%= heads.length %>)</h2>
+    <!-- Event Heads Panel -->
+    <div class="panel p-6 mb-8">
+      <div class="panel-head px-0 pt-0 pb-4 mb-4">
+        <span class="overline">// OPERATIONAL LEADERSHIP</span>
+        <h3 class="text-base font-bold text-fg">Designated Event Heads (<%= heads.length %>)</h3>
+      </div>
       <% if (heads.length === 0) { %>
-        <p class="text-muted text-sm">No event head assigned.</p>
+        <p class="text-xs text-muted">No student head currently assigned.</p>
       <% } else { %>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2.5">
           <% heads.forEach(function(h) { %>
-            <span class="chip-label"><%= h.name %></span>
+            <span class="badge badge-lime text-xs px-3 py-1.5 font-bold">★ <%= h.name %></span>
           <% }); %>
         </div>
       <% } %>
     </div>
 
-    <div class="mb-10">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted">TEAMS (<%= teams.length %>)</h2>
+    <!-- Teams Management Panel -->
+    <div class="panel p-6 mb-8">
+      <div class="panel-head px-0 pt-0 pb-4 mb-4">
+        <div>
+          <span class="overline">// VOLUNTEER CADRE</span>
+          <h3 class="text-base font-bold text-fg">Operational Teams (<%= teams.length %>)</h3>
+        </div>
       </div>
 
       <% if (teams.length === 0) { %>
-        <p class="text-muted text-sm mb-6">No teams yet.</p>
+        <p class="text-xs text-muted py-2">No volunteer teams formed yet.</p>
       <% } %>
 
-      <div class="space-y-6">
-        <% teams.forEach(function(team, i) { %>
-          <div class="border border-line rounded-lg p-5">
-            <div class="flex items-start justify-between gap-4 mb-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <% teams.forEach(function(team) { %>
+          <div class="panel p-5 bg-surface-2 border border-line">
+            <div class="flex items-start justify-between gap-3 mb-2">
               <div>
-                <h3 class="font-display text-lg"><%= team.name %></h3>
-                <% if (team.description) { %><p class="text-muted text-xs mt-1"><%= team.description %></p><% } %>
+                <h4 class="text-sm font-bold text-fg"><%= team.name %></h4>
+                <% if (team.description) { %>
+                  <p class="text-xs text-muted mt-0.5"><%= team.description %></p>
+                <% } %>
               </div>
-              <span class="font-mono text-[11px] tracking-[0.1em] shrink-0 <%= team.max_size && team.members.length >= team.max_size ? 'text-red-400' : 'text-muted' %>">
-                <%= team.members.length %><%= team.max_size ? ' / ' + team.max_size : '' %> MEMBER<%= team.members.length === 1 ? '' : 'S' %>
-                <% if (team.max_size && team.members.length >= team.max_size) { %> · TEAM FULL<% } %>
+              <span class="badge <%= team.max_size && team.members.length >= team.max_size ? 'badge-red' : 'badge-neutral' %> font-mono text-[8px]">
+                <%= team.members.length %><%= team.max_size ? ' / ' + team.max_size : '' %> MEMBERS
               </span>
             </div>
 
             <% if (team.heads.length > 0) { %>
-              <div class="flex flex-wrap gap-2 mb-4">
+              <div class="flex flex-wrap gap-1.5 mb-3">
                 <% team.heads.forEach(function(h) { %>
-                  <span class="chip-label">Head: <%= h.name %></span>
+                  <span class="badge badge-amber text-[8px]">Head: <%= h.name %></span>
                 <% }); %>
               </div>
             <% } %>
 
-            <% if (team.requiredSkills.length > 0) { %>
-              <div class="flex flex-wrap gap-2 mb-4">
-                <% team.requiredSkills.forEach(function(s) { %>
-                  <span class="chip-label"><%= s.name %></span>
-                <% }); %>
-              </div>
-            <% } %>
-
-            <div class="flex items-center gap-5">
-              <a href="/teams/<%= team.id %>/manage" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
-                MANAGE TEAM →
+            <div class="flex items-center gap-3 pt-3 border-t border-line">
+              <a href="/teams/<%= team.id %>/manage" class="button button-quiet text-[9px] py-1 px-3 text-decoration-none">
+                Manage Team →
               </a>
-              <a href="/teams/<%= team.id %>#chat" class="font-mono text-[11px] tracking-[0.1em] text-lime hover:underline">
-                VIEW CHAT →
+              <a href="/teams/<%= team.id %>#chat" class="button button-quiet text-[9px] py-1 px-3 text-decoration-none">
+                Team Chat
               </a>
             </div>
           </div>
         <% }); %>
       </div>
 
-      <form action="<%= manageBasePath %>/teams" method="POST" class="border border-line rounded-lg p-5 mt-6">
-        <div class="flex flex-wrap gap-3 items-end mb-4">
-          <div class="flex-1 min-w-[160px]">
-            <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">NEW TEAM NAME</label>
-            <input type="text" name="name" required
-                   class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
-          </div>
-          <div class="flex-1 min-w-[160px]">
-            <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">DESCRIPTION (OPTIONAL)</label>
-            <input type="text" name="description"
-                   class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
-          </div>
-          <div class="w-32">
-            <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">TEAM SIZE</label>
-            <input type="number" name="maxSize" min="1" placeholder="Unlimited"
-                   class="w-full px-3 py-2 bg-panel border border-line rounded-md text-fg text-sm focus:outline-none focus:border-lime" />
-          </div>
+      <!-- Add Team Form -->
+      <form action="<%= manageBasePath %>/teams" method="POST" class="p-5 rounded-xl bg-surface-2 border border-line">
+        <span class="overline text-lime block mb-3">// CREATE OPERATIONAL TEAM</span>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <label class="field-label sm:col-span-1">
+            TEAM NAME
+            <input type="text" name="name" placeholder="e.g. Technical Logistics" required />
+          </label>
+          <label class="field-label sm:col-span-1">
+            MANDATE DESCRIPTION
+            <input type="text" name="description" placeholder="Sound, displays, network..." />
+          </label>
+          <label class="field-label sm:col-span-1">
+            CAPACITY LIMIT
+            <input type="number" name="maxSize" min="1" placeholder="Unlimited" />
+          </label>
         </div>
 
-        <label class="font-mono text-[10px] tracking-[0.1em] text-muted block mb-2">SKILLS REQUIRED (OPTIONAL)</label>
-        <div class="flex flex-wrap gap-2 mb-4">
-          <% skillTags.forEach(function(tag) { %>
-            <input type="checkbox" name="skillTagIds" id="new-team-skill-<%= tag.id %>" value="<%= tag.id %>" class="chip-input" />
-            <label for="new-team-skill-<%= tag.id %>" class="chip-label"><%= tag.name %></label>
-          <% }); %>
-        </div>
-
-        <button type="submit" class="btn-outline border border-line px-5 py-2.5 rounded-md text-sm">+ Add team</button>
+        <button type="submit" class="button button-primary text-xs font-bold">
+          + Add Operational Team
+        </button>
       </form>
     </div>
 
-    <!-- Attendees -->
-    <div class="mb-10">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">ATTENDEES (<%= attendees.length %>)</h2>
+    <!-- Attendees Roster -->
+    <div class="panel overflow-hidden">
+      <div class="panel-head">
+        <div>
+          <span class="overline">// VERIFIED PARTICIPATION</span>
+          <h3 class="text-base font-bold text-fg">Registered Attendees (<%= attendees.length %>)</h3>
+        </div>
+        <span class="badge badge-green font-mono text-[9px]"><%= attendees.length %> Registered</span>
+      </div>
+
       <% if (attendees.length === 0) { %>
-        <p class="text-muted text-sm">No one has registered as an attendee yet.</p>
+        <div class="p-10 text-center text-muted text-xs">
+          No students registered as attendees yet.
+        </div>
       <% } else { %>
-        <div class="border border-line rounded-lg overflow-hidden overflow-x-auto">
-          <table class="w-full text-sm">
+        <div class="table-wrap">
+          <table>
             <thead>
-              <tr class="border-b border-line text-left">
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">NAME</th>
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">EMAIL</th>
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">CHECKED IN</th>
-                <th class="px-4 py-3 font-mono text-[11px] tracking-[0.1em] text-muted">CHECKED OUT</th>
+              <tr>
+                <th>Attendee Name</th>
+                <th>Email Address</th>
+                <th>Check-in Status</th>
+                <th>Check-out Status</th>
               </tr>
             </thead>
             <tbody>
               <% attendees.forEach(function(a) { %>
-                <tr class="border-b border-line last:border-b-0">
-                  <td class="px-4 py-3"><%= a.name %></td>
-                  <td class="px-4 py-3 text-muted"><%= a.email %></td>
-                  <td class="px-4 py-3"><%= a.checked_in_at ? '✅ ' + new Date(a.checked_in_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—' %></td>
-                  <td class="px-4 py-3"><%= a.checked_out_at ? '✅ ' + new Date(a.checked_out_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—' %></td>
+                <tr>
+                  <td><strong class="text-fg text-xs"><%= a.name %></strong></td>
+                  <td class="mono text-xs text-muted"><%= a.email %></td>
+                  <td>
+                    <% if (a.checked_in_at) { %>
+                      <span class="badge badge-green font-mono text-[8px]">
+                        ✓ <%= new Date(a.checked_in_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %>
+                      </span>
+                    <% } else { %>
+                      <span class="text-muted mono text-[10px]">—</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (a.checked_out_at) { %>
+                      <span class="badge badge-green font-mono text-[8px]">
+                        ✓ <%= new Date(a.checked_out_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %>
+                      </span>
+                    <% } else { %>
+                      <span class="text-muted mono text-[10px]">—</span>
+                    <% } %>
+                  </td>
                 </tr>
               <% }); %>
             </tbody>

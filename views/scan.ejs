@@ -1,29 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: 'Scan · ' + event.title }) %>
+  <%- include('partials/head', { title: 'QR Gate Scanner · ' + event.title + ' — CampusBuzz' }) %>
   <script src="/vendor/html5-qrcode.min.js"></script>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-xl mx-auto px-8 pt-16 pb-20">
-    <a href="<%= typeof backUrl !== 'undefined' ? backUrl : '/events/' + event.id %>" class="text-muted text-xs font-mono tracking-[0.15em] hover:text-fg transition-colors">← BACK TO EVENT</a>
-
-    <div class="mt-6 mb-8">
-      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-        CHECK-IN SCANNER
-      </span>
-      <h1 class="font-display text-3xl mb-2"><%= event.title %></h1>
-      <p class="text-muted text-sm">Scan an attendee's QR once to check them in, scan the same code again to check them out.</p>
+  <main class="page max-w-xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="<%= typeof backUrl !== 'undefined' ? backUrl : '/events/' + event.id %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← BACK TO EVENT
+      </a>
+      <span class="badge badge-green font-mono text-[9px]">LIVE CAMERA SCANNER</span>
     </div>
 
-    <!-- Result banner: hidden until the first scan, then reused for every scan after -->
-    <div id="result" class="hidden border rounded-md px-5 py-4 mb-6"></div>
+    <!-- Header -->
+    <div class="welcome-row mb-6">
+      <div>
+        <span class="overline text-lime">// GATE ADMISSION &amp; ATTENDANCE</span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-fg my-1"><%= event.title %></h1>
+        <p class="text-xs text-muted">Point camera at student pass QR. Scan once to check in (+credit hours), scan again to check out.</p>
+      </div>
+    </div>
 
-    <div id="reader" class="rounded-lg overflow-hidden border border-line"></div>
+    <!-- Result Banner -->
+    <div id="result" class="hidden panel p-4 mb-6 text-xs font-bold transition-all"></div>
 
-    <p id="camera-error" class="hidden text-red-400 text-sm mt-4"></p>
+    <!-- Camera Box -->
+    <div class="panel p-3 border-2 border-line bg-surface-2 overflow-hidden shadow-2xl rounded-2xl">
+      <div id="reader" class="rounded-xl overflow-hidden"></div>
+    </div>
+
+    <p id="camera-error" class="hidden text-red-400 text-xs mt-4 text-center"></p>
   </main>
 
   <script>
@@ -31,18 +40,14 @@
     const resultBox = document.getElementById('result');
     const cameraError = document.getElementById('camera-error');
 
-    // Once a code is decoded we stop feeding new decodes to the handler
-    // for a moment — html5-qrcode fires on every video frame, and without
-    // this the same physical scan would fire the check-in/out toggle
-    // multiple times in a row before the attendee even moves the phone away.
     let processing = false;
 
     function showResult({ ok, text }) {
-      resultBox.classList.remove('hidden', 'border-lime/40', 'bg-lime/5', 'text-lime', 'border-red-500', 'bg-red-500/10', 'text-red-400');
+      resultBox.classList.remove('hidden', 'bg-lime/10', 'border-lime/40', 'text-lime', 'bg-red-500/10', 'border-red-500/30', 'text-red-400');
       if (ok) {
-        resultBox.classList.add('border-lime/40', 'bg-lime/5', 'text-lime');
+        resultBox.classList.add('bg-lime/10', 'border-lime/40', 'text-lime');
       } else {
-        resultBox.classList.add('border-red-500', 'bg-red-500/10', 'text-red-400');
+        resultBox.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-400');
       }
       resultBox.textContent = text;
     }
@@ -60,16 +65,14 @@
         const data = await res.json();
 
         if (!res.ok) {
-          showResult({ ok: false, text: data.error || 'Scan failed' });
+          showResult({ ok: false, text: data.error || 'Scan validation failed.' });
         } else {
           const verb = data.action === 'check_in' ? 'Checked in' : 'Checked out';
-          showResult({ ok: true, text: `✅ ${verb}: ${data.student.name} (${data.registrationType})` });
+          showResult({ ok: true, text: `✓ ${verb}: ${data.student.name} (${data.registrationType}) — Credited.` });
         }
       } catch (err) {
-        showResult({ ok: false, text: 'Network error — try again' });
+        showResult({ ok: false, text: 'Network connection error — retry scan.' });
       } finally {
-        // Small cooldown so the attendee has time to move the QR code away
-        // before the same frame can be decoded and processed a second time.
         setTimeout(() => { processing = false; }, 2000);
       }
     }
@@ -79,10 +82,10 @@
       { facingMode: 'environment' },
       { fps: 10, qrbox: 250 },
       onScanSuccess,
-      () => {} // per-frame "no code found" callback — expected constantly, ignore
+      (err) => {}
     ).catch((err) => {
       cameraError.classList.remove('hidden');
-      cameraError.textContent = 'Could not access camera: ' + err;
+      cameraError.textContent = 'Camera permission denied or camera device unavailable.';
     });
   </script>
 </body>

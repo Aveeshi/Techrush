@@ -223,14 +223,24 @@ const facultyController = {
       const year = req.query.year || new Date().getFullYear();
       const month = req.query.month || new Date().getMonth() + 1;
 
-      let reportData = null;
-      if (req.query.run === '1') {
-        reportData = await Event.getClubReportByTimeframe(clubId, {
-          timeframe,
-          eventId,
-          year: parseInt(year, 10),
-          month: parseInt(month, 10),
-        });
+      let reportData = await Event.getClubReportByTimeframe(clubId, {
+        timeframe,
+        eventId,
+        year: parseInt(year, 10),
+        month: parseInt(month, 10),
+      });
+
+      // If specific timeframe filter yielded 0 events, fall back to all approved club events with attendees
+      if (!reportData || reportData.length === 0) {
+        const approvedFallback = allEvents.filter(e => e.approval_status === 'approved');
+        reportData = [];
+        for (const ev of (approvedFallback.length > 0 ? approvedFallback : allEvents)) {
+          const attendees = await Event.getAttendeesForEvent(ev.id);
+          reportData.push({
+            ...ev,
+            attendees,
+          });
+        }
       }
 
       res.render('faculty/generate-report', {

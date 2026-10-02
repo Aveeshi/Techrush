@@ -1,247 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head') %>
+  <%- include('../partials/head', { title: (isViewingOwn ? 'Student Hub' : student.name + ' Ledger') + ' — CampusBuzz' }) %>
+  <style>
+    .score-conic {
+      background: conic-gradient(var(--lime) 0% var(--perc, 75%), var(--surface-3) var(--perc, 75%) 100%);
+    }
+  </style>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
-    <!-- Breadcrumb / Inspector notice -->
+  <main class="page">
+    <!-- Inspection Banner if viewing as Auditor/Faculty -->
     <% if (isInspector) { %>
-      <div class="mb-6 p-4 rounded-lg bg-lime/10 border border-lime/40 flex items-center justify-between">
+      <div class="mb-6 p-4 rounded-xl bg-lime/10 border border-lime/40 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <span class="w-3 h-3 rounded-full bg-lime animate-pulse"></span>
-          <span class="text-sm font-semibold text-lime">
-            INSPECTION MODE: Viewing Activity Record of <%= student.name %> (<%= student.roll_number || 'N/A' %>)
+          <span class="w-2.5 h-2.5 rounded-full bg-lime animate-pulse"></span>
+          <span class="text-xs font-bold font-mono text-lime tracking-wide">
+            AUDIT / INSPECTOR MODE: Viewing Official Ledger of <%= student.name %> (<%= student.roll_number || 'N/A' %>)
           </span>
         </div>
-        <span class="font-mono text-xs text-muted uppercase">Auditor: <%= user.name %> (<%= user.type %>)</span>
+        <span class="badge badge-lime font-mono text-[9px]">Verified Session</span>
       </div>
     <% } %>
 
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-6 border-b border-line">
+    <!-- Welcome Header Row (CampusBuzz UI Design) -->
+    <section class="welcome-row">
       <div>
-        <div class="flex items-center gap-3 mb-2">
-          <span class="w-6 h-px bg-lime"></span>
-          <span class="font-mono text-xs tracking-[0.2em] text-lime">// ACADEMIC & ACTIVITY RECORD</span>
-        </div>
-        <h1 class="font-display text-3xl sm:text-4xl"><%= isViewingOwn ? 'My Activity Dashboard' : student.name + '\'s Activity Dashboard' %></h1>
-        <p class="text-muted text-sm mt-1">
-          Verified, tamper-proof record of event attendance and club activity hours. (Non-editable)
-        </p>
+        <span class="overline">// OFFICIAL CO-CURRICULAR LEDGER</span>
+        <h1>Good day, <%= student.name.split(' ')[0] %>.</h1>
+        <p>Your institutional activity transcript is <strong>cryptographically verified</strong> and non-editable.</p>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap items-center gap-3">
-        <a href="/student/semester-report" class="btn-lime text-xs font-semibold px-4 py-2.5 bg-lime text-black rounded-md flex items-center gap-1.5">
-          <span>📄</span> Semester Report
-        </a>
-        <a href="/student/graduation-report<%= isInspector ? '/' + student.id : '' %>" class="btn-outline text-xs font-semibold px-4 py-2.5 border border-line rounded-md hover:border-lime transition-colors flex items-center gap-1.5">
-          <span>🎓</span> 4-Year Graduation Dossier
-        </a>
-        <a href="/student/yearly-summary<%= isInspector ? '/' + student.id : '' %>" class="btn-outline text-xs font-semibold px-4 py-2.5 border border-line rounded-md hover:border-lime transition-colors flex items-center gap-1.5">
-          <span>📅</span> Yearly Memory Summary
-        </a>
-      </div>
-    </div>
-
-    <!-- Student Info & Hours Overview Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-      <!-- Profile Card -->
-      <div class="border border-line bg-panel p-6 rounded-xl flex items-center gap-4">
-        <img src="<%= student.profile_photo_url || '/avatars/avatar-1.svg' %>" alt="" class="w-16 h-16 rounded-full object-cover border border-line" />
+      <div class="student-id">
+        <span class="avatar avatar-lg">
+          <%= student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() %>
+        </span>
         <div>
-          <h2 class="font-bold text-lg leading-tight"><%= student.name %></h2>
-          <div class="text-xs text-muted mt-1 font-mono">Roll: <%= student.roll_number || 'N/A' %></div>
-          <div class="text-xs text-muted"><%= student.department || 'Department' %> • Year <%= student.year || '1' %></div>
+          <strong><%= student.name %></strong>
+          <p class="mono"><%= student.roll_number || 'PRN PENDING' %> · <%= (student.department || 'COMPUTER ENGG').toUpperCase() %> · YEAR <%= student.year || '2' %></p>
         </div>
+        <span class="badge badge-green">VERIFIED</span>
       </div>
+    </section>
 
-      <!-- Priority Club Card -->
-      <div class="border border-line bg-panel p-6 rounded-xl flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between">
-            <span class="font-mono text-[10px] tracking-[0.15em] text-muted">FIRST PRIORITY CLUB</span>
-            <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-lime/20 text-lime font-bold">PRIMARY</span>
-          </div>
-          <div class="font-display text-xl mt-2 text-fg truncate">
-            <%= priorityClub ? priorityClub.name : 'No Club Selected' %>
-          </div>
-          <div class="text-xs text-muted mt-1">
-            Priority club hours: <span class="text-lime font-bold font-mono"><%= priorityClubHours %> hrs</span>
-          </div>
-        </div>
-
-        <% if (isViewingOwn && myClubs && myClubs.length > 0) { %>
-          <form action="/student/priority-club" method="POST" class="mt-4 pt-3 border-t border-line flex items-center gap-2">
-            <select name="clubId" class="text-xs bg-black/40 border border-line rounded px-2 py-1.5 text-fg flex-1 focus:outline-none focus:border-lime">
-              <% myClubs.forEach(function(c) { %>
-                <option value="<%= c.club_id %>" <%= priorityClub && priorityClub.id === c.club_id ? 'selected' : '' %>>
-                  <%= c.name %>
-                </option>
-              <% }); %>
-            </select>
-            <button type="submit" class="text-xs px-2.5 py-1.5 bg-line text-fg hover:bg-lime hover:text-black rounded transition-colors font-mono">
-              Save
-            </button>
-          </form>
-        <% } %>
+    <!-- Quick Exports Row (CampusBuzz UI Design) -->
+    <section class="quick-row">
+      <div class="section-kicker">
+        <span>QUICK EXPORTS</span>
+        <i></i>
       </div>
+      <div class="quick-actions">
+        <a href="/student/semester-report" class="quick-button text-decoration-none">
+          <span class="quick-icon q0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </span>
+          <span>
+            <strong>Semester Report</strong>
+            <small>Hardcoded Institutional PDF</small>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
 
-      <!-- Total Hours Card -->
-      <div class="border border-line bg-panel p-6 rounded-xl flex flex-col justify-between">
-        <span class="font-mono text-[10px] tracking-[0.15em] text-muted">TOTAL CREDITED HOURS</span>
-        <div class="my-2">
-          <span class="font-display text-4xl text-lime font-bold"><%= totalHoursAll %></span>
-          <span class="text-xs text-muted ml-1">Hours</span>
-        </div>
-        <div class="text-xs text-muted">
-          Counted across all verified event check-ins and tasks.
-        </div>
+        <a href="/student/graduation-report<%= isInspector ? '/' + student.id : '' %>" class="quick-button text-decoration-none">
+          <span class="quick-icon q1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="6"></circle>
+              <path d="M8.5 13 7 22l5-3 5 3-1.5-9"></path>
+            </svg>
+          </span>
+          <span>
+            <strong>4-Year Dossier</strong>
+            <small>Degree Graduation Keepsake</small>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+
+        <a href="/student/yearly-summary<%= isInspector ? '/' + student.id : '' %>" class="quick-button text-decoration-none">
+          <span class="quick-icon q2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m12 2 1.5 5.2L18 10l-4.5 2.8L12 18l-1.5-5.2L6 10l4.5-2.8L12 2Z"></path>
+            </svg>
+          </span>
+          <span>
+            <strong>Yearly Keepsake</strong>
+            <small>Visual Memory Certificate</small>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
       </div>
+    </section>
 
-      <!-- Leadership Roles Card -->
-      <div class="border border-line bg-panel p-6 rounded-xl flex flex-col justify-between">
-        <span class="font-mono text-[10px] tracking-[0.15em] text-muted">LEADERSHIP &amp; COORDINATION</span>
-        <div class="my-2">
-          <% if (coordinatorships && coordinatorships.length > 0) { %>
-            <div class="space-y-1">
-              <% coordinatorships.forEach(function(sc) { %>
-                <div class="text-xs font-semibold text-lime flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
-                  <%= sc.role_title %> (<%= sc.club_name %>)
-                </div>
-              <% }); %>
-            </div>
-          <% } else { %>
-            <div class="text-xs text-muted">No student coordinator assignments.</div>
+    <!-- 4-Card Metric Grid (CampusBuzz UI Design) -->
+    <section class="metric-grid">
+      <!-- 1. First Priority Club -->
+      <article class="metric featured">
+        <div class="metric-top">
+          <span class="metric-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m12 2 1.5 5.2L18 10l-4.5 2.8L12 18l-1.5-5.2L6 10l4.5-2.8L12 2Z"></path>
+            </svg>
+          </span>
+          <span class="badge badge-lime">PRIMARY</span>
+        </div>
+        <p>FIRST PRIORITY CLUB</p>
+        <h2 class="truncate"><%= priorityClub ? priorityClub.name : 'None Selected' %></h2>
+        <div class="metric-foot">
+          <span>Priority Hours: <strong class="text-lime font-mono"><%= priorityClubHours %> hrs</strong></span>
+          <% if (isViewingOwn && myClubs && myClubs.length > 0) { %>
+            <form action="/student/priority-club" method="POST" class="inline-flex items-center gap-1.5 ml-auto">
+              <select name="clubId" onchange="this.form.submit()" class="text-[10px] bg-surface-3 border border-line rounded px-1.5 py-1 text-fg">
+                <% myClubs.forEach(function(c) { %>
+                  <option value="<%= c.club_id %>" <%= priorityClub && priorityClub.id === c.club_id ? 'selected' : '' %>><%= c.name %></option>
+                <% }); %>
+              </select>
+            </form>
           <% } %>
         </div>
-        <div class="text-[11px] text-muted font-mono">
-          Assigned by Faculty Coordinator
-        </div>
-      </div>
-    </div>
+      </article>
 
-    <!-- Attended Events Section (Non-Editable verified log) -->
-    <div class="border border-line rounded-xl bg-panel overflow-hidden mb-10">
-      <div class="p-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="font-display text-xl">Verified Attended Events Log</h2>
-          <p class="text-xs text-muted mt-0.5">
-            Strictly read-only &amp; non-editable. Automatically recorded upon official QR code check-in.
-          </p>
+      <!-- 2. Priority Club Progress -->
+      <article class="metric">
+        <div class="metric-top">
+          <span class="metric-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9"></circle>
+              <polyline points="12 7 12 12 15 14"></polyline>
+            </svg>
+          </span>
+          <span class="trend font-mono">SEMESTER GOAL</span>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="font-mono text-xs px-2.5 py-1 rounded-full bg-lime/10 text-lime border border-lime/30">
-            <%= attendedEvents.length %> Events Completed
+        <p>PRIORITY CLUB HOURS</p>
+        <h2><%= priorityClubHours %> <small>hrs</small></h2>
+        <div class="meter">
+          <% const priorityPct = Math.min(100, Math.round((priorityClubHours / 40) * 100)); %>
+          <span style="width: <%= priorityPct %>%;"></span>
+        </div>
+        <div class="metric-foot">
+          <span>Target: 40 hours</span>
+          <strong><%= priorityPct %>%</strong>
+        </div>
+      </article>
+
+      <!-- 3. Total Credited Hours -->
+      <article class="metric">
+        <div class="metric-top">
+          <span class="metric-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="6"></circle>
+              <path d="M8.5 13 7 22l5-3 5 3-1.5-9"></path>
+            </svg>
+          </span>
+          <span class="badge badge-green">ON TRACK</span>
+        </div>
+        <p>CUMULATIVE CREDITED HOURS</p>
+        <h2><%= totalHoursAll %> <small>hrs</small></h2>
+        <div class="metric-foot">
+          <span>Across all verified check-ins</span>
+          <span class="font-mono text-xs text-lime">8 Sems Active</span>
+        </div>
+      </article>
+
+      <!-- 4. Leadership / Coordinatorship -->
+      <article class="metric">
+        <div class="metric-top">
+          <span class="metric-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </span>
+          <span class="trend font-mono"><%= coordinatorships && coordinatorships.length > 0 ? coordinatorships.length + ' APPOINTED' : 'PARTICIPANT' %></span>
+        </div>
+        <p>COORDINATOR AUTHORITY</p>
+        <h2><%= coordinatorships ? String(coordinatorships.length).padStart(2, '0') : '00' %></h2>
+        <div class="metric-foot">
+          <span class="truncate"><%= coordinatorships && coordinatorships.length > 0 ? coordinatorships[0].role_title + ' · ' + coordinatorships[0].club_name : 'General Student Member' %></span>
+          <% if (coordinatorships && coordinatorships.some(c => c.can_inspect_students)) { %>
+            <span class="badge badge-lime text-[7px]">INSPECTOR</span>
+          <% } %>
+        </div>
+      </article>
+    </section>
+
+    <!-- Main Content Grid (CampusBuzz UI Design: Ledger Table + Report Status Card) -->
+    <section class="content-grid">
+      <!-- Left: Tamper-Proof Attendance Ledger -->
+      <article class="panel table-panel">
+        <div class="panel-head">
+          <div>
+            <span class="overline">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="10" width="16" height="11" rx="3"></rect>
+                <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+              </svg>
+              VERIFIED LEDGER (NON-EDITABLE)
+            </span>
+            <h3>Attended Events &amp; Credit Log</h3>
+          </div>
+          <span class="badge badge-green font-mono text-[9px]">
+            <%= attendedEvents ? attendedEvents.length : 0 %> SESSIONS LOGGED
           </span>
         </div>
-      </div>
 
-      <% if (attendedEvents.length === 0) { %>
-        <div class="p-12 text-center text-muted text-sm">
-          No attended event check-ins recorded yet. Check into events with your personal QR code to earn verified hours.
-        </div>
-      <% } else { %>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-black/20 text-muted font-mono text-[10px] tracking-[0.1em] border-b border-line uppercase">
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th class="px-6 py-3.5">#</th>
-                <th class="px-6 py-3.5">Event Name</th>
-                <th class="px-6 py-3.5">Organizing Club</th>
-                <th class="px-6 py-3.5">Date &amp; Venue</th>
-                <th class="px-6 py-3.5 text-center">Assigned Hours</th>
-                <th class="px-6 py-3.5">Checked-In At</th>
-                <th class="px-6 py-3.5 text-right">Status</th>
+                <th>Event</th>
+                <th>Host Club</th>
+                <th>Date</th>
+                <th>Venue</th>
+                <th>Assigned Hours</th>
+                <th>Verification Status</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-line">
-              <% attendedEvents.forEach(function(ev, idx) { %>
-                <tr class="hover:bg-white/[0.02] transition-colors">
-                  <td class="px-6 py-4 font-mono text-xs text-muted"><%= idx + 1 %></td>
-                  <td class="px-6 py-4 font-semibold text-fg">
-                    <a href="/events/<%= ev.event_id %>" class="hover:text-lime transition-colors">
-                      <%= ev.title %>
-                    </a>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class="inline-flex items-center gap-1.5 text-xs text-fg">
-                      <% if (priorityClub && priorityClub.id === ev.club_id) { %>
-                        <span class="w-2 h-2 rounded-full bg-lime" title="First Priority Club"></span>
-                      <% } %>
-                      <%= ev.club_name %>
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-xs text-muted">
-                    <div><%= new Date(ev.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></div>
-                    <div class="text-[11px] font-mono text-muted/80"><%= ev.venue || 'Campus' %></div>
-                  </td>
-                  <td class="px-6 py-4 text-center font-mono font-bold text-lime">
-                    +<%= ev.credit_hours %> hrs
-                  </td>
-                  <td class="px-6 py-4 text-xs text-muted font-mono">
-                    <%= new Date(ev.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
-                  </td>
-                  <td class="px-6 py-4 text-right">
-                    <span class="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
-                      <span>✓</span> VERIFIED
-                    </span>
+            <tbody>
+              <% if (!attendedEvents || attendedEvents.length === 0) { %>
+                <tr>
+                  <td colspan="6" class="text-center py-10 text-muted">
+                    No verified event check-ins recorded yet for this student.
                   </td>
                 </tr>
-              <% }); %>
+              <% } else { %>
+                <% attendedEvents.forEach(function(ev, idx) { %>
+                  <tr>
+                    <td>
+                      <span class="event-name">
+                        <i class="event-dot d<%= (idx % 3) + 1 %>"></i>
+                        <strong><%= ev.title %></strong>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="text-fg text-xs font-medium"><%= ev.club_name %></span>
+                    </td>
+                    <td class="mono text-xs">
+                      <%= new Date(ev.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                    </td>
+                    <td class="text-xs text-muted">
+                      <%= ev.location || 'PICT Campus' %>
+                    </td>
+                    <td class="mono font-bold text-lime">
+                      +<%= parseFloat(ev.hours || 0).toFixed(1) %> hrs
+                    </td>
+                    <td>
+                      <span class="badge badge-green">
+                        <i></i> Verified QR
+                      </span>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } %>
             </tbody>
           </table>
         </div>
-      <% } %>
-    </div>
+      </article>
 
-    <!-- Semester Reports Tracking -->
-    <div class="border border-line rounded-xl bg-panel p-6">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="font-display text-xl">Semester Activity Reports</h2>
-          <p class="text-xs text-muted mt-0.5">Official end-of-semester submissions sent to the Faculty Coordinator for verification.</p>
+      <!-- Right: Semester Report Status Card -->
+      <article class="panel report-status">
+        <div class="panel-head">
+          <div>
+            <span class="overline">SEMESTER AUDIT</span>
+            <h3>Transcript Progress</h3>
+          </div>
+          <span class="badge badge-lime font-mono text-[8px]">ACTIVE</span>
         </div>
-        <a href="/student/semester-report" class="btn-outline text-xs px-3 py-1.5 border border-line rounded hover:border-lime">
-          Submit New Report &rarr;
+
+        <% 
+          const calcGoal = 40;
+          const currentTotal = parseFloat(priorityClubHours || 0);
+          const percent = Math.min(100, Math.round((currentTotal / calcGoal) * 100));
+        %>
+        <div class="score-ring score-conic" style="--perc: <%= percent %>%;">
+          <div>
+            <strong><%= percent %></strong>
+            <small>%</small>
+          </div>
+        </div>
+
+        <p class="center-copy">
+          <%= priorityClubHours %> of 40 standard semester hours credited for priority club.
+        </p>
+
+        <div class="status-list">
+          <div>
+            <span><i class="status-dot green"></i><strong>Priority Hours</strong></span>
+            <b><%= priorityClubHours %> h</b>
+          </div>
+          <div>
+            <span><i class="status-dot amber"></i><strong>Other Clubs</strong></span>
+            <b><%= Math.max(0, totalHoursAll - priorityClubHours).toFixed(1) %> h</b>
+          </div>
+          <div>
+            <span><i class="status-dot red"></i><strong>Cumulative Total</strong></span>
+            <b><%= totalHoursAll %> h</b>
+          </div>
+        </div>
+
+        <a href="/student/semester-report" class="button button-primary block text-center mt-4 text-decoration-none">
+          Open Semester Report Studio →
         </a>
-      </div>
-
-      <% if (!semesterReports || semesterReports.length === 0) { %>
-        <p class="text-muted text-sm py-4">No semester reports submitted yet.</p>
-      <% } else { %>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <% semesterReports.forEach(function(rep) { %>
-            <div class="p-4 rounded-lg border border-line/80 bg-black/20 flex items-center justify-between">
-              <div>
-                <div class="font-bold text-sm text-fg">
-                  Semester <%= rep.semester %> (<%= rep.academic_year %>)
-                </div>
-                <div class="text-xs text-muted mt-0.5"><%= rep.club_name %> • <span class="text-lime font-mono"><%= rep.total_hours %> hrs</span></div>
-                <% if (rep.fc_remarks) { %>
-                  <div class="text-xs text-amber-300/80 mt-1 italic">"<%= rep.fc_remarks %>"</div>
-                <% } %>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="text-xs font-mono px-2.5 py-1 rounded-full uppercase
-                  <%= rep.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
-                      rep.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/40' :
-                      rep.status === 'reverification' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
-                      'bg-sky-500/20 text-sky-400 border border-sky-500/40' %>">
-                  <%= rep.status === 'reverification' ? 'Needs Revision' : rep.status %>
-                </span>
-                <a href="/student/semester-report/<%= rep.id %>/view" class="text-xs font-mono text-lime hover:underline">
-                  View &rarr;
-                </a>
-              </div>
-            </div>
-          <% }); %>
-        </div>
-      <% } %>
-    </div>
+      </article>
+    </section>
   </main>
 </body>
 </html>

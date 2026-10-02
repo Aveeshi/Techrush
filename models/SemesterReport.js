@@ -118,7 +118,7 @@ class SemesterReport {
 
     // All leadership roles (Team Head, Event Head, Student Coordinator)
     const rolesRes = await pool.query(
-      `SELECT 'Event Head' AS role_type, e.title AS context_name, c.name AS club_name, eh.created_at
+      `SELECT 'Event Head' AS role_type, e.title AS context_name, c.name AS club_name, eh.assigned_at AS created_at
        FROM event_heads eh
        JOIN events e ON e.id = eh.event_id
        JOIN clubs c ON c.id = e.club_id

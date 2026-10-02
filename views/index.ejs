@@ -1,87 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: "Clubbing — Run your event like a command center" }) %>
-  <style>
-    .stat-card {
-      transition: border-color .15s ease, background-color .15s ease;
-    }
-    .stat-card:hover {
-      border-color: #d7ff2b55;
-      background-color: #ffffff05;
-    }
-  </style>
+  <%- include('partials/head', { title: "CampusBuzz — Institutional Campus Activity & Credit Protocol" }) %>
 </head>
-<body class="font-sans text-fg antialiased">
-
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <!-- HERO -->
-  <main class="max-w-[1400px] mx-auto px-8 pt-20 pb-16">
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-16 items-start">
-
+  <!-- HERO SECTION -->
+  <main class="page pt-12 pb-24">
+    <div class="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 items-center mb-16">
       <!-- LEFT: COPY -->
       <div>
         <div class="flex items-center gap-3 mb-6">
-          <span class="w-6 h-px bg-lime"></span>
-          <span class="font-mono text-xs tracking-[0.2em] text-lime">001 — EVENT OPS OS</span>
+          <span class="badge badge-lime">
+            <i></i> PICT AUTONOMOUS CAMPUS PROTOCOL
+          </span>
+          <span class="mono text-xs text-muted">// PROTOCOL V2.4</span>
         </div>
 
-        <h1 class="font-display text-5xl sm:text-6xl lg:text-[64px] leading-[1.05] tracking-tight mb-8">
-          Got an event?<br />
-          <span class="text-lime">We're here to help</span> organize!
+        <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
+          Every contribution.<br />
+          <span class="text-lime">Credited.</span>
         </h1>
 
-        <p class="text-muted text-lg leading-relaxed max-w-xl mb-10">
-          Ditch the spreadsheets and WhatsApp groups. Clubbing gives organizers,
-          volunteers, and attendees a shared brain — QR check-ins, live analytics,
-          task boards, and AI predictions in one place.
+        <p class="text-muted text-base sm:text-lg leading-relaxed max-w-xl mb-8">
+          One verified, tamper-proof academic ledger for all co-curricular activities, leadership hours, and accredited milestones. Designed for students, faculty conveners, and institutional auditors.
         </p>
 
-        <div class="flex flex-wrap items-center gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <a href="/events" class="button button-primary text-sm py-3 px-6 text-decoration-none">
+            Explore Events &amp; Hackathons →
+          </a>
           <% if (!user) { %>
-            <a href="/auth/signup" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-              Signup
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M5 12h14M13 5l7 7-7 7"/>
-              </svg>
+            <a href="/auth/login" class="button button-quiet text-sm py-3 px-6 text-decoration-none">
+              Sign In to Portal
+            </a>
+          <% } else { %>
+            <a href="<%= user.type === 'faculty' ? '/faculty/dashboard' : user.type === 'institutional' ? '/institutional/dashboard' : '/student/dashboard' %>"
+               class="button button-quiet text-sm py-3 px-6 text-decoration-none">
+              My Console (<%= user.type.toUpperCase() %>)
             </a>
           <% } %>
-          <a href="/events" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-6 py-3.5 rounded-md">
-            Browse events
-          </a>
         </div>
       </div>
 
-      <!-- RIGHT: STATS -->
-      <div class="grid grid-cols-2 gap-4 w-full">
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">CLUBS</span>
-          <div class="font-display text-3xl text-lime mt-3">128</div>
-          <p class="text-muted text-sm mt-2">number of clubs</p>
-        </div>
+      <!-- RIGHT: STATS GRID -->
+      <div class="grid grid-cols-2 gap-4">
+        <article class="metric featured">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21h18M6 21V7l6-4 6 4v14"></path>
+              </svg>
+            </span>
+            <span class="badge badge-lime">REGISTERED</span>
+          </div>
+          <p>CAMPUS CLUBS</p>
+          <h2>08 <small>Autonomous</small></h2>
+          <div class="metric-foot">
+            <span>PICT Technical & Cultural</span>
+          </div>
+        </article>
 
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">EVENTS</span>
-          <div class="font-display text-3xl text-lime mt-3">642</div>
-          <p class="text-muted text-sm mt-2">number of events</p>
-        </div>
+        <article class="metric">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"></circle>
+                <polyline points="12 7 12 12 15 14"></polyline>
+              </svg>
+            </span>
+            <span class="trend font-mono">+18.4%</span>
+          </div>
+          <p>VERIFIED HOURS</p>
+          <h2>1,420 <small>hrs</small></h2>
+          <div class="metric-foot">
+            <span>Credited to transcripts</span>
+          </div>
+        </article>
 
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">PEOPLE</span>
-          <div class="font-display text-3xl text-lime mt-3">14.2k</div>
-          <p class="text-muted text-sm mt-2">number of participants</p>
-        </div>
+        <article class="metric">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="6"></circle>
+                <path d="M8.5 13 7 22l5-3 5 3-1.5-9"></path>
+              </svg>
+            </span>
+            <span class="badge badge-green">NAAC A++</span>
+          </div>
+          <p>AUDIT LEDGER</p>
+          <h2>100% <small>Locked</small></h2>
+          <div class="metric-foot">
+            <span>Cryptographic sign-off</span>
+          </div>
+        </article>
 
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">CREW</span>
-          <div class="font-display text-3xl text-lime mt-3">890</div>
-          <p class="text-muted text-sm mt-2">number of volunteers</p>
-        </div>
+        <article class="metric">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <span class="trend font-mono">LIVE NODE</span>
+          </div>
+          <p>ACTIVE STUDENTS</p>
+          <h2>3,200+</h2>
+          <div class="metric-foot">
+            <span>Enrolled engineers</span>
+          </div>
+        </article>
       </div>
+    </div>
 
+    <!-- WORKSPACE TILES -->
+    <div class="section-title mb-6">
+      <div>
+        <span class="overline">GOVERNANCE &amp; ACTIVITY ROLES</span>
+        <h3>Authorized Campus Workspaces</h3>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- 1. Student Activity Ledger -->
+      <a href="/student/dashboard" class="panel p-6 hover:border-lime/40 transition-all text-decoration-none group">
+        <div class="flex items-center justify-between mb-4">
+          <span class="w-10 h-10 rounded-xl bg-lime/10 border border-lime/30 flex items-center justify-center text-lime group-hover:scale-110 transition-transform">
+            🎓
+          </span>
+          <span class="badge badge-green">STUDENT HUB</span>
+        </div>
+        <h3 class="text-lg font-bold text-fg mb-2 group-hover:text-lime transition-colors">
+          Student Activity Ledger
+        </h3>
+        <p class="text-xs text-muted leading-relaxed mb-4">
+          View your tamper-proof attended events list, select your first priority club, track credited hours, and export end-of-semester transcripts.
+        </p>
+        <span class="mono text-xs text-lime flex items-center gap-1">
+          Open Student Ledger →
+        </span>
+      </a>
+
+      <!-- 2. Faculty Coordinator Desk -->
+      <a href="/auth/faculty-login" class="panel p-6 hover:border-amber-400/40 transition-all text-decoration-none group">
+        <div class="flex items-center justify-between mb-4">
+          <span class="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+            🛡️
+          </span>
+          <span class="badge badge-amber">FACULTY CONVENER</span>
+        </div>
+        <h3 class="text-lg font-bold text-fg mb-2 group-hover:text-amber-400 transition-colors">
+          Faculty Review Desk
+        </h3>
+        <p class="text-xs text-muted leading-relaxed mb-4">
+          Sanction event permissions before publishing, verify student semester credit claims with 1-click approvals or remarks, and assign student coordinators.
+        </p>
+        <span class="mono text-xs text-amber-400 flex items-center gap-1">
+          Access Faculty Console →
+        </span>
+      </a>
+
+      <!-- 3. Institutional Command Hub -->
+      <a href="/auth/institutional-login" class="panel p-6 hover:border-blue-400/40 transition-all text-decoration-none group">
+        <div class="flex items-center justify-between mb-4">
+          <span class="w-10 h-10 rounded-xl bg-blue-400/10 border border-blue-400/30 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+            🏛️
+          </span>
+          <span class="badge badge-lime">CENTRAL COUNCIL</span>
+        </div>
+        <h3 class="text-lg font-bold text-fg mb-2 group-hover:text-blue-400 transition-colors">
+          Institutional Command Center
+        </h3>
+        <p class="text-xs text-muted leading-relaxed mb-4">
+          Campus-wide transparency across all 8 clubs: inspect event attendee rosters, audit verified faculty coordinators, and generate NAAC/NBA dossiers.
+        </p>
+        <span class="mono text-xs text-blue-400 flex items-center gap-1">
+          Enter Institutional Hub →
+        </span>
+      </a>
     </div>
   </main>
-
 </body>
 </html>

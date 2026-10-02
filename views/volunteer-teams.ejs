@@ -1,67 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: 'Volunteer · ' + event.title }) %>
+  <%- include('partials/head', { title: 'Volunteer Teams · ' + event.title + ' — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-2xl mx-auto px-8 pt-16 pb-20">
-    <a href="<%= backUrl %>" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK TO EVENT</a>
+  <main class="page max-w-3xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="<%= backUrl %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← BACK TO EVENT
+      </a>
+      <span class="badge badge-lime font-mono text-[9px]">VOLUNTEER APPLICATION</span>
+    </div>
 
-    <div class="mt-6 mb-10">
-      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-        VOLUNTEERING
-      </span>
-      <h1 class="font-display text-4xl mb-2"><%= event.title %></h1>
-      <p class="text-muted">Pick as many teams as you'd like to join. No approval needed — you're added instantly.</p>
+    <!-- Header Section -->
+    <div class="welcome-row mb-8">
+      <div>
+        <span class="overline text-lime">// OPERATIONAL PARTICIPATION</span>
+        <h1 class="text-3xl font-extrabold text-fg my-1"><%= event.title %></h1>
+        <p class="text-xs text-muted">Select the volunteer teams you want to join. Your registration is confirmed immediately upon selection.</p>
+      </div>
     </div>
 
     <% if (teams.length === 0) { %>
-      <p class="text-muted">This event doesn't have any teams set up yet.</p>
+      <article class="panel p-10 text-center text-muted text-xs">
+        This event does not have any active volunteer teams set up yet.
+      </article>
     <% } else { %>
-      <form action="<%= formAction %>" method="POST">
-        <div class="space-y-3 mb-8">
+      <form action="<%= formAction %>" method="POST" class="space-y-4">
+        <div class="space-y-3 mb-6">
           <% teams.forEach(function(team) { %>
             <% var isFull = team.is_full && !team.joined; %>
-            <label class="flex items-start gap-4 border border-line rounded-lg p-5 <%= isFull ? 'opacity-60' : 'cursor-pointer hover:border-lime/55 transition-colors' %>">
-              <% if (isFull) { %>
-                <input type="checkbox" disabled class="mt-1 shrink-0 w-4 h-4" />
-              <% } else { %>
-                <input
-                  type="checkbox"
-                  name="teamIds"
-                  value="<%= team.id %>"
-                  <%= team.joined ? 'checked' : '' %>
-                  class="mt-1 shrink-0 accent-lime w-4 h-4"
-                />
-              <% } %>
-              <span class="flex-1">
-                <span class="flex items-center gap-2 flex-wrap">
-                  <span class="block font-display text-lg"><%= team.name %></span>
-                  <% if (isFull) { %>
-                    <span class="font-mono text-[11px] tracking-[0.1em] text-red-400 border border-red-400/50 rounded px-2 py-0.5">TEAM FULL</span>
-                  <% } else if (team.max_size) { %>
-                    <span class="font-mono text-[11px] tracking-[0.1em] text-muted">(<%= team.member_count %> / <%= team.max_size %>)</span>
+            <label class="panel p-5 block bg-surface <%= isFull ? 'opacity-50' : 'cursor-pointer hover:border-lime/50 transition-colors' %>">
+              <div class="flex items-start gap-4">
+                <% if (isFull) { %>
+                  <input type="checkbox" disabled class="mt-1 w-4 h-4 shrink-0" />
+                <% } else { %>
+                  <input
+                    type="checkbox"
+                    name="teamIds"
+                    value="<%= team.id %>"
+                    <%= team.joined ? 'checked' : '' %>
+                    class="mt-1 w-4 h-4 shrink-0 accent-lime"
+                  />
+                <% } %>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <strong class="text-sm text-fg"><%= team.name %></strong>
+                    <% if (isFull) { %>
+                      <span class="badge badge-red font-mono text-[8px]">TEAM FULL</span>
+                    <% } else if (team.max_size) { %>
+                      <span class="badge badge-neutral font-mono text-[8px]"><%= team.member_count %> / <%= team.max_size %> SLOTS</span>
+                    <% } %>
+                  </div>
+                  <% if (team.description) { %>
+                    <p class="text-xs text-muted mb-2"><%= team.description %></p>
                   <% } %>
-                </span>
-                <% if (team.description) { %>
-                  <span class="block text-muted text-sm mt-1"><%= team.description %></span>
-                <% } %>
-                <% if (team.requiredSkills && team.requiredSkills.length > 0) { %>
-                  <span class="flex flex-wrap gap-2 mt-2">
-                    <% team.requiredSkills.forEach(function(s) { %>
-                      <span class="chip-label"><%= s.name %></span>
-                    <% }); %>
-                  </span>
-                <% } %>
-              </span>
+                  <% if (team.requiredSkills && team.requiredSkills.length > 0) { %>
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                      <% team.requiredSkills.forEach(function(s) { %>
+                        <span class="badge badge-lime text-[8px]"><%= s.name %></span>
+                      <% }); %>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
             </label>
           <% }); %>
         </div>
 
-        <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-          Save my teams
+        <button type="submit" class="button button-primary w-full text-xs py-3 font-bold">
+          Save Team Selections →
         </button>
       </form>
     <% } %>

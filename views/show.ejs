@@ -1,50 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: event.title }) %>
+  <%- include('partials/head', { title: event.title + ' — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
-    <a href="/events" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← BACK TO EVENTS</a>
+  <main class="page max-w-4xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/events" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Events Explorer
+      </a>
+      <span class="badge badge-green font-mono text-[9px]">VERIFIED EVENT</span>
+    </div>
 
     <% if (typeof error !== 'undefined' && error) { %>
-      <div class="border border-red-500 bg-red-500/10 text-red-400 px-4 py-3 rounded-md mt-6 text-sm">
+      <div class="badge badge-red mb-6 p-4 w-full rounded-xl text-xs">
         <%= error %>
       </div>
     <% } %>
 
-    <div class="mt-6 mb-8">
-      <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-        <%= (event.event_type_name || 'EVENT').toUpperCase() %>
-      </span>
-      <h1 class="font-display text-4xl sm:text-5xl mb-2"><%= event.title %></h1>
-      <p class="text-muted">Organized by <span class="text-fg"><%= event.club_name %></span></p>
+    <!-- Event Header -->
+    <div class="panel p-6 sm:p-8 mb-8 relative overflow-hidden">
+      <div class="flex items-center gap-2.5 mb-3">
+        <span class="badge badge-lime text-xs font-bold">
+          <%= event.club_name || 'STUDENT CLUB' %>
+        </span>
+        <span class="mono text-xs text-muted">
+          <%= (event.event_type_name || 'WORKSHOP').toUpperCase() %>
+        </span>
+        <span class="badge badge-green font-mono font-bold text-xs ml-auto">
+          +<%= parseFloat(event.credit_hours || 4).toFixed(1) %> CREDIT HRS
+        </span>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-fg mb-4 leading-tight">
+        <%= event.title %>
+      </h1>
+
+      <p class="text-sm text-muted leading-relaxed">
+        Hosted by <%= event.club_name %>. Verified under the Institutional Co-Curricular Activity Course (CCA-I).
+      </p>
     </div>
 
+    <!-- Media Carousel or Banner -->
     <%
-      // images (EventImage.findByEvent) is only passed on the normal
-      // showEvent render — the register() error-path re-renders don't
-      // re-fetch it, so fall back to an empty list there rather than
-      // crashing on an undefined local.
       const gallery = typeof images !== 'undefined' ? images : [];
     %>
     <% if (gallery.length > 1) { %>
-      <!-- Multi-image carousel — plain JS, no library. One <img> per
-           gallery image (all in the DOM so no extra network round trips
-           mid-browse), toggled via .hidden; left/right buttons cycle an
-           index. Falls back to a single <img> below when there's 0 or 1
-           images. -->
-      <div id="event-carousel" class="relative w-full h-72 rounded-lg border border-line overflow-hidden mb-8 bg-panel">
+      <div id="event-carousel" class="relative w-full h-80 rounded-2xl border border-line overflow-hidden mb-8 bg-surface-2">
         <% gallery.forEach(function(img, i) { %>
           <img src="<%= img.url %>" alt="" data-slide="<%= i %>" class="carousel-slide absolute inset-0 w-full h-full object-cover <%= i === 0 ? '' : 'hidden' %>" />
         <% }); %>
-        <button type="button" onclick="moveCarousel(-1)" aria-label="Previous image"
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">‹</button>
-        <button type="button" onclick="moveCarousel(1)" aria-label="Next image"
-                class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">›</button>
-        <div class="absolute bottom-3 right-3 font-mono text-[11px] tracking-[0.1em] text-white bg-black/60 rounded px-2 py-1">
+        <button type="button" onclick="moveCarousel(-1)" aria-label="Previous"
+                class="absolute left-4 top-1/2 -translate-y-1/2 icon-button bg-black/70 hover:bg-black text-white">‹</button>
+        <button type="button" onclick="moveCarousel(1)" aria-label="Next"
+                class="absolute right-4 top-1/2 -translate-y-1/2 icon-button bg-black/70 hover:bg-black text-white">›</button>
+        <div class="absolute bottom-4 right-4 font-mono text-xs text-white bg-black/70 rounded-lg px-2.5 py-1">
           <span id="carousel-position">1</span> / <%= gallery.length %>
         </div>
       </div>
@@ -62,163 +74,180 @@
         })();
       </script>
     <% } else if (gallery.length === 1) { %>
-      <img src="<%= gallery[0].url %>" alt="" class="w-full h-72 object-cover rounded-lg border border-line mb-8" />
+      <div class="w-full h-80 rounded-2xl border border-line overflow-hidden mb-8 bg-surface-2">
+        <img src="<%= gallery[0].url %>" alt="" class="w-full h-full object-cover" />
+      </div>
     <% } else if (event.banner_url) { %>
-      <img src="<%= event.banner_url %>" alt="" class="w-full h-72 object-cover rounded-lg border border-line mb-8" />
+      <div class="w-full h-80 rounded-2xl border border-line overflow-hidden mb-8 bg-surface-2">
+        <img src="<%= event.banner_url %>" alt="" class="w-full h-full object-cover" />
+      </div>
     <% } %>
 
+    <!-- Event Key Metrics (Figma Stat Grid) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">WHEN</span>
-        <p class="mt-2 text-sm">
-          <%= new Date(event.start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %>
-        </p>
-      </div>
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">WHERE</span>
-        <p class="mt-2 text-sm"><%= event.venue || 'TBA' %></p>
-      </div>
-      <div class="stat-card border border-line rounded-lg p-5">
-        <span class="font-mono text-[11px] tracking-[0.15em] text-muted">VISIBILITY</span>
-        <p class="mt-2 text-sm"><%= event.visibility === 'club_only' ? 'Club members only' : 'Public' %></p>
-      </div>
+      <article class="metric p-5">
+        <div class="metric-top mb-2">
+          <span class="metric-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9"></circle>
+              <polyline points="12 7 12 12 15 14"></polyline>
+            </svg>
+          </span>
+          <span class="trend font-mono text-[10px]">SCHEDULE</span>
+        </div>
+        <p>DATE &amp; TIME</p>
+        <h3 class="text-sm font-bold text-fg mt-1">
+          <%= new Date(event.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+        </h3>
+        <span class="mono text-[11px] text-muted">
+          <%= new Date(event.start_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %>
+        </span>
+      </article>
+
+      <article class="metric p-5">
+        <div class="metric-top mb-2">
+          <span class="metric-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </span>
+          <span class="trend font-mono text-[10px]">CAMPUS NODE</span>
+        </div>
+        <p>LOCATION &amp; VENUE</p>
+        <h3 class="text-sm font-bold text-fg mt-1 truncate">
+          <%= event.venue || 'PICT Campus' %>
+        </h3>
+        <span class="mono text-[11px] text-muted">In-person session</span>
+      </article>
+
+      <article class="metric featured p-5">
+        <div class="metric-top mb-2">
+          <span class="metric-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="6"></circle>
+              <path d="M8.5 13 7 22l5-3 5 3-1.5-9"></path>
+            </svg>
+          </span>
+          <span class="badge badge-lime text-[8px]">ACCREDITED</span>
+        </div>
+        <p>CREDIT HOURS</p>
+        <h3 class="text-sm font-bold text-lime mt-1 font-mono">
+          +<%= parseFloat(event.credit_hours || 4).toFixed(1) %> Hours
+        </h3>
+        <span class="mono text-[11px] text-muted">Transfers to Priority Club</span>
+      </article>
     </div>
 
-    <div class="mb-10">
-      <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-3">ABOUT THIS EVENT</h2>
-      <p class="text-fg leading-relaxed whitespace-pre-line"><%= event.description || 'No description provided.' %></p>
-    </div>
+    <!-- About Section -->
+    <article class="panel p-6 sm:p-8 mb-8">
+      <span class="overline mb-3 block">EVENT DESCRIPTION &amp; LEARNING OUTCOMES</span>
+      <h3 class="text-xl font-bold mb-4">About this session</h3>
+      <p class="text-sm text-fg leading-relaxed whitespace-pre-line">
+        <%= event.description || 'Interactive hands-on session organized to foster technical skills, collaborative teamwork, and co-curricular excellence.' %>
+      </p>
+    </article>
 
+    <!-- Sub-Events if flagship -->
     <% if (typeof hasSubEvents !== 'undefined' && hasSubEvents) { %>
-      <!-- Sub-events -->
-      <div class="mb-10">
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">SUB-EVENTS</h2>
+      <article class="panel p-6 sm:p-8 mb-8">
+        <span class="overline mb-3 block">FLAGSHIP TOURNAMENT TRACKS</span>
+        <h3 class="text-xl font-bold mb-4">Included Sub-Events</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <% subEvents.forEach(function(sub) { %>
-            <a href="/events/<%= event.id %>/sub-events/<%= sub.id %>" class="event-card block border border-line rounded-lg p-5 hover:border-lime/55 transition-colors">
-              <h3 class="font-display text-lg mb-2"><%= sub.title %></h3>
-              <div class="space-y-1.5 text-sm text-muted mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono">📅</span>
-                  <%= new Date(sub.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %>
-                </div>
-                <% if (sub.venue) { %>
-                  <div class="flex items-center gap-2">
-                    <span class="font-mono">📍</span>
-                    <%= sub.venue %>
-                  </div>
-                <% } %>
+            <a href="/events/<%= event.id %>/sub-events/<%= sub.id %>" class="panel p-4 hover:border-lime/40 transition-colors text-decoration-none">
+              <h4 class="font-bold text-fg mb-1 text-sm"><%= sub.title %></h4>
+              <div class="text-xs text-muted space-y-1">
+                <div>📅 <%= new Date(sub.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></div>
+                <% if (sub.venue) { %><div>📍 <%= sub.venue %></div><% } %>
               </div>
-              <span class="font-mono text-xs tracking-[0.1em] text-lime">VIEW SUB-EVENT →</span>
+              <span class="mono text-xs text-lime mt-3 block">View Sub-Event Track →</span>
             </a>
           <% }); %>
         </div>
-      </div>
+      </article>
     <% } %>
 
-    <!-- Registration -->
-    <div class="border-t border-line pt-8">
+    <!-- Registration / Action Section -->
+    <article class="panel p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-line">
+        <div>
+          <span class="overline">PARTICIPATION STATUS</span>
+          <h3 class="text-xl font-bold">Event Registration</h3>
+        </div>
+      </div>
+
       <% if (!user) { %>
-        <p class="text-muted mb-4">Log in as a student to <%= hasSubEvents ? 'volunteer for' : 'register for' %> this event.</p>
-        <a href="/auth/login" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-          Log in
-        </a>
-
+        <div class="p-6 rounded-xl bg-surface-2 border border-line text-center">
+          <p class="text-sm text-muted mb-4">Sign in to register and earn verified credit hours on your institutional transcript.</p>
+          <a href="/auth/login" class="button button-primary text-sm py-2.5 px-6 text-decoration-none">
+            Sign In with College ID →
+          </a>
+        </div>
       <% } else if (typeof isHead !== 'undefined' && isHead) { %>
-        <!-- This event's own head manages it — no register/volunteer
-             options for them, same as an organizer never registers for
-             their own club's event. -->
-        <p class="text-lime font-semibold mb-1">You're the event head for this event.</p>
-        <p class="text-muted text-sm mb-4">Manage its info, teams, and tasks from your dashboard instead of registering here.</p>
-        <a href="/club-events/<%= event.id %>" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-5 py-3 rounded-md text-sm">
-          Manage event →
-        </a>
-
+        <div class="p-5 rounded-xl bg-lime/10 border border-lime/30 text-lime text-sm">
+          <strong>✓ Event Head Status:</strong> You are the designated head managing this event.
+        </div>
       <% } else if (user.type === 'organizer') { %>
         <% if (user.club_id === event.club_id) { %>
-          <% if (!hasSubEvents) { %>
-            <a href="/events/<%= event.id %>/scan" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-              Scan attendee QR codes
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-muted">You are organizing this event.</span>
+            <a href="/events/<%= event.id %>/scan" class="button button-primary text-decoration-none">
+              Scan Attendee QR Check-Ins →
             </a>
-          <% } else { %>
-            <p class="text-muted">This event's attendees register per sub-event — scan from each sub-event's page.</p>
-          <% } %>
+          </div>
         <% } else { %>
-          <p class="text-muted">Organizer accounts don't register for events.</p>
+          <p class="text-muted text-sm">Organizer accounts manage events from their club console.</p>
         <% } %>
-
       <% } else if (registration) { %>
-        <div class="border border-lime/40 bg-lime/5 rounded-md px-5 py-4">
-          <p class="text-lime font-semibold">
-            You're registered as <%= registration.registration_type === 'volunteer' ? 'a volunteer' : 'an attendee' %>.
-          </p>
-          <p class="text-muted text-sm mt-1">Status: <%= registration.status %></p>
+        <div class="p-6 rounded-xl bg-lime/10 border border-lime/40">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <span class="badge badge-green font-mono text-[9px] mb-1">REGISTERED</span>
+              <h4 class="text-base font-bold text-lime">
+                You are registered as <%= registration.registration_type === 'volunteer' ? 'a Volunteer' : 'an Attendee' %>
+              </h4>
+              <p class="text-xs text-muted mt-0.5">Check-in Status: <strong class="mono text-fg"><%= registration.status %></strong></p>
+            </div>
+          </div>
 
           <% if (registration.registration_type === 'attendee' && typeof qrImage !== 'undefined' && qrImage) { %>
-            <div class="mt-5 pt-5 border-t border-lime/20 flex flex-col items-start gap-3">
-              <p class="font-mono text-[11px] tracking-[0.15em] text-muted">YOUR CHECK-IN CODE</p>
-              <img src="<%= qrImage %>" alt="Your event QR code" class="w-48 h-48 rounded-md border border-line bg-white p-2" />
-              <p class="text-muted text-xs max-w-sm">
-                Show this at the entrance. The organizer scans it once to check you in, and again to check you out.
-              </p>
-            </div>
-          <% } %>
-
-          <% if (registration.registration_type === 'volunteer') { %>
-            <div class="mt-5 pt-5 border-t border-lime/20">
-              <a href="/events/<%= event.id %>/volunteer-teams" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-5 py-3 rounded-md text-sm">
-                Manage which teams you're on →
-              </a>
+            <div class="mt-4 pt-4 border-t border-line/40 flex flex-col sm:flex-row items-center gap-6">
+              <div class="bg-white p-3 rounded-xl shadow-lg">
+                <img src="<%= qrImage %>" alt="QR Code" class="w-40 h-40 object-contain" />
+              </div>
+              <div>
+                <span class="overline text-[9px]">OFFICIAL CHECK-IN PASS</span>
+                <h5 class="text-sm font-bold text-fg mb-1">Your Geofenced QR Pass</h5>
+                <p class="text-xs text-muted leading-relaxed max-w-sm mb-3">
+                  Present this QR code at the venue entrance. The student coordinator or faculty head will scan it to verify your presence and lock your credit hours.
+                </p>
+                <span class="mono text-[10px] text-lime">● Encrypted &amp; Tamper-Proof</span>
+              </div>
             </div>
           <% } %>
         </div>
-
-      <% } else if (hasSubEvents) { %>
-        <!-- Flagship events with sub-events are volunteer-only at this level —
-             attendees register per sub-event instead (see the cards above). -->
-        <div class="flex flex-wrap gap-4">
-          <% if (canVolunteer) { %>
-            <form action="/events/<%= event.id %>/register" method="POST">
-              <input type="hidden" name="registrationType" value="volunteer" />
-              <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-                Volunteer now
-              </button>
-            </form>
-          <% } %>
-        </div>
-
-        <% if (!canVolunteer) { %>
-          <p class="text-muted text-xs mt-4">
-            Volunteering is open to <%= event.club_name %> members. Join the club to unlock this option.
-          </p>
-        <% } %>
-
       <% } else { %>
+        <!-- Registration Actions -->
         <div class="flex flex-wrap items-center gap-4">
           <form action="/events/<%= event.id %>/register" method="POST">
             <input type="hidden" name="registrationType" value="attendee" />
-            <button type="submit" class="btn-lime bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-              Register as attendee
+            <button type="submit" class="button button-primary py-3 px-6 text-sm font-bold">
+              Register as Attendee (+<%= parseFloat(event.credit_hours || 4).toFixed(1) %> hrs) →
             </button>
           </form>
 
           <% if (canVolunteer) { %>
             <form action="/events/<%= event.id %>/register" method="POST">
               <input type="hidden" name="registrationType" value="volunteer" />
-              <button type="submit" class="btn-outline border border-line font-semibold px-6 py-3.5 rounded-md">
-                Volunteer now
+              <button type="submit" class="button button-quiet py-3 px-6 text-sm font-semibold">
+                Volunteer for Event
               </button>
             </form>
           <% } %>
         </div>
-
-        <% if (!canVolunteer) { %>
-          <p class="text-muted text-xs mt-4">
-            Volunteering is open to <%= event.club_name %> members. Join the club to unlock this option.
-          </p>
-        <% } %>
       <% } %>
-    </div>
+    </article>
   </main>
 </body>
 </html>

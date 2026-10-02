@@ -1,96 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('../partials/head') %>
+  <%- include('../partials/head', { title: 'Faculty Event Approvals — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
     <div class="mb-6 flex items-center justify-between">
-      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg">&larr; Back to Command Center</a>
+      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Faculty Desk
+      </a>
+      <span class="badge badge-amber font-mono text-[9px]">SANCTION PROTOCOL</span>
     </div>
 
-    <div class="flex items-center gap-3 mb-2">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// EVENT VERIFICATION &amp; AGREEMENT</span>
-    </div>
-    <h1 class="font-display text-3xl sm:text-4xl mb-3">Event Approvals &amp; Permissions</h1>
-    <p class="text-muted text-sm max-w-2xl mb-8">
-      Under institutional policy, all club events must receive explicit Faculty Coordinator agreement before publishing and taking registrations.
-    </p>
+    <!-- Header Section -->
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline text-amber-400">// EVENT VERIFICATION &amp; FACULTY AGREEMENT</span>
+        <h1>Event Approvals &amp; Permissions</h1>
+        <p>Under institutional policy, all club events must receive explicit Faculty Coordinator agreement before publishing and taking registrations.</p>
+      </div>
+
+      <div class="date-tile">
+        <strong><%= pendingEvents.length %></strong>
+        <small>PENDING</small>
+      </div>
+    </section>
 
     <% if (message) { %>
-      <div class="p-4 mb-6 rounded-lg bg-lime/10 border border-lime/30 text-lime text-sm">
-        ✓ <%= message %>
+      <div class="panel p-4 mb-6 bg-lime/10 border border-lime/40 text-lime text-xs flex items-center gap-2">
+        <span class="font-bold">✓</span> <%= message %>
       </div>
     <% } %>
 
-    <!-- Pending Event Approvals Section -->
-    <div class="border border-line rounded-xl bg-panel overflow-hidden mb-12">
-      <div class="p-6 border-b border-line flex items-center justify-between">
+    <!-- Pending Proposals Section -->
+    <div class="panel mb-10 overflow-hidden">
+      <div class="panel-head">
         <div>
-          <h2 class="font-display text-xl">Pending Event Proposals</h2>
-          <p class="text-xs text-muted mt-0.5">Submitted by club student organizers awaiting your permission.</p>
+          <span class="overline text-amber-400">// AWAITING SANCTION</span>
+          <h3 class="text-base font-bold text-fg">Pending Event Proposals</h3>
         </div>
-        <span class="font-mono text-xs px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
-          <%= pendingEvents.length %> Pending Agreement
-        </span>
+        <span class="badge badge-amber font-mono text-[9px]"><%= pendingEvents.length %> Pending Agreement</span>
       </div>
 
       <% if (pendingEvents.length === 0) { %>
-        <div class="p-8 text-center text-muted text-sm">
+        <div class="p-10 text-center text-muted text-xs">
           No pending event proposals. All events have been processed.
         </div>
       <% } else { %>
         <div class="divide-y divide-line">
           <% pendingEvents.forEach(function(ev) { %>
-            <div class="p-6">
-              <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div class="p-6 bg-surface hover:bg-surface-2 transition-colors">
+              <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                 <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-2">
-                    <h3 class="font-display text-xl font-bold text-fg"><%= ev.title %></h3>
-                    <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-lime/10 text-lime"><%= ev.event_type_name || 'Event' %></span>
+                  <div class="flex items-center gap-2.5 mb-2">
+                    <span class="badge badge-lime text-[9px] uppercase"><%= ev.event_type_name || 'Event' %></span>
+                    <h3 class="text-lg font-bold text-fg"><%= ev.title %></h3>
                   </div>
-                  <p class="text-sm text-fg/80 leading-relaxed mb-4"><%= ev.description || 'No description provided.' %></p>
+                  <p class="text-xs text-muted leading-relaxed mb-4"><%= ev.description || 'No description provided.' %></p>
                   
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-black/20 border border-line text-xs font-mono">
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-xl bg-surface-2 border border-line text-xs font-mono">
                     <div>
-                      <span class="text-muted block text-[10px]">SCHEDULED DATE</span>
-                      <span class="text-fg font-semibold"><%= new Date(ev.start_time).toLocaleDateString() %></span>
+                      <span class="text-muted block text-[8px] uppercase tracking-wider">SCHEDULED DATE</span>
+                      <strong class="text-fg mt-0.5 block"><%= new Date(ev.start_time).toLocaleDateString() %></strong>
                     </div>
                     <div>
-                      <span class="text-muted block text-[10px]">VENUE</span>
-                      <span class="text-fg font-semibold"><%= ev.venue || 'TBA' %></span>
+                      <span class="text-muted block text-[8px] uppercase tracking-wider">VENUE</span>
+                      <strong class="text-fg mt-0.5 block"><%= ev.venue || 'TBA' %></strong>
                     </div>
                     <div>
-                      <span class="text-muted block text-[10px]">ASSIGNED CREDIT HOURS</span>
-                      <span class="text-lime font-bold font-mono"><%= ev.credit_hours || 0 %> hrs</span>
+                      <span class="text-muted block text-[8px] uppercase tracking-wider">CREDIT AWARD</span>
+                      <strong class="text-lime mt-0.5 block">+<%= ev.credit_hours || 0 %> hrs</strong>
                     </div>
                     <div>
-                      <span class="text-muted block text-[10px]">ORGANIZER</span>
-                      <span class="text-fg font-semibold"><%= ev.organizer_name || 'Club Core' %></span>
+                      <span class="text-muted block text-[8px] uppercase tracking-wider">ORGANIZER</span>
+                      <strong class="text-fg mt-0.5 block"><%= ev.organizer_name || 'Club Core' %></strong>
                     </div>
                   </div>
                 </div>
 
                 <!-- Approval / Reject Action Form -->
-                <div class="w-full md:w-80 flex flex-col gap-3 p-4 rounded-xl border border-line bg-black/30">
-                  <span class="font-mono text-[10px] tracking-wider uppercase text-muted">FACULTY DECISION &amp; REMARKS</span>
+                <div class="w-full lg:w-80 p-4 rounded-xl border border-line bg-surface-2 flex flex-col gap-3">
+                  <span class="overline text-[8px] text-muted block">FACULTY DECISION &amp; REMARKS</span>
                   
-                  <!-- Approve Form -->
                   <form action="/faculty/events/<%= ev.id %>/approve" method="POST" class="space-y-2">
                     <input type="text" name="remarks" placeholder="Optional agreement remarks..."
-                           class="w-full text-xs px-3 py-2 bg-panel border border-line rounded text-fg placeholder-muted focus:outline-none focus:border-lime" />
-                    <button type="submit" class="btn-lime w-full text-xs font-semibold py-2.5 bg-lime text-black rounded flex items-center justify-center gap-1.5 shadow">
+                           class="w-full text-xs px-3 py-2 bg-surface border border-line rounded-lg text-fg placeholder-muted focus:outline-none focus:border-lime" />
+                    <button type="submit" class="button button-primary w-full text-xs py-2 flex items-center justify-center gap-1.5 font-bold">
                       <span>✓</span> Grant Permission &amp; Publish
                     </button>
                   </form>
 
-                  <!-- Reject Form -->
                   <form action="/faculty/events/<%= ev.id %>/reject" method="POST">
                     <input type="hidden" name="remarks" value="Event rejected by Faculty Coordinator" />
-                    <button type="submit" class="w-full text-xs font-semibold py-2 border border-red-500/40 text-red-400 hover:bg-red-500/10 rounded transition-colors">
+                    <button type="submit" class="button button-quiet w-full text-xs text-red-400 hover:text-red-300 border-red-500/20">
                       ✕ Reject Event Proposal
                     </button>
                   </form>
@@ -103,48 +107,63 @@
     </div>
 
     <!-- Approved Club Events Listing -->
-    <div class="border border-line rounded-xl bg-panel overflow-hidden">
-      <div class="p-6 border-b border-line flex items-center justify-between">
+    <div class="panel overflow-hidden">
+      <div class="panel-head">
         <div>
-          <h2 class="font-display text-xl">Approved &amp; Conducted Club Events</h2>
-          <p class="text-xs text-muted mt-0.5">Events running under official faculty agreement.</p>
+          <span class="overline text-lime">// ACCREDITED CALENDAR</span>
+          <h3 class="text-base font-bold text-fg">Approved &amp; Conducted Club Events</h3>
         </div>
-        <span class="font-mono text-xs text-muted"><%= allEvents.length %> Total Events</span>
+        <span class="badge badge-green font-mono text-[9px]"><%= allEvents.length %> Total Events</span>
       </div>
 
       <% if (allEvents.length === 0) { %>
-        <div class="p-8 text-center text-muted text-sm">
+        <div class="p-10 text-center text-muted text-xs">
           No approved events conducted yet.
         </div>
       <% } else { %>
-        <div class="divide-y divide-line">
-          <% allEvents.forEach(function(ev) { %>
-            <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/[0.01]">
-              <div>
-                <div class="flex items-center gap-3">
-                  <h3 class="font-bold text-base text-fg"><%= ev.title %></h3>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded
-                    <%= ev.approval_status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
-                        ev.approval_status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/40' :
-                        'bg-amber-500/20 text-amber-300 border border-amber-500/40' %>">
-                    <%= ev.approval_status === 'approved' ? '✓ FACULTY APPROVED' : ev.approval_status %>
-                  </span>
-                </div>
-                <div class="text-xs text-muted mt-1">
-                  📅 <%= new Date(ev.start_time).toLocaleDateString() %> • Venue: <%= ev.venue || 'Campus' %> • Award: <span class="text-lime font-mono"><%= ev.credit_hours || 0 %> hrs</span>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <span class="text-xs font-mono text-muted">
-                  <strong class="text-lime"><%= ev.attended_count || 0 %></strong> attended
-                </span>
-                <a href="/faculty/events/<%= ev.id %>/attendees" class="btn-outline text-xs px-3.5 py-1.5 border border-line rounded hover:border-lime flex items-center gap-1">
-                  <span>👥</span> View Attendee Roster &rarr;
-                </a>
-              </div>
-            </div>
-          <% }); %>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Event Title</th>
+                <th>Status</th>
+                <th>Scheduled Date</th>
+                <th>Venue</th>
+                <th>Credits</th>
+                <th>Attendees</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% allEvents.forEach(function(ev) { %>
+                <tr>
+                  <td>
+                    <strong class="text-xs text-fg"><%= ev.title %></strong>
+                  </td>
+                  <td>
+                    <span class="badge <%= ev.approval_status === 'approved' ? 'badge-green' : ev.approval_status === 'rejected' ? 'badge-red' : 'badge-amber' %> font-mono text-[8px]">
+                      <%= ev.approval_status === 'approved' ? '✓ APPROVED' : ev.approval_status.toUpperCase() %>
+                    </span>
+                  </td>
+                  <td class="mono text-xs">
+                    <%= new Date(ev.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                  </td>
+                  <td class="text-xs text-muted"><%= ev.venue || 'Campus' %></td>
+                  <td class="mono font-bold text-lime">+<%= ev.credit_hours || 0 %>h</td>
+                  <td>
+                    <span class="badge badge-neutral font-mono text-[8px]">
+                      <%= ev.attended_count || 0 %> Check-ins
+                    </span>
+                  </td>
+                  <td>
+                    <a href="/faculty/events/<%= ev.id %>/attendees" class="button button-quiet text-[9px] py-1 px-3 text-decoration-none">
+                      Attendees Roster →
+                    </a>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
         </div>
       <% } %>
     </div>

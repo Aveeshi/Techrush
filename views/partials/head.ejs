@@ -1,14 +1,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title><%= typeof title !== 'undefined' ? title : 'Clubbing' %></title>
+<title><%= typeof title !== 'undefined' ? title : 'CampusBuzz — Campus Activity & Credit Protocol' %></title>
 
-<!--
-  Runs before Tailwind's CDN script so <html data-theme> is already set
-  by the time utility classes (which reference the CSS variables below)
-  get their first paint — no flash of the wrong theme. Priority: the
-  `theme` cookie (set by the toggle in nav.ejs, POST /theme) > the
-  visitor's OS preference > dark (this app's original look).
--->
+<!-- Pre-paint theme script to prevent FOUC -->
 <script>
   (function () {
     var match = document.cookie.match(/(?:^|; )theme=(dark|light)/);
@@ -17,117 +11,91 @@
   })();
 </script>
 
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Google Fonts (Manrope, DM Mono, Outfit, Plus Jakarta Sans, JetBrains Mono) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- CampusBuzz Production Design Styles -->
+<link rel="stylesheet" href="/css/campusbuzz.css">
+
 <script>
   tailwind.config = {
     theme: {
       extend: {
         colors: {
-          // Every one of these resolves through the CSS variables defined
-          // in the <style> block below, which is what makes flipping
-          // [data-theme] on <html> re-theme every already-generated
-          // utility class (bg-panel, border-line, text-muted, ...)
-          // instantly, with no Tailwind re-compile and no per-view edits.
           bg: 'var(--bg)',
-          panel: 'var(--panel)',
+          panel: 'var(--surface, var(--panel))',
+          'panel-glass': 'rgba(17, 19, 17, 0.85)',
+          surface: 'var(--surface)',
+          'surface-2': 'var(--surface-2)',
+          'surface-3': 'var(--surface-3)',
           line: 'var(--line)',
+          'line-strong': 'var(--line-strong)',
           lime: '#d7ff2b',
+          'lime-ink': '#111600',
+          'lime-dim': 'rgba(215, 255, 43, 0.12)',
           muted: 'var(--muted)',
-          fg: 'var(--fg)',
+          fg: 'var(--text, var(--fg))',
         },
         fontFamily: {
-          display: ['"Archivo Black"', 'sans-serif'],
-          sans: ['Inter', 'sans-serif'],
-          mono: ['"JetBrains Mono"', 'monospace'],
+          sans: ['"Manrope"', '"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+          display: ['"Outfit"', '"Manrope"', 'sans-serif'],
+          mono: ['"DM Mono"', '"JetBrains Mono"', 'monospace'],
+        },
+        boxShadow: {
+          'glow-lime': '0 0 25px -5px rgba(215, 255, 43, 0.4)',
+          'glow-subtle': '0 10px 30px -10px rgba(0, 0, 0, 0.5)',
         },
       },
     },
   }
 </script>
+
 <style>
   :root, :root[data-theme="dark"] {
-    --bg: #0a0a0a;
-    --panel: #111111;
-    --line: #242424;
-    --muted: #8a8a8a;
-    --fg: #ffffff;
-    --hover-tint: rgba(255, 255, 255, 0.05);
-    --hover-tint-soft: rgba(255, 255, 255, 0.02);
+    --bg: #090a09;
+    --surface: #111311;
+    --surface-2: #171a17;
+    --surface-3: #1c201c;
+    --panel: #111311;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.15);
+    --fg: #f4f6f1;
+    --text: #f4f6f1;
+    --muted: #8b9189;
+    --faint: #5f665e;
+    --lime: #d7ff2b;
+    --lime-ink: #111600;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #fb7185;
+    --purple: #a78bfa;
+    --blue: #60a5fa;
+    --shadow: 0 20px 60px rgba(0,0,0,.25);
   }
+
   :root[data-theme="light"] {
-    --bg: #fafafa;
+    --bg: #f4f5ef;
+    --surface: #ffffff;
+    --surface-2: #f7f8f3;
+    --surface-3: #eef0e8;
     --panel: #ffffff;
-    --line: #e2e2e2;
-    --muted: #6b6b6b;
-    --fg: #0a0a0a;
-    --hover-tint: rgba(0, 0, 0, 0.04);
-    --hover-tint-soft: rgba(0, 0, 0, 0.02);
-  }
-  /* Only a media-query fallback for the sliver of time before the
-     pre-paint script above runs (effectively never, but keeps this
-     honest if JS is disabled) — the script is the real source of truth. */
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme]) {
-      --bg: #fafafa;
-      --panel: #ffffff;
-      --line: #e2e2e2;
-      --muted: #6b6b6b;
-      --fg: #0a0a0a;
-      --hover-tint: rgba(0, 0, 0, 0.04);
-      --hover-tint-soft: rgba(0, 0, 0, 0.02);
-    }
+    --line: rgba(14, 18, 12, 0.09);
+    --line-strong: rgba(14, 18, 12, 0.16);
+    --fg: #121510;
+    --text: #121510;
+    --muted: #697066;
+    --faint: #969c93;
+    --shadow: 0 20px 60px rgba(28,32,20,.08);
   }
 
-  body { background-color: var(--bg); transition: background-color .15s ease, color .15s ease; }
-  .btn-lime {
-    transition: transform .15s ease, box-shadow .15s ease;
-  }
-  .btn-lime:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 0 0 1px #d7ff2b, 0 8px 24px -8px rgba(215,255,43,.5);
-  }
-  .btn-outline:hover {
-    background-color: var(--hover-tint);
-  }
-  .stat-card, .event-card {
-    transition: border-color .15s ease, background-color .15s ease;
-  }
-  .stat-card:hover, .event-card:hover {
-    border-color: #d7ff2b55;
-    background-color: var(--hover-tint-soft);
-  }
-
-  /* Chip-style multiselect: a plain checkbox visually hidden, its label
-     styled as a pill, toggling appearance via :checked — no JS needed
-     for the visual state. Used for skills / event interests / clubs on
-     signup, and reusable anywhere else a multiselect tag picker is needed. */
-  .chip-input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  .chip-label {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: 9999px;
-    font-size: 0.8125rem;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all .15s ease;
-    user-select: none;
-  }
-  .chip-input:checked + .chip-label {
-    background-color: #d7ff2b;
-    border-color: #d7ff2b;
-    color: #0a0a0a;
-    font-weight: 600;
-  }
-  .chip-label:hover {
-    border-color: #d7ff2b55;
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', 'Plus Jakarta Sans', sans-serif;
   }
 </style>
