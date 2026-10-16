@@ -358,6 +358,20 @@ class Event {
 
     return eventsWithAttendees;
   }
+
+  // Fetch all published/completed events across all clubs for the institutional calendar
+  static async getAllEventsForCalendar() {
+    const { rows } = await pool.query(
+      `SELECT e.id, e.title, e.start_time, e.end_time, e.venue, e.status,
+              e.credit_hours, c.name AS club_name, et.name AS event_type_name
+       FROM events e
+       JOIN clubs c ON c.id = e.club_id
+       LEFT JOIN event_types et ON et.id = e.event_type_id
+       WHERE e.status IN ('published', 'ongoing', 'completed')
+       ORDER BY e.start_time ASC`
+    );
+    return rows;
+  }
 }
 
 module.exports = Event;

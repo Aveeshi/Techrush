@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Activity Report — CampusBuzz' }) %>
+  <style>
+    /* ── Print / Save-as-PDF styles ── */
+    @media print {
+      header, .no-print { display: none !important; }
+      body  { background: #fff !important; color: #111 !important; }
+      main  { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      #print-header { display: block !important; }
+
+      .panel, article {
+        background: #fff !important;
+        border: 1px solid #ccc !important;
+        border-radius: 4px !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+      h1, h2, h3, h4, strong, .text-fg { color: #111 !important; }
+      p, .text-muted, small  { color: #444 !important; }
+      .mono, .font-mono      { color: #555 !important; }
+      .overline { color: #666 !important; font-size: 9px !important; letter-spacing: .1em; }
+
+      .badge {
+        background: transparent !important; border: 1px solid #aaa !important;
+        color: #333 !important; padding: 1px 6px !important;
+        border-radius: 4px !important; font-size: 8px !important;
+      }
+      .badge-lime, .badge-green { border-color: #2d6a2d !important; color: #2d6a2d !important; }
+      .badge-amber { border-color: #b45309 !important; color: #b45309 !important; }
+
+      .section-title { border-bottom: 2px solid #222 !important; padding-bottom: 6px !important; }
+      section { page-break-inside: avoid; margin-bottom: 24px !important; }
+      .space-y-4 > * + * { margin-top: 10px !important; }
+      .welcome-row { display: none !important; }
+
+      #print-footer { display: block !important; border-top: 1px solid #ccc; margin-top: 32px; padding-top: 8px; font-size: 9px; color: #888; text-align: center; }
+      @page { margin: 18mm 15mm; size: A4 portrait; }
+    }
+    #print-header, #print-footer { display: none; }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <%- include('../partials/nav') %>
+
+  <!-- Hidden letterhead — only rendered in print/PDF -->
+  <div id="print-header" style="margin-bottom:24px;border-bottom:2px solid #111;padding-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px;">CampusBuzz</div>
+        <div style="font-size:10px;color:#555;margin-top:3px;">Official Co-Curricular Activity Report</div>
+        <div style="font-size:9px;color:#888;margin-top:2px;">Pune Institute of Computer Technology · Autonomous · NAAC A++</div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:#555;line-height:1.8;">
+        <div><strong>Student:</strong> <%= user.name %></div>
+        <div><strong>PRN / Roll No:</strong> <%= user.roll_number || 'N/A' %></div>
+        <div><strong>Department:</strong> <%= (user.department || 'Computer Engg').toUpperCase() %></div>
+        <div><strong>Generated:</strong> <span id="print-date"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <main class="page max-w-5xl mx-auto pt-8 pb-20">
+    <!-- Top bar: back link + action buttons -->
+    <div class="mb-6 flex items-center justify-between no-print">
+      <a href="/student/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Student Hub
+      </a>
+      <div class="flex items-center gap-2">
+        <button onclick="printReport()"
+                class="button button-primary text-xs flex items-center gap-2 py-2 px-4">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          Print / Save as PDF
+        </button>
+        <span class="badge badge-lime text-[9px] font-mono">ACTIVITY REPORT SYSTEM</span>
+      </div>
+    </div>
+
+    <!-- Title Row -->
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline">// OFFICIAL ACTIVITY DOSSIER</span>
+        <h1>Activity Report</h1>
+        <p>Your complete co-curricular activity record — academic projects, community initiatives, and club special projects.</p>
+      </div>
+      <div class="student-id">
+        <span class="avatar avatar-lg">
+          <%= user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() %>
+        </span>
+        <div>
+          <strong><%= user.name %></strong>
+          <p class="mono"><%= user.roll_number || 'PRN PENDING' %> · <%= (user.department || 'COMPUTER ENGG').toUpperCase() %></p>
+        </div>
+        <span class="badge badge-green">VERIFIED</span>
+      </div>
+    </section>
+
+    <!-- Report Notice -->
+    <div class="panel p-4 mb-6 bg-amber-400/10 border border-amber-400/40 text-amber-400 text-xs flex items-center gap-2">
+      <span class="font-bold">📋</span>
+      <span>This report is populated from verified club records and submitted project data. Connect with your Faculty Coordinator to update entries. <em>(Demo data — database integration coming soon)</em></span>
+    </div>
+
+    <!-- Section 1: Academic & Technical Projects -->
+    <section class="mb-8">
+      <div class="section-title mb-4">
+        <div>
+          <span class="overline">SECTION 01</span>
+          <h3>Academic & Technical Projects</h3>
+        </div>
+        <span class="badge badge-lime">3 PROJECTS</span>
+      </div>
+
+      <div class="space-y-4">
+        <article class="panel p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-green text-[8px]">COMPLETED</span>
+                <span class="mono text-[10px] text-muted">Jan 2025 – Apr 2025</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">Smart Campus Attendance System</h4>
+              <p class="text-xs text-muted mb-3 leading-relaxed">
+                Developed an IoT-based attendance tracking system using RFID cards and a Node.js backend. Integrated real-time dashboards for faculty monitoring. Deployed for 2 departments as a pilot.
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <span class="badge badge-neutral text-[9px]">Node.js</span>
+                <span class="badge badge-neutral text-[9px]">IoT / RFID</span>
+                <span class="badge badge-neutral text-[9px]">PostgreSQL</span>
+                <span class="badge badge-neutral text-[9px]">React</span>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-2xl font-mono font-bold text-lime">A+</span>
+              <p class="text-[10px] text-muted mono">GRADE</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-green text-[8px]">COMPLETED</span>
+                <span class="mono text-[10px] text-muted">Aug 2024 – Nov 2024</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">AI-Powered Crop Disease Detection</h4>
+              <p class="text-xs text-muted mb-3 leading-relaxed">
+                Built a deep learning model (CNN) to detect 12 types of crop diseases from leaf images. Achieved 94% validation accuracy. Published dataset on Kaggle with 1.2k downloads.
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <span class="badge badge-neutral text-[9px]">Python</span>
+                <span class="badge badge-neutral text-[9px]">TensorFlow</span>
+                <span class="badge badge-neutral text-[9px]">Flask</span>
+                <span class="badge badge-neutral text-[9px]">OpenCV</span>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-2xl font-mono font-bold text-lime">A</span>
+              <p class="text-[10px] text-muted mono">GRADE</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-amber text-[8px]">ONGOING</span>
+                <span class="mono text-[10px] text-muted">Jul 2025 – Present</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">Decentralized Voting System (Blockchain)</h4>
+              <p class="text-xs text-muted mb-3 leading-relaxed">
+                Final year capstone project — implementing a tamper-proof e-voting mechanism using Ethereum smart contracts and a Web3.js frontend for institute student council elections.
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <span class="badge badge-neutral text-[9px]">Solidity</span>
+                <span class="badge badge-neutral text-[9px]">Web3.js</span>
+                <span class="badge badge-neutral text-[9px]">Ethereum</span>
+                <span class="badge badge-neutral text-[9px]">Next.js</span>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-2xl font-mono font-bold text-muted">—</span>
+              <p class="text-[10px] text-muted mono">IN PROGRESS</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Section 2: Community Work & Social Initiatives -->
+    <section class="mb-8">
+      <div class="section-title mb-4">
+        <div>
+          <span class="overline">SECTION 02</span>
+          <h3>Community Work & Social Initiatives</h3>
+        </div>
+        <span class="badge badge-lime">2 ENTRIES</span>
+      </div>
+
+      <div class="space-y-4">
+        <article class="panel p-5">
+          <div class="flex items-start gap-4">
+            <div class="shrink-0 w-10 h-10 rounded-xl bg-lime/10 border border-lime/30 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-lime">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-green text-[8px]">COMPLETED</span>
+                <span class="mono text-[10px] text-muted">Mar 2025 · 3 Days</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">Digital Literacy Workshop — Underprivileged Youth</h4>
+              <p class="text-xs text-muted mb-2 leading-relaxed">
+                Conducted 3-day digital literacy workshops for 60+ underprivileged students from Zilla Parishad schools in Pune district. Topics: Basic computing, internet safety, and Microsoft Office tools. Organized under NSS Unit 14.
+              </p>
+              <div class="flex flex-wrap items-center gap-4 text-[10px] text-muted font-mono">
+                <span>📍 ZP School, Hadapsar, Pune</span>
+                <span>👥 60 Beneficiaries</span>
+                <span>🕐 18 Hours Volunteered</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel p-5">
+          <div class="flex items-start gap-4">
+            <div class="shrink-0 w-10 h-10 rounded-xl bg-lime/10 border border-lime/30 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-lime">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-green text-[8px]">COMPLETED</span>
+                <span class="mono text-[10px] text-muted">Jan 2025 · 1 Day</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">Blood Donation Drive — Red Cross Collaboration</h4>
+              <p class="text-xs text-muted mb-2 leading-relaxed">
+                Co-organized a campus-wide blood donation camp in collaboration with the Indian Red Cross Society. Coordinated logistics, volunteer teams, and donor registration. Successfully collected 142 units of blood.
+              </p>
+              <div class="flex flex-wrap items-center gap-4 text-[10px] text-muted font-mono">
+                <span>📍 PICT Campus, Pune</span>
+                <span>🩸 142 Units Collected</span>
+                <span>👤 Event Coordinator</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Section 3: Special Club Projects & Achievements -->
+    <section class="mb-8">
+      <div class="section-title mb-4">
+        <div>
+          <span class="overline">SECTION 03</span>
+          <h3>Special Club Projects & Achievements</h3>
+        </div>
+        <span class="badge badge-lime">4 ENTRIES</span>
+      </div>
+
+      <div class="space-y-4">
+        <article class="panel p-5">
+          <div class="flex items-start gap-4">
+            <div class="shrink-0">
+              <span class="badge badge-lime font-mono text-[9px]">PASC</span>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-green text-[8px]">COMPLETED</span>
+                <span class="mono text-[10px] text-muted">Feb 2025</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">TechRush 2025 — Hackathon Lead Organizer</h4>
+              <p class="text-xs text-muted mb-2 leading-relaxed">
+                Led the organizing team for TechRush 2025, PASC's 24-hour inter-college hackathon with 380 participants from 28 colleges. Managed 8 sub-teams, sponsor coordination, and live judging logistics.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="badge badge-neutral text-[9px]">Lead Organizer</span>
+                <span class="badge badge-neutral text-[9px]">380 Participants</span>
+                <span class="badge badge-neutral text-[9px]">₹2L Prize Pool</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel p-5">
+          <div class="flex items-start gap-4">
+            <div class="shrink-0">
+              <span class="badge badge-lime font-mono text-[9px]">ACM</span>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-green text-[8px]">ACHIEVED</span>
+                <span class="mono text-[10px] text-muted">Dec 2024</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">ICPC Regional Qualifier — Team Captain</h4>
+              <p class="text-xs text-muted mb-2 leading-relaxed">
+                Captained Team BitBenders at ICPC Asia Regional Qualifier (Amritapuri). Ranked 47th out of 312 teams. Qualified for the India National Championship round.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="badge badge-neutral text-[9px]">Team Captain</span>
+                <span class="badge badge-neutral text-[9px]">Rank 47 / 312</span>
+                <span class="badge badge-neutral text-[9px]">National Qualifier</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel p-5">
+          <div class="flex items-start gap-4">
+            <div class="shrink-0">
+              <span class="badge badge-lime font-mono text-[9px]">CSI</span>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-amber text-[8px]">ONGOING</span>
+                <span class="mono text-[10px] text-muted">Aug 2025 – Present</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">Open Source Contribution Drive — Club Initiative</h4>
+              <p class="text-xs text-muted mb-2 leading-relaxed">
+                Spearheading a semester-long club initiative to encourage members to contribute to open source projects. Mentoring 12 juniors through their first pull requests on GitHub. Tracking progress via a custom dashboard.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="badge badge-neutral text-[9px]">Technical Lead</span>
+                <span class="badge badge-neutral text-[9px]">12 Mentees</span>
+                <span class="badge badge-neutral text-[9px]">Open Source</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel p-5">
+          <div class="flex items-start gap-4">
+            <div class="shrink-0">
+              <span class="badge badge-lime font-mono text-[9px]">PASC</span>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-green text-[8px]">CERTIFIED</span>
+                <span class="mono text-[10px] text-muted">Nov 2024</span>
+              </div>
+              <h4 class="text-sm font-bold text-fg mb-1">Best Technical Speaker — Annual Tech Symposium</h4>
+              <p class="text-xs text-muted mb-2 leading-relaxed">
+                Awarded "Best Technical Speaker" at PICT's Annual Tech Symposium 2024 for a talk on "Microservices Architecture in Production" attended by 200+ students and industry professionals.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="badge badge-neutral text-[9px]">🏆 Award Winner</span>
+                <span class="badge badge-neutral text-[9px]">200+ Audience</span>
+                <span class="badge badge-neutral text-[9px]">Speaker</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Summary Footer -->
+    <article class="panel p-6 bg-surface-2 border border-line">
+      <div class="panel-head px-0 pt-0 pb-4 mb-4">
+        <span class="overline">REPORT SUMMARY</span>
+        <span class="badge badge-green text-[9px]">OFFICIAL RECORD</span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="text-center">
+          <span class="text-2xl font-mono font-bold text-lime">3</span>
+          <p class="text-[10px] text-muted mt-1">TECH PROJECTS</p>
+        </div>
+        <div class="text-center">
+          <span class="text-2xl font-mono font-bold text-lime">2</span>
+          <p class="text-[10px] text-muted mt-1">COMMUNITY WORK</p>
+        </div>
+        <div class="text-center">
+          <span class="text-2xl font-mono font-bold text-lime">4</span>
+          <p class="text-[10px] text-muted mt-1">CLUB PROJECTS</p>
+        </div>
+        <div class="text-center">
+          <span class="text-2xl font-mono font-bold text-lime">18+</span>
+          <p class="text-[10px] text-muted mt-1">VOLUNTEER HRS</p>
+        </div>
+      </div>
+    </article>
+  </main>
+  <script>
+    function printReport() {
+      document.getElementById('print-date').innerText = new Date().toLocaleDateString();
+      window.print();
+    }
+  </script>
+</body>
+</html>

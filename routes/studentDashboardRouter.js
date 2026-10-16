@@ -26,4 +26,9 @@ router.get('/graduation-report/:studentId', requireStudentOrInspector, studentDa
 router.get('/yearly-summary', requireStudent, studentDashboardController.yearlySummary);
 router.get('/yearly-summary/:studentId', requireStudentOrInspector, studentDashboardController.yearlySummary);
 
+// Activity Report (projects, community work, special club projects)
+router.get('/report', requireStudent, (req, res) => {
+  res.render('student/report', { user: req.user });
+});
+
 module.exports = router;

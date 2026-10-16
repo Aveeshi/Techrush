@@ -13,6 +13,9 @@ router.get('/dashboard', institutionalController.dashboard);
 // Central report redirect
 router.get('/reports', institutionalController.reportsOverview);
 
+// Export all events to Excel
+router.get('/export-events', institutionalController.exportEventsExcel);
+
 // View individual student semester report
 router.get('/reports/:reportId', institutionalController.viewSemesterReport);
 

@@ -7,6 +7,7 @@ const institutionalController = {
   async dashboard(req, res, next) {
     try {
       const clubs = await InstitutionalCoordinator.getAllClubsOverview();
+      const calendarEvents = await Event.getAllEventsForCalendar();
 
       let totalEventsAcrossClubs = 0;
       let totalMembersAcrossClubs = 0;
@@ -21,6 +22,7 @@ const institutionalController = {
       res.render('institutional/dashboard', {
         admin: req.user,
         clubs,
+        calendarEvents: JSON.stringify(calendarEvents),
         totalEventsAcrossClubs,
         totalMembersAcrossClubs,
         totalCoordinators,
@@ -203,6 +205,64 @@ const institutionalController = {
       next(err);
     }
   },
+
+  // GET /institutional/export-events (Export all events as an Excel overall report)
+  async exportEventsExcel(req, res, next) {
+    try {
+      const xlsx = require('xlsx');
+      const pool = require('../utils/db');
+      
+      const { rows } = await pool.query(
+        `SELECT e.title AS "Event Name", 
+                c.name AS "Club", 
+                e.start_time AS "Start Time", 
+                e.end_time AS "End Time", 
+                fc.name AS "Faculty Coordinator",
+                e.venue AS "Venue",
+                e.status AS "Status",
+                e.credit_hours AS "Credit Hours",
+                et.name AS "Event Type"
+         FROM events e
+         JOIN clubs c ON c.id = e.club_id
+         LEFT JOIN faculty_coordinators fc ON fc.club_id = c.id
+         LEFT JOIN event_types et ON et.id = e.event_type_id
+         ORDER BY e.start_time DESC`
+      );
+
+      const formattedRows = rows.map(row => {
+          const start = new Date(row["Start Time"]);
+          const end = new Date(row["End Time"]);
+          let durationHrs = 0;
+          if (!isNaN(start) && !isNaN(end)) {
+             durationHrs = Math.round((end - start) / (1000 * 60 * 60) * 10) / 10;
+          }
+          return {
+              "Club": row.Club,
+              "Event Name": row["Event Name"],
+              "Start Date": start.toLocaleDateString(),
+              "Duration (Hrs)": durationHrs,
+              "Faculty Coordinator": row["Faculty Coordinator"] || 'N/A',
+              "Venue": row["Venue"] || 'N/A',
+              "Status": row["Status"] || 'N/A',
+              "Credit Hours": row["Credit Hours"] || 0,
+              "Event Type": row["Event Type"] || 'N/A'
+          };
+      });
+
+      const wb = xlsx.utils.book_new();
+      const ws = xlsx.utils.json_to_sheet(formattedRows);
+      xlsx.utils.book_append_sheet(wb, ws, "Events");
+
+      const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      
+      res.setHeader('Content-Disposition', 'attachment; filename="Overall_Events_Report.xlsx"');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      return res.send(buffer);
+
+    } catch (err) {
+      next(err);
+    }
+  }
 };
 
 module.exports = institutionalController;

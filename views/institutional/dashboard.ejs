@@ -124,7 +124,7 @@
                     <td class="mono font-bold text-fg"><%= c.total_events || 0 %></td>
                     <td class="mono text-muted"><%= c.total_members || 0 %></td>
                     <td class="text-xs">
-                      <%= c.faculty_coordinator_name ? c.faculty_coordinator_name : 'Pending Appointment' %>
+                      <%= c.faculty_name ? c.faculty_name : 'Pending Appointment' %>
                     </td>
                     <td>
                       <span class="avatar-stack">
@@ -195,7 +195,7 @@
             <span class="avatar">FC</span>
             <div>
               <small>FACULTY IN-CHARGE</small>
-              <strong><%= featuredClub.faculty_coordinator_name || 'Dr. Faculty Convener' %></strong>
+              <strong><%= featuredClub.faculty_name || 'Dr. Faculty Convener' %></strong>
             </div>
             <span class="badge badge-green text-[7px]">CONFIRMED</span>
           </div>
@@ -215,7 +215,212 @@
         </article>
       <% } %>
     </section>
+
+    <!-- ===================== CAMPUS EVENTS CALENDAR ===================== -->
+    <section class="mt-8 mb-8">
+      <div class="section-title mb-4" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <span class="overline">CAMPUS SCHEDULE</span>
+          <h3>Events Calendar</h3>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span class="badge badge-neutral" id="cal-month-label"></span>
+          <a href="/institutional/export-events" class="button button-quiet text-xs" style="padding: 4px 8px; text-decoration: none;">Export Events (Excel)</a>
+        </div>
+      </div>
+
+      <div class="panel p-0 overflow-hidden">
+        <!-- Calendar Navigation Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-line">
+          <button onclick="calPrev()" class="icon-button" title="Previous Month">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span class="text-sm font-bold font-mono text-fg" id="cal-header"></span>
+          <button onclick="calNext()" class="icon-button" title="Next Month">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+
+        <!-- Day Labels Row -->
+        <div class="grid grid-cols-7 border-b border-line">
+          <% ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(d) { %>
+            <div class="text-center text-[10px] font-mono text-muted py-2 border-r border-line last:border-r-0"><%= d %></div>
+          <% }); %>
+        </div>
+
+        <!-- Calendar Grid (filled by JS) -->
+        <div class="grid grid-cols-7" id="cal-grid"></div>
+      </div>
+
+      <!-- Event Detail Panel: shown when a date with events is clicked -->
+      <div id="cal-detail" class="panel p-5 mt-4 hidden">
+        <div class="panel-head px-0 pt-0 pb-3 mb-3">
+          <span class="overline text-[10px]" id="cal-detail-date">SELECT A DATE</span>
+          <span class="badge badge-lime text-[9px]" id="cal-detail-count">0 EVENTS</span>
+        </div>
+        <div id="cal-detail-list" class="space-y-3"></div>
+      </div>
+    </section>
   </main>
+
+  <script>
+    /* ─── Institutional Calendar — powered by real DB events ─── */
+    const RAW_EVENTS = <%- calendarEvents %>;
+
+    // Group events by local date key "YYYY-MM-DD"
+    const eventsByDate = {};
+    RAW_EVENTS.forEach(function(ev) {
+      const d = new Date(ev.start_time);
+      const key = d.getFullYear() + '-'
+                + String(d.getMonth() + 1).padStart(2, '0') + '-'
+                + String(d.getDate()).padStart(2, '0');
+      if (!eventsByDate[key]) eventsByDate[key] = [];
+      eventsByDate[key].push(ev);
+    });
+
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+
+    let calYear  = new Date().getFullYear();
+    let calMonth = new Date().getMonth(); // 0-indexed
+
+    function renderCalendar() {
+      const today    = new Date();
+      const todayKey = today.getFullYear() + '-'
+                     + String(today.getMonth() + 1).padStart(2, '0') + '-'
+                     + String(today.getDate()).padStart(2, '0');
+
+      document.getElementById('cal-header').textContent    = MONTHS[calMonth] + ' ' + calYear;
+      document.getElementById('cal-month-label').textContent = MONTHS[calMonth].toUpperCase() + ' ' + calYear;
+
+      const firstDay    = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const grid        = document.getElementById('cal-grid');
+      grid.innerHTML    = '';
+
+      // Leading empty cells
+      for (let i = 0; i < firstDay; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'h-16 border-r border-b border-line bg-surface-2/20';
+        grid.appendChild(cell);
+      }
+
+      // Day cells
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key  = calYear + '-' + String(calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const evs  = eventsByDate[key] || [];
+        const isToday = key === todayKey;
+
+        const cell = document.createElement('div');
+        cell.className = 'h-16 border-r border-b border-line p-1.5 cursor-pointer transition-colors hover:bg-surface-2 '
+                       + (isToday ? 'bg-lime/5 ring-1 ring-inset ring-lime/30' : '');
+        cell.onclick = function() { showDateEvents(key, d); };
+
+        // Day number
+        const num = document.createElement('span');
+        num.className = 'block text-[11px] font-mono ' + (isToday ? 'text-lime font-bold' : 'text-muted');
+        num.textContent = d;
+        cell.appendChild(num);
+
+        // Event indicator dots
+        if (evs.length > 0) {
+          const dots = document.createElement('div');
+          dots.className = 'flex flex-wrap gap-0.5 mt-0.5';
+          evs.slice(0, 3).forEach(function() {
+            const pip = document.createElement('span');
+            pip.className = 'w-1.5 h-1.5 rounded-full bg-lime block';
+            dots.appendChild(pip);
+          });
+          if (evs.length > 3) {
+            const more = document.createElement('span');
+            more.className = 'text-[8px] text-muted font-mono leading-none mt-0.5';
+            more.textContent = '+' + (evs.length - 3);
+            dots.appendChild(more);
+          }
+          cell.appendChild(dots);
+        }
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function showDateEvents(key, d) {
+      const evs        = eventsByDate[key] || [];
+      const detail     = document.getElementById('cal-detail');
+      const dateLabel  = document.getElementById('cal-detail-date');
+      const countLabel = document.getElementById('cal-detail-count');
+      const list       = document.getElementById('cal-detail-list');
+
+      const dateObj = new Date(calYear, calMonth, d);
+      dateLabel.textContent  = dateObj.toLocaleDateString('en-IN', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      }).toUpperCase();
+      countLabel.textContent = evs.length + ' EVENT' + (evs.length !== 1 ? 'S' : '');
+
+      detail.classList.remove('hidden');
+
+      if (evs.length === 0) {
+        list.innerHTML = '<p class="text-xs text-muted text-center py-6">No events scheduled on this date.</p>';
+        return;
+      }
+
+      list.innerHTML = evs.map(function(ev) {
+        var start   = new Date(ev.start_time);
+        var end     = ev.end_time ? new Date(ev.end_time) : null;
+        var timeStr = start.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        var endStr  = end ? ' &ndash; ' + end.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+        var typeBadge = ev.event_type_name
+          ? '<span class="text-[9px] font-mono text-muted">' + ev.event_type_name + '</span>'
+          : '';
+        var venuePart = ev.venue
+          ? '<span>📍 ' + ev.venue + '</span>'
+          : '';
+        var creditPart = ev.credit_hours
+          ? '<span>⭐ ' + parseFloat(ev.credit_hours).toFixed(1) + ' credit hrs</span>'
+          : '';
+        return '<div class="flex items-start gap-3 p-3 rounded-xl bg-surface-2 border border-line">'
+             +   '<div class="shrink-0 w-1 self-stretch rounded-full bg-lime"></div>'
+             +   '<div class="flex-1 min-w-0">'
+             +     '<div class="flex items-center gap-2 mb-0.5">'
+             +       '<span class="text-[9px] font-mono bg-lime/10 text-lime px-1.5 py-0.5 rounded">' + ev.club_name + '</span>'
+             +       typeBadge
+             +     '</div>'
+             +     '<a href="/institutional/events/' + ev.id + '" class="text-sm font-bold text-fg hover:text-lime transition-colors">' + ev.title + '</a>'
+             +     '<div class="flex flex-wrap items-center gap-3 mt-1 text-[10px] text-muted font-mono">'
+             +       '<span>🕐 ' + timeStr + endStr + '</span>'
+             +       venuePart
+             +       creditPart
+             +     '</div>'
+             +   '</div>'
+             + '</div>';
+      }).join('');
+    }
+
+    function calPrev() {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    }
+    function calNext() {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendar();
+    }
+
+    // Initial render
+    renderCalendar();
+
+    // Auto-show today's events if any exist
+    (function() {
+      var today    = new Date();
+      var todayKey = today.getFullYear() + '-'
+                   + String(today.getMonth() + 1).padStart(2, '0') + '-'
+                   + String(today.getDate()).padStart(2, '0');
+      if (eventsByDate[todayKey] && eventsByDate[todayKey].length > 0) {
+        showDateEvents(todayKey, today.getDate());
+      }
+    })();
+  </script>
 
   <script>
     function filterClubs() {
