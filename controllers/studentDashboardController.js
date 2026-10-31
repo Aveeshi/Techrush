@@ -1,8 +1,9 @@
 const User = require('../models/User');
 const Club = require('../models/Club');
-const ClubMember = require('../models/Clubmember');
+const ClubMember = require('../models/ClubMember');
 const SemesterReport = require('../models/SemesterReport');
 const FacultyCoordinator = require('../models/FacultyCoordinator');
+const pool = require('../utils/db');
 
 const studentDashboardController = {
   // GET /student/dashboard (or /student/dashboard/:studentId)

@@ -24,10 +24,9 @@ const logbookRouter=require("./routes/logbookRouter.js");
 const studentDashboardRouter=require("./routes/studentDashboardRouter.js");
 const facultyRouter=require("./routes/facultyRouter.js");
 const institutionalRouter=require("./routes/institutionalRouter.js");
+const schedulingRouter=require("./routes/schedulingRouter.js");
 const registerChatSocket=require('./sockets/chatSocket.js');
-// const errorController=require("./controller/errors.js");
 
-const { title } = require('process');
 const session=require("express-session");
 const pgSession=require('connect-pg-simple')(session);
 const db=require('./utils/db.js');
@@ -78,31 +77,19 @@ const sessionMiddleware=session({
 });
 app.use(sessionMiddleware);
 
-app.use((req,res,next)=>{
-    req.isLoggedIn=req.session.isLoggedIn;
-    res.locals.isLoggedIn = req.isLoggedIn;
-    res.locals.user = req.session.user ;
-    next();
-});
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(cookieParser());
 app.use(attachUserToLocals);
 
 
 app.use(express.static(path.join(rootDir,"public")));
-// app.use('/uploads', express.static(path.join(rootDir, 'uploads')));
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // needed for the scan page's fetch() POST to /events/:id/checkin
 
 app.get('/favicon.ico', (req, res) => res.status(204).end());
-// app.use("/organizer",);
-// app.use("/auth",);
 
-app.use((req, res, next) => {
-  res.locals.user = req.user || null;
-  next();
-});
 
 // Nav-badge flags — cheap existence lookups, students only. Also exposed
 // as JSON at GET /auth/me-roles (authController.meRoles) so the nav's
@@ -136,7 +123,6 @@ app.use(async (req, res, next) => {
 // ('dark'/'light'), or undefined if the visitor never toggled yet (the
 // pre-paint inline script in head.ejs falls back to prefers-color-scheme
 // in that case).
-app.use(cookieParser());
 app.use((req, res, next) => {
   res.locals.theme = req.cookies?.theme || null;
   next();
@@ -163,11 +149,11 @@ app.use('/logbook', logbookRouter);
 app.use('/student', studentDashboardRouter);
 app.use('/faculty', facultyRouter);
 app.use('/institutional', institutionalRouter);
+app.use('/scheduling', schedulingRouter);
 app.use('/', studentRouter);
 app.use("/",(req,res)=>{
     res.render('index');
 });
-// app.use(errorController.pageNotFound);
 
 // Final catch-all error handler
 app.use((err, req, res, next) => {

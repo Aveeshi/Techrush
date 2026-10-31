@@ -1,5 +1,5 @@
 const Club = require('../models/Club');
-const ClubMember = require('../models/Clubmember');
+const ClubMember = require('../models/ClubMember');
 const LogbookImage = require('../models/LogbookImage');
 const LogbookData = require('../models/LogbookData');
 const User = require('../models/User');

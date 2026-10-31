@@ -50,8 +50,10 @@ function registerChatSocket(io) {
     // then broadcasts to everyone currently in that team's room, including
     // the sender — the client renders on the broadcast, not optimistically,
     // so everyone (sender included) sees the exact same server-confirmed copy.
-    socket.on('team:message', async ({ teamId, content } = {}, ack) => {
+    socket.on('team:message', async (data, ack) => {
       try {
+        if (!data || typeof data !== 'object') return;
+        const { teamId, content } = data;
         if (!teamId || typeof content !== 'string' || !content.trim()) return;
 
         const canAccess = await Team.canAccessTeam(teamId, user);

@@ -1,6 +1,6 @@
 const XLSX = require('xlsx');
 const Club = require('../models/Club');
-const ClubMember = require('../models/Clubmember');
+const ClubMember = require('../models/ClubMember');
 const ClubRoster = require('../models/ClubRoster');
 const Organizer = require('../models/Organizer');
 

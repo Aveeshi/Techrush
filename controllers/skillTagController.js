@@ -1,4 +1,4 @@
-const SkillTag = require('../models/Skilltag');
+const SkillTag = require('../models/SkillTag');
 
 const skillTagController = {
   // GET /skill-tags

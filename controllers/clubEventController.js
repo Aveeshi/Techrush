@@ -1,15 +1,15 @@
 const Event = require('../models/Event');
 const SubEvent = require('../models/SubEvent');
 const EventHead = require('../models/EventHead');
-const EventType = require('../models/Eventtype');
-const ClubMember = require('../models/Clubmember');
+const EventType = require('../models/EventType');
+const ClubMember = require('../models/ClubMember');
 const Team = require('../models/Team');
 const Group = require('../models/Group');
 const Task = require('../models/Task');
-const TaskAssignment = require('../models/Taskassignment');
-const EventRegistration = require('../models/Eventregistration');
+const TaskAssignment = require('../models/TaskAssignment');
+const EventRegistration = require('../models/EventRegistration');
 const EventImage = require('../models/EventImage');
-const SkillTag = require('../models/Skilltag');
+const SkillTag = require('../models/SkillTag');
 
 const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 

@@ -52,6 +52,9 @@
           <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
           REVIEW DESK
         </a>
+        <a href="/scheduling" class="text-xs font-semibold tracking-wider text-muted hover:text-fg transition-colors">
+          SPACE PLANNER
+        </a>
         <a href="/faculty/events" class="text-xs font-semibold tracking-wider text-muted hover:text-fg transition-colors">
           EVENT APPROVALS
         </a>
@@ -68,6 +71,9 @@
         <a href="/institutional/dashboard" class="text-xs font-bold tracking-wider text-blue-400 flex items-center gap-1.5">
           <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
           COMMAND CENTER
+        </a>
+        <a href="/scheduling" class="text-xs font-semibold tracking-wider text-muted hover:text-fg transition-colors">
+          SPACE PLANNER
         </a>
         <a href="/institutional/dashboard" class="text-xs font-semibold tracking-wider text-muted hover:text-fg transition-colors">
           ALL-CLUBS DIRECTORY
@@ -103,13 +109,13 @@
       <% if (user) { %>
         <!-- Role Indicator Pill -->
         <% if (user.type === 'faculty') { %>
-          <span class="badge badge-amber font-mono text-[8px]">FACULTY NODE</span>
+          <span class="nav-role-badge badge badge-amber font-mono text-[8px]">FACULTY NODE</span>
         <% } else if (user.type === 'institutional') { %>
-          <span class="badge badge-lime font-mono text-[8px]">INSTITUTION NODE</span>
+          <span class="nav-role-badge badge badge-lime font-mono text-[8px]">INSTITUTION NODE</span>
         <% } else if (user.type === 'organizer') { %>
-          <span class="badge badge-lime font-mono text-[8px]">LEAD ORGANIZER</span>
+          <span class="nav-role-badge badge badge-lime font-mono text-[8px]">LEAD ORGANIZER</span>
         <% } else { %>
-          <span class="badge badge-green font-mono text-[8px]">VERIFIED STUDENT</span>
+          <span class="nav-role-badge badge badge-green font-mono text-[8px]">VERIFIED STUDENT</span>
         <% } %>
 
         <!-- User Profile Pill -->
