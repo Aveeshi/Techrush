@@ -34,11 +34,11 @@
     "passport-local": "^1.0.0",
     "pg": "^8.22.0",
     "qrcode": "^1.5.4",
+    "read-excel-file": "^9.3.14",
     "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "tailwindcss": "^4.3.3",
-    "uuid": "^14.0.1",
-    "xlsx": "^0.18.5"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

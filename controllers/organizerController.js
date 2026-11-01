@@ -1,4 +1,4 @@
-const XLSX = require('xlsx');
+const readXlsxFile = require('read-excel-file/node');
 const Club = require('../models/Club');
 const ClubMember = require('../models/ClubMember');
 const ClubRoster = require('../models/ClubRoster');
@@ -13,21 +13,20 @@ const NAME_HEADER_RE = /^(full )?name$/i;
 const EMAIL_HEADER_RE = /^email( address)?$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function parseRosterWorkbook(buffer) {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
+async function parseRosterWorkbook(buffer) {
+  const rows = await readXlsxFile(buffer);
+  const headers = (rows[0] || []).map((header) => String(header || '').trim());
   const members = [];
-  for (const row of rows) {
-    let name = null;
-    let email = null;
-    for (const key of Object.keys(row)) {
-      if (NAME_HEADER_RE.test(key.trim())) name = String(row[key]).trim();
-      if (EMAIL_HEADER_RE.test(key.trim())) email = String(row[key]).trim().toLowerCase();
-    }
+  const nameIndex = headers.findIndex((header) => NAME_HEADER_RE.test(header)) + 1;
+  const emailIndex = headers.findIndex((header) => EMAIL_HEADER_RE.test(header)) + 1;
+
+  if (!emailIndex) return [];
+
+  for (const row of rows.slice(1)) {
+    const nameValue = nameIndex ? String(row[nameIndex - 1] || '').trim() : '';
+    const email = String(row[emailIndex - 1] || '').trim().toLowerCase();
     if (email && EMAIL_RE.test(email)) {
-      members.push({ name: name || null, email });
+      members.push({ name: nameValue || null, email });
     }
   }
   return members;
@@ -71,7 +70,7 @@ const organizerController = {
         return res.status(400).send('No file uploaded');
       }
 
-      const members = parseRosterWorkbook(req.file.buffer);
+      const members = await parseRosterWorkbook(req.file.buffer);
       if (!members.length) {
         return res.status(400).send('No valid rows found — the sheet needs a "Name" and "Email" column, with at least one row containing a real email.');
       }

@@ -55,11 +55,11 @@
       </div>
 
       <p class="text-xs text-muted mb-5 leading-relaxed">
-        Upload an .xlsx or .xls file containing <strong class="text-fg">Name</strong> and <strong class="text-fg">Email</strong> columns. Every upload validates membership eligibility when students register for events or access logbook records.
+        Upload an .xlsx file containing <strong class="text-fg">Name</strong> and <strong class="text-fg">Email</strong> columns. Every upload validates membership eligibility when students register for events or access logbook records.
       </p>
 
       <form action="/club/roster" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3 mb-6">
-        <input type="file" name="roster" accept=".xlsx,.xls" required
+        <input type="file" name="roster" accept=".xlsx" required
                class="text-xs text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-line file:bg-surface-2 file:text-fg file:text-xs file:font-semibold file:cursor-pointer" />
         <button type="submit" class="button button-quiet text-xs font-bold">
           Upload / Replace Roster
