@@ -1,6 +1,7 @@
 const express=require('express');
 require('dotenv').config();
 const crypto=require('crypto');
+const helmet=require('helmet');
 const http=require('http');
 const { Server }=require('socket.io');
 const passport=require("passport");
@@ -41,6 +42,11 @@ const app=express();
 app.set('trust proxy', 1);
 app.set('view engine','ejs');
 app.set('views','views');
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
 
 const isProduction = process.env.NODE_ENV === 'production';
 const sessionSecret = process.env.SESSION_SECRET;
