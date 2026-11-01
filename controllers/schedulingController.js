@@ -24,8 +24,7 @@ function parseCsv(text) {
   });
 }
 
-function parseBlocks(buffer) {
-  const rows = parseCsv(buffer.toString('utf8'));
+function parseTimetableRows(rows) {
   if (rows.length < 2) throw new Error('CSV must include a header and at least one timetable row.');
   const headers = rows[0].map((header) => header.toLowerCase().replace(/[\s-]+/g, '_'));
   const required = ['room', 'class_name', 'day_of_week', 'start_time', 'end_time'];
@@ -76,6 +75,12 @@ function parseBlocks(buffer) {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
+  function isLegacyTimetable(rows) {
+    const headers = rows[0].map(normalizeHeader);
+    return ['room', 'class_name', 'day_of_week', 'start_time', 'end_time']
+      .every((name) => headers.includes(name));
+  }
+
   function parseImportedScheduleRows(rows) {
     const nonEmptyRows = rows.filter((row) => row.some((value) => String(value ?? '').trim() !== ''));
     if (nonEmptyRows.length < 2) throw new Error('The calendar file must include a header and at least one event row.');
@@ -102,13 +107,25 @@ function parseBlocks(buffer) {
     });
   }
 
+  function parseBlocks(buffer) {
+    return parseTimetableRows(parseCsv(buffer.toString('utf8')));
+  }
+
   async function parseImportedScheduleFile(file) {
     const extension = file.originalname.toLowerCase().split('.').pop();
     if (extension === 'xlsx') {
-      return parseImportedScheduleRows(await readXlsxFile(file.buffer));
+      const rows = await readXlsxFile(file.buffer);
+      if (isLegacyTimetable(rows)) {
+        return { type: 'timetable', items: parseTimetableRows(rows) };
+      }
+      return { type: 'schedule', items: parseImportedScheduleRows(rows) };
     }
     if (extension === 'csv') {
-      return parseImportedScheduleRows(parseCsv(file.buffer.toString('utf8')));
+      const rows = parseCsv(file.buffer.toString('utf8'));
+      if (isLegacyTimetable(rows)) {
+        return { type: 'timetable', items: parseTimetableRows(rows) };
+      }
+      return { type: 'schedule', items: parseImportedScheduleRows(rows) };
     }
     throw new Error('Choose a .csv or .xlsx calendar file.');
   }
@@ -155,7 +172,9 @@ const schedulingController = {
   async importTimetable(req, res, next) {
     try {
       if (!req.file) throw new Error('Choose a CSV or Excel calendar file first.');
-      await Scheduling.addImportedScheduleItems(await parseImportedScheduleFile(req.file));
+      const imported = await parseImportedScheduleFile(req.file);
+      if (imported.type === 'timetable') await Scheduling.addTimetableBlocks(imported.items);
+      else await Scheduling.addImportedScheduleItems(imported.items);
       res.redirect('/scheduling?msg=Calendar+schedule+imported+successfully');
     } catch (error) {
       res.redirect(`/scheduling?error=${encodeURIComponent(error.message)}`);
