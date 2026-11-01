@@ -165,6 +165,10 @@
         return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
       }
 
+      function normalizeRoomName(value) {
+        return String(value || '').toLowerCase().replace(/[\s-]+/g, '');
+      }
+
       function freeSlots(blocks) {
         var startOfDay = 8 * 60;
         var endOfDay = 20 * 60;
@@ -184,10 +188,10 @@
       }
 
       function blocksForRoom(day, room) {
-        var roomName = room.name.toLowerCase();
+        var roomName = normalizeRoomName(room.name);
         var blocks = [];
         day.timetable.filter(function (block) {
-          return block.room_name.toLowerCase() === roomName;
+          return normalizeRoomName(block.room_name) === roomName;
         }).forEach(function (block) {
           var start = timeToMinutes(block.start_time);
           var end = timeToMinutes(block.end_time);
@@ -195,25 +199,25 @@
         });
         var knownEventRooms = day.events.filter(function (event) {
           return rooms.some(function (candidate) {
-            return String(event.venue || '').toLowerCase().includes(candidate.name.toLowerCase());
+            return normalizeRoomName(event.venue).includes(normalizeRoomName(candidate.name));
           });
         });
         day.events.filter(function (event) {
-          return String(event.venue || '').toLowerCase().includes(roomName) || !knownEventRooms.includes(event);
+          return normalizeRoomName(event.venue).includes(roomName) || !knownEventRooms.includes(event);
         }).forEach(function (event) {
           var start = isoTimeToMinutes(event.start_time);
           var end = isoTimeToMinutes(event.end_time);
           if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end });
         });
         day.manualEvents.filter(function (event) {
-          return !event.room_name || event.room_name.toLowerCase() === roomName;
+          return !event.room_name || normalizeRoomName(event.room_name) === roomName;
         }).forEach(function (event) {
           var start = timeToMinutes(event.start_time);
           var end = timeToMinutes(event.end_time);
           if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end });
         });
         day.importedSchedule.filter(function (event) {
-          return event.room_number.toLowerCase() === roomName;
+          return normalizeRoomName(event.room_number) === roomName;
         }).forEach(function (event) {
           var start = timeToMinutes(event.start_time);
           if (start !== null) blocks.push({ label: event.event_name, start: start, end: start + Number(event.duration_minutes) });
@@ -234,7 +238,7 @@
         var roomRows = rooms.map(function (room) {
           var blocks = blocksForRoom(day, room);
           var slots = freeSlots(blocks);
-          return '<tr><td>' + escapeHtml(room.name) + '</td><td><span class="badge ' + (blocks.length ? 'badge-amber' : 'badge-green') + '">' +
+          return '<tr><td><strong>' + escapeHtml(room.name) + '</strong><span class="calendar-slot">' + escapeHtml(room.room_type || 'Class') + '</span></td><td><span class="badge ' + (blocks.length ? 'badge-amber' : 'badge-green') + '">' +
             (blocks.length ? 'BUSY' : 'FREE') + '</span></td><td>' +
             (blocks.length ? blocks.map(function (block) {
               return '<span class="calendar-slot"><strong>' + escapeHtml(formatTime(block.start) + '–' + formatTime(block.end)) + '</strong> · ' + escapeHtml(block.label) + '</span>';

@@ -75,6 +75,12 @@ function parseTimetableRows(rows) {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
+  function normalizeRoomNumber(value) {
+    const text = String(value || '').trim();
+    const match = text.match(/^([a-z]\d)\s*[- ]?\s*(\d{3}[a-z]?)$/i);
+    return match ? `${match[1].toUpperCase()}-${match[2].toUpperCase()}` : text;
+  }
+
   function isLegacyTimetable(rows) {
     const headers = rows[0].map(normalizeHeader);
     return ['room', 'class_name', 'day_of_week', 'start_time', 'end_time']
@@ -93,7 +99,7 @@ function parseTimetableRows(rows) {
 
     return nonEmptyRows.slice(1).map((row, index) => {
       const eventName = String(row[indexes.name_of_event] || '').trim();
-      const roomNumber = String(row[indexes.room_number] || '').trim();
+      const roomNumber = normalizeRoomNumber(row[indexes.room_number]);
       const date = parseDateValue(row[indexes.date], `Date on row ${index + 2}`);
       const startDate = parseDateValue(row[indexes.start_day] || date, `Start day on row ${index + 2}`);
       const endDate = parseDateValue(row[indexes.end_day] || startDate, `End day on row ${index + 2}`);

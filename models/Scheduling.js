@@ -8,9 +8,11 @@ async function ensureSchema() {
       CREATE TABLE IF NOT EXISTS campus_rooms (
         id BIGSERIAL PRIMARY KEY,
         name TEXT NOT NULL UNIQUE,
+        room_type TEXT NOT NULL DEFAULT 'Class',
         active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
+      ALTER TABLE campus_rooms ADD COLUMN IF NOT EXISTS room_type TEXT NOT NULL DEFAULT 'Class';
       CREATE TABLE IF NOT EXISTS timetable_blocks (
         id BIGSERIAL PRIMARY KEY,
         room_name TEXT NOT NULL,
@@ -47,8 +49,42 @@ async function ensureSchema() {
       CREATE INDEX IF NOT EXISTS schedule_import_items_dates_idx
         ON schedule_import_items (start_date, end_date);
       ALTER TABLE manual_schedule_events ADD COLUMN IF NOT EXISTS event_id UUID;
-      INSERT INTO campus_rooms (name) VALUES
-        ('Auditorium A1-101'), ('Auditorium A1-102'), ('Auditorium A1-103')
+      INSERT INTO campus_rooms (name, room_type) VALUES
+        ('A1-209', 'Class'), ('A1-208', 'Class'), ('A1-204', 'Class'),
+        ('A1-203', 'Class'), ('A1-202', 'Class'), ('A1-102', 'Class'),
+        ('A1-103', 'Class'), ('A1-105', 'Class'), ('A1-008', 'Class'),
+        ('A1-303', 'Class'), ('A1-306', 'Class'), ('A1-307', 'Class'),
+        ('A1-302', 'Class'), ('A1-314', 'Lab'),
+        ('A1-211', 'Class'), ('A1-212', 'Class'), ('A1-213', 'Class'),
+        ('A1-101', 'Class'), ('A1-112', 'Class'), ('A1-111', 'Class'),
+        ('A1-115', 'Class'), ('A1-311', 'Class'), ('A1-310', 'Class'),
+        ('A1-309', 'Class'),
+        ('Computer Seminar Hall', 'Seminar Hall'),
+        ('A2-301', 'Class'), ('A2-304', 'Class'), ('A2-401', 'Class'),
+        ('A2-303', 'Lab'), ('A2-302', 'Lab'), ('A2-404', 'Lab'),
+        ('A2-405', 'Lab'), ('A2-403', 'Lab'), ('A2-402', 'Lab'),
+        ('A2-503A', 'Lab'), ('A2-503B', 'Lab'), ('A2-502A', 'Lab'),
+        ('A2-502B', 'Lab'),
+        ('IT Seminar Hall', 'Seminar Hall'),
+        ('ENTC Seminar Hall', 'Seminar Hall'),
+        ('A3-301', 'Lab'), ('A3-302', 'Lab'), ('A3-309', 'Lab'),
+        ('A3-303', 'Lab'), ('A3-304', 'Lab'), ('A3-305', 'Lab'),
+        ('A3-404', 'Lab'), ('A3-403', 'Lab'), ('A3-402', 'Lab'),
+        ('A3-401', 'Lab'), ('A3-505', 'Lab'), ('A3-504', 'Lab'),
+        ('A3-503', 'Lab'), ('A3-502', 'Lab'), ('A3-501', 'Lab'),
+        ('A3-201', 'Lab'), ('A3-202', 'Lab'), ('A3-203', 'Lab'),
+        ('A3-204', 'Lab'), ('A3-206', 'Lab'), ('A3-205', 'Lab'),
+        ('A3-105', 'Lab'), ('A3-104', 'Lab'), ('A3-103', 'Lab'),
+        ('A3-102', 'Lab'), ('A3-101', 'Lab'),
+        ('A3-308', 'Class'), ('A3-307', 'Class'), ('A3-405', 'Class'),
+        ('A3-406', 'Class'), ('A3-407', 'Class'), ('A3-408', 'Class'),
+        ('A3-507', 'Class'), ('A3-508', 'Class'), ('A3-509', 'Class'),
+        ('A3-510', 'Class'), ('A3-208', 'Class'), ('A3-207', 'Class'),
+        ('A3-107', 'Class'), ('A3-108', 'Class'), ('A3-109', 'Class'),
+        ('A3-010', 'Class'), ('A3-007', 'Class'),
+        ('Auditorium A1-101', 'Seminar Hall'),
+        ('Auditorium A1-102', 'Seminar Hall'),
+        ('Auditorium A1-103', 'Seminar Hall')
       ON CONFLICT (name) DO NOTHING;
     `);
   }
@@ -69,7 +105,7 @@ async function getCalendar(month) {
   await ensureSchema();
   const { start, end, year, monthNumber } = monthBounds(month);
   const [roomsResult, timetableResult, eventsResult, manualEventsResult, importedScheduleResult] = await Promise.all([
-    pool.query(`SELECT id, name FROM campus_rooms WHERE active = TRUE ORDER BY name`),
+    pool.query(`SELECT id, name, room_type FROM campus_rooms WHERE active = TRUE ORDER BY name`),
     pool.query(`SELECT room_name, class_name, day_of_week, start_time, end_time
                 FROM timetable_blocks ORDER BY room_name, day_of_week, start_time`),
     pool.query(
