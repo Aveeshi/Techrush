@@ -28,8 +28,8 @@
         </p>
 
         <div class="flex flex-wrap items-center gap-3">
-          <a href="/events" class="button button-primary text-sm py-3 px-6 text-decoration-none">
-            Browse the campus calendar →
+          <a href="#explore" class="button button-primary text-sm py-3 px-6 text-decoration-none">
+            See how it works →
           </a>
           <% if (!user) { %>
             <a href="/auth/login" class="button button-quiet text-sm py-3 px-6 text-decoration-none">
@@ -147,7 +147,7 @@
       </div>
     </section>
 
-    <section class="landing-links" aria-label="Explore CampusBuzz">
+    <section id="explore" class="landing-links" aria-label="Explore CampusBuzz">
       <div class="landing-links-heading">
         <span class="overline">START WHERE YOU ARE</span>
         <h2>Make campus work for you.</h2>
