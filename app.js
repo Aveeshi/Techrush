@@ -41,6 +41,12 @@ app.set('trust proxy', 1);
 app.set('view engine','ejs');
 app.set('views','views');
 
+const isProduction = process.env.NODE_ENV === 'production';
+const sessionSecret = process.env.SESSION_SECRET;
+if (isProduction && !sessionSecret) {
+  throw new Error('SESSION_SECRET must be set in production');
+}
+
 app.use((req, res, next) => {
     res.locals.user = null;
     res.locals.isLoggedIn = false;
@@ -68,11 +74,14 @@ const sessionStore = process.env.DATABASE_URL
 
 const sessionMiddleware=session({
     store: sessionStore,
-    secret: process.env.SESSION_SECRET || 'campusconnect-secret-session-key',
+    secret: sessionSecret || 'development-only-session-secret',
     resave:false,
     saveUninitialized:true,
     cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
     }
 });
 app.use(sessionMiddleware);
