@@ -5,6 +5,8 @@
   <style>
     .availability-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
     .calendar-day { min-height: 92px; border: 1px solid var(--line); border-radius: 10px; padding: 9px; background: var(--surface); }
+    .calendar-day[aria-current="date"] { outline: 2px solid var(--lime); outline-offset: 1px; }
+    .calendar-day.is-selected { box-shadow: 0 0 0 2px var(--lime); }
     .calendar-day.is-busy { background: color-mix(in srgb, var(--amber) 8%, var(--surface)); border-color: color-mix(in srgb, var(--amber) 35%, var(--line)); }
     .calendar-day.is-empty { opacity: .35; background: transparent; }
     .calendar-day-number { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; }
@@ -14,6 +16,13 @@
     .availability-table th, .availability-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; font-size: 12px; }
     .availability-table th { color: var(--muted); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
     .availability-table td:first-child { font-weight: 700; }
+    .calendar-detail-table { max-height: 470px; overflow-y: auto; }
+    .calendar-detail-table .availability-table { min-width: 520px; }
+    .calendar-detail-table .availability-table td,
+    .calendar-detail-table .availability-table th { vertical-align: top; }
+    .calendar-slot { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .calendar-slot.is-free { color: var(--lime); }
+    .calendar-detail-empty { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 24px 16px; text-align: center; color: var(--muted); }
     @media (max-width: 700px) {
       .calendar-day { min-height: 64px; padding: 7px; }
       .calendar-day-status { margin-top: 10px; font-size: 8px; }
@@ -40,7 +49,7 @@
     <% if (message) { %><div class="panel p-3 mb-5 text-xs text-lime"><%= message %></div><% } %>
     <% if (error) { %><div class="panel p-3 mb-5 text-xs text-red-300"><%= error %></div><% } %>
 
-    <section class="grid grid-cols-1 lg:grid-cols-[1.4fr_.6fr] gap-6 mb-6">
+    <section class="grid grid-cols-1 lg:grid-cols-[1.35fr_.85fr] gap-6 mb-6">
       <article class="panel p-5">
         <div class="panel-head mb-4">
           <div><span class="overline">MONTH OVERVIEW</span><h3><%= calendar.monthLabel %></h3></div>
@@ -52,67 +61,27 @@
         <div class="availability-calendar">
           <% for (let i = 0; i < calendar.firstDay; i += 1) { %><div class="calendar-day is-empty"></div><% } %>
           <% calendar.days.forEach(day => { %>
-            <a href="#rooms-<%= day.date %>" class="calendar-day text-decoration-none <%= day.busy ? 'is-busy' : '' %>">
+            <button type="button" class="calendar-day text-decoration-none text-left <%= day.busy ? 'is-busy' : '' %>" data-calendar-date="<%= day.date %>" aria-label="Show room availability for <%= day.date %>">
               <span class="calendar-day-number"><%= day.dayNumber %></span>
               <div class="calendar-day-status"><span><%= day.busy ? 'Busy' : 'Free' %></span></div>
-            </a>
+            </button>
           <% }); %>
         </div>
       </article>
 
-      <article class="panel p-5">
-        <span class="overline">ROOM INVENTORY</span>
-        <h3 class="mb-4">Schedulable rooms</h3>
-        <div class="space-y-2 mb-6">
-          <% calendar.rooms.forEach(room => { %>
-            <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-2 border border-line text-xs">
-              <span><i class="inline-block w-2 h-2 rounded-full bg-lime mr-2"></i><%= room.name %></span>
-              <span class="text-muted">Active</span>
-            </div>
-          <% }); %>
+      <article class="panel p-5" id="calendar-details" aria-live="polite">
+        <div class="panel-head mb-4">
+          <div><span class="overline">SELECTED DAY</span><h3 id="selected-date-label">Choose a date</h3></div>
+          <span id="selected-day-summary" class="badge badge-green">—</span>
         </div>
-        <form action="/scheduling/rooms" method="POST" class="flex gap-2">
+        <p id="selected-day-intro" class="text-xs text-muted mb-4">Select a day to see available rooms and time slots.</p>
+        <div id="selected-day-content" class="calendar-detail-table"></div>
+        <form action="/scheduling/rooms" method="POST" class="flex gap-2 mt-5">
           <input name="name" required placeholder="Add room, e.g. A1-104" class="min-w-0 flex-1 text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg" />
-          <button class="button button-quiet text-xs" type="submit">Add</button>
+          <button class="button button-quiet text-xs" type="submit">Add room</button>
         </form>
       </article>
     </section>
-
-    <% calendar.days.filter(day => day.busy).forEach(day => { %>
-      <article id="rooms-<%= day.date %>" class="panel p-5 mb-4">
-        <div class="panel-head mb-3">
-          <div><span class="overline">ROOM STATUS · <%= day.date %></span><h3><%= new Date(day.date + 'T00:00:00Z').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) %></h3></div>
-          <span class="badge badge-amber">TIMETABLE / EVENT CONFLICTS</span>
-        </div>
-        <table class="availability-table">
-          <thead><tr><th>Room</th><th>Status</th><th>Busy blocks</th></tr></thead>
-          <tbody>
-            <% calendar.rooms.forEach(room => {
-              const timetable = day.timetable.filter(block => block.room_name.toLowerCase() === room.name.toLowerCase());
-              const eventsWithKnownRoom = day.events.filter(event => calendar.rooms.some(candidate => (event.venue || '').toLowerCase().includes(candidate.name.toLowerCase())));
-              const events = day.events.filter(event => (event.venue || '').toLowerCase().includes(room.name.toLowerCase()) || !eventsWithKnownRoom.includes(event));
-              const manualEvents = day.manualEvents.filter(event => !event.room_name || event.room_name.toLowerCase() === room.name.toLowerCase());
-              const importedSchedule = day.importedSchedule.filter(event => event.room_number.toLowerCase() === room.name.toLowerCase());
-              const blocks = timetable.map(block => `${block.class_name} (${block.start_time.slice(0, 5)}–${block.end_time.slice(0, 5)})`)
-                .concat(events.map(event => `${event.title} (event)`))
-                .concat(manualEvents.map(event => `${event.title} (${event.start_time.slice(0, 5)}–${event.end_time.slice(0, 5)})`))
-                .concat(importedSchedule.map(event => {
-                  const startMinutes = Number(event.start_time.slice(0, 2)) * 60 + Number(event.start_time.slice(3, 5));
-                  const endMinutes = startMinutes + Number(event.duration_minutes);
-                  const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
-                  return `${event.event_name} (${event.start_time.slice(0, 5)}–${endTime})`;
-                }));
-            %>
-              <tr>
-                <td><%= room.name %></td>
-                <td><span class="badge <%= blocks.length ? 'badge-amber' : 'badge-green' %>"><%= blocks.length ? 'UNAVAILABLE' : 'FREE' %></span></td>
-                <td class="text-muted"><%= blocks.length ? blocks.join(' · ') : 'Available for event planning' %></td>
-              </tr>
-            <% }); %>
-          </tbody>
-        </table>
-      </article>
-    <% }); %>
 
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
       <article class="panel p-5">
@@ -162,5 +131,130 @@
       </article>
     </section>
   </main>
+  <script nonce="<%= cspNonce %>">
+    (function () {
+      var days = <%- JSON.stringify(calendar.days).replace(/</g, '\\u003c') %>;
+      var rooms = <%- JSON.stringify(calendar.rooms).replace(/</g, '\\u003c') %>;
+      var selectedDateLabel = document.getElementById('selected-date-label');
+      var selectedDaySummary = document.getElementById('selected-day-summary');
+      var selectedDayIntro = document.getElementById('selected-day-intro');
+      var selectedDayContent = document.getElementById('selected-day-content');
+      var dayButtons = Array.prototype.slice.call(document.querySelectorAll('[data-calendar-date]'));
+      var monthDays = days.reduce(function (lookup, day) {
+        lookup[day.date] = day;
+        return lookup;
+      }, {});
+
+      function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"']/g, function (character) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character];
+        });
+      }
+
+      function timeToMinutes(value) {
+        var match = String(value || '').slice(0, 5).match(/^(\d{2}):(\d{2})$/);
+        return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+      }
+
+      function isoTimeToMinutes(value) {
+        var date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date.getHours() * 60 + date.getMinutes();
+      }
+
+      function formatTime(minutes) {
+        return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
+      }
+
+      function freeSlots(blocks) {
+        var startOfDay = 8 * 60;
+        var endOfDay = 20 * 60;
+        var occupied = blocks.map(function (block) {
+          return { start: Math.max(startOfDay, block.start), end: Math.min(endOfDay, block.end) };
+        }).filter(function (block) {
+          return block.end > block.start;
+        }).sort(function (a, b) { return a.start - b.start; });
+        var slots = [];
+        var cursor = startOfDay;
+        occupied.forEach(function (block) {
+          if (block.start > cursor) slots.push(formatTime(cursor) + '–' + formatTime(block.start));
+          cursor = Math.max(cursor, block.end);
+        });
+        if (cursor < endOfDay) slots.push(formatTime(cursor) + '–' + formatTime(endOfDay));
+        return slots;
+      }
+
+      function blocksForRoom(day, room) {
+        var roomName = room.name.toLowerCase();
+        var blocks = [];
+        day.timetable.filter(function (block) {
+          return block.room_name.toLowerCase() === roomName;
+        }).forEach(function (block) {
+          var start = timeToMinutes(block.start_time);
+          var end = timeToMinutes(block.end_time);
+          if (start !== null && end !== null) blocks.push({ label: block.class_name, start: start, end: end });
+        });
+        var knownEventRooms = day.events.filter(function (event) {
+          return rooms.some(function (candidate) {
+            return String(event.venue || '').toLowerCase().includes(candidate.name.toLowerCase());
+          });
+        });
+        day.events.filter(function (event) {
+          return String(event.venue || '').toLowerCase().includes(roomName) || !knownEventRooms.includes(event);
+        }).forEach(function (event) {
+          var start = isoTimeToMinutes(event.start_time);
+          var end = isoTimeToMinutes(event.end_time);
+          if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end });
+        });
+        day.manualEvents.filter(function (event) {
+          return !event.room_name || event.room_name.toLowerCase() === roomName;
+        }).forEach(function (event) {
+          var start = timeToMinutes(event.start_time);
+          var end = timeToMinutes(event.end_time);
+          if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end });
+        });
+        day.importedSchedule.filter(function (event) {
+          return event.room_number.toLowerCase() === roomName;
+        }).forEach(function (event) {
+          var start = timeToMinutes(event.start_time);
+          if (start !== null) blocks.push({ label: event.event_name, start: start, end: start + Number(event.duration_minutes) });
+        });
+        return blocks.sort(function (a, b) { return a.start - b.start; });
+      }
+
+      function renderDay(date) {
+        var day = monthDays[date];
+        if (!day) return;
+        dayButtons.forEach(function (button) {
+          button.classList.toggle('is-selected', button.dataset.calendarDate === date);
+          button.setAttribute('aria-current', button.dataset.calendarDate === date ? 'date' : 'false');
+        });
+        selectedDateLabel.textContent = new Date(date + 'T00:00:00Z').toLocaleDateString('en-IN', {
+          weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'
+        });
+        var roomRows = rooms.map(function (room) {
+          var blocks = blocksForRoom(day, room);
+          var slots = freeSlots(blocks);
+          return '<tr><td>' + escapeHtml(room.name) + '</td><td><span class="badge ' + (blocks.length ? 'badge-amber' : 'badge-green') + '">' +
+            (blocks.length ? 'BUSY' : 'FREE') + '</span></td><td>' +
+            (blocks.length ? blocks.map(function (block) {
+              return '<span class="calendar-slot"><strong>' + escapeHtml(formatTime(block.start) + '–' + formatTime(block.end)) + '</strong> · ' + escapeHtml(block.label) + '</span>';
+            }).join('') : '<span class="calendar-slot is-free">Available all day</span>') +
+            (slots.length ? '<span class="calendar-slot is-free">Free: ' + escapeHtml(slots.join(', ')) + '</span>' : '') +
+            '</td></tr>';
+        }).join('');
+        var busyRooms = rooms.filter(function (room) { return blocksForRoom(day, room).length; }).length;
+        selectedDaySummary.textContent = busyRooms + ' of ' + rooms.length + ' rooms busy';
+        selectedDayIntro.textContent = rooms.length ? 'Green time ranges are available for booking. Availability is shown from 08:00 to 20:00.' : 'No rooms have been added yet.';
+        selectedDayContent.innerHTML = rooms.length
+          ? '<table class="availability-table"><thead><tr><th>Room</th><th>Status</th><th>Time slots</th></tr></thead><tbody>' + roomRows + '</tbody></table>'
+          : '<div class="calendar-detail-empty">Add rooms to see daily availability.</div>';
+      }
+
+      dayButtons.forEach(function (button) {
+        button.addEventListener('click', function () { renderDay(button.dataset.calendarDate); });
+      });
+      renderDay(days.find(function (day) { return day.date === new Date().toISOString().slice(0, 10); })?.date || days[0]?.date);
+    })();
+  </script>
 </body>
 </html>
