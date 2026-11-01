@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <%- include('partials/head', { title: 'QR Gate Scanner · ' + event.title + ' — CampusBuzz' }) %>
-  <script src="/vendor/html5-qrcode.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/html5-qrcode.min.js"></script>
 </head>
 <body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
@@ -35,7 +35,7 @@
     <p id="camera-error" class="hidden text-red-400 text-xs mt-4 text-center"></p>
   </main>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     const checkinUrl = '<%= typeof checkinUrl !== "undefined" ? checkinUrl : "/events/" + event.id + "/checkin" %>';
     const resultBox = document.getElementById('result');
     const cameraError = document.getElementById('camera-error');

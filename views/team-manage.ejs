@@ -271,7 +271,7 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     document.querySelectorAll('.new-task-assign-mode').forEach((radio) => {
       radio.addEventListener('change', () => {
         document.getElementById('new-task-specific-volunteers').classList.toggle('hidden', radio.value !== 'specific' || !radio.checked);

@@ -60,7 +60,7 @@
           <span id="carousel-position">1</span> / <%= gallery.length %>
         </div>
       </div>
-      <script>
+      <script nonce="<%= cspNonce %>">
         (function () {
           const slides = document.querySelectorAll('#event-carousel .carousel-slide');
           const positionEl = document.getElementById('carousel-position');

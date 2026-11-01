@@ -234,8 +234,8 @@
   </main>
 
   <% if (user.type === 'student') { %>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
+    <script nonce="<%= cspNonce %>" src="/socket.io/socket.io.js"></script>
+    <script nonce="<%= cspNonce %>">
       (function () {
         if (typeof io !== 'function') return;
         const socket = io({ withCredentials: true });

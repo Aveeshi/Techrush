@@ -100,7 +100,7 @@
       </form>
     </div>
 
-    <script>
+    <script nonce="<%= cspNonce %>">
       function updateFormFields() {
         const tf = document.getElementById('tf-select').value;
         document.getElementById('year-field').style.display = (tf === 'weekly' || tf === 'event') ? 'none' : 'block';

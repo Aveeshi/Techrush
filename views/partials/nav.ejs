@@ -243,7 +243,7 @@
   </div>
 </header>
 
-<script>
+<script nonce="<%= cspNonce %>">
   function toggleTheme() {
     const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
     document.documentElement.dataset.theme = next;

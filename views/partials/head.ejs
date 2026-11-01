@@ -3,7 +3,7 @@
 <meta name="csrf-token" content="<%= csrfToken %>" />
 <title><%= typeof title !== 'undefined' ? title : 'CampusBuzz — Campus Activity & Credit Protocol' %></title>
 
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     var token = document.querySelector('meta[name="csrf-token"]')?.content;
     if (!token) return;
@@ -43,7 +43,7 @@
 </script>
 
 <!-- Pre-paint theme script to prevent FOUC -->
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     var match = document.cookie.match(/(?:^|; )theme=(dark|light)/);
     var theme = match ? match[1] : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
@@ -57,13 +57,13 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Tailwind CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
+<script nonce="<%= cspNonce %>" src="https://cdn.tailwindcss.com"></script>
 
 <!-- CampusBuzz Production Design Styles -->
 <link rel="stylesheet" href="/css/campusbuzz.css">
 <link rel="stylesheet" href="/css/clean-ui.css">
 
-<script>
+<script nonce="<%= cspNonce %>">
   tailwind.config = {
     theme: {
       extend: {

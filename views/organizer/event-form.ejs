@@ -166,7 +166,7 @@
     </form>
   </main>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     const searchInput = document.getElementById('head-search');
     if (searchInput) {
       searchInput.addEventListener('input', () => {
