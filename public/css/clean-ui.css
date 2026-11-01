@@ -115,6 +115,185 @@ header .nav-role-badge {
   margin-bottom: 28px;
 }
 
+.landing-signal-panel {
+  min-height: 300px;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 48px;
+  align-items: end;
+  padding: 38px;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 78% 28%, rgba(215, 255, 43, 0.13), transparent 28%),
+    linear-gradient(135deg, var(--surface-2), var(--surface));
+}
+
+.landing-signal-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(90deg, black, transparent 80%);
+  pointer-events: none;
+}
+
+.landing-signal-copy,
+.landing-signal-status {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-signal-copy {
+  max-width: 560px;
+}
+
+.landing-signal-copy h2 {
+  margin: 10px 0 12px;
+  font-family: 'Outfit', 'Manrope', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.landing-signal-copy p {
+  max-width: 470px;
+  margin-bottom: 24px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landing-signal-status {
+  padding: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.signal-status-header,
+.signal-status-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.signal-status-header {
+  color: var(--text);
+}
+
+.signal-dot {
+  width: 7px;
+  height: 7px;
+  margin-right: auto;
+  border-radius: 50%;
+  background: var(--lime);
+  box-shadow: 0 0 0 5px rgba(215, 255, 43, 0.12), 0 0 18px var(--lime);
+  animation: signal-pulse 2s ease-in-out infinite;
+}
+
+.signal-wave {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 20px 0 16px;
+}
+
+.signal-wave span {
+  width: 5px;
+  height: 24px;
+  border-radius: 99px;
+  background: var(--lime);
+  opacity: 0.7;
+  animation: signal-wave 1.2s ease-in-out infinite alternate;
+}
+
+.signal-wave span:nth-child(2n) { animation-delay: -0.3s; }
+.signal-wave span:nth-child(3n) { animation-delay: -0.6s; }
+.signal-wave span:nth-child(4n) { animation-delay: -0.9s; }
+
+.signal-status-foot {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.signal-status-foot strong {
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.landing-principles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-top: 28px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--line);
+}
+
+.landing-principles > div {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 22px;
+  background: var(--surface);
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.landing-principles > div:hover {
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+
+.principle-index {
+  color: var(--lime);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+}
+
+.landing-principles strong {
+  font-size: 14px;
+}
+
+.landing-principles span:last-child {
+  max-width: 270px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+@keyframes signal-pulse {
+  50% { box-shadow: 0 0 0 9px rgba(215, 255, 43, 0.03), 0 0 22px var(--lime); }
+}
+
+@keyframes signal-wave {
+  from { height: 18px; opacity: 0.35; }
+  to { height: 78px; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-dot,
+  .signal-wave span {
+    animation: none;
+  }
+}
+
 @media (max-width: 1100px) {
   header nav > .hidden.md\:flex.items-center.gap-7 {
     margin-right: 8px;
@@ -138,5 +317,23 @@ header .nav-role-badge {
   .page {
     padding-top: 28px;
     padding-bottom: 48px;
+  }
+
+  .landing-signal-panel {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 24px;
+  }
+
+  .landing-signal-status {
+    max-width: none;
+  }
+
+  .landing-principles {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-principles > div {
+    min-height: 0;
   }
 }
