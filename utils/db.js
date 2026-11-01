@@ -1,6 +1,8 @@
 const {Pool, Client}=require('pg');
 require('dotenv').config();
 
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+
 // DATABASE_URL points at Supabase's SESSION-mode pooler (port 5432), which
 // caps total concurrent clients at pool_size on Supabase's side (15 by
 // default) — a hard ceiling shared across every connection to the
@@ -12,7 +14,7 @@ require('dotenv').config();
 const db= new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl:{
-        rejectUnauthorized:false
+        rejectUnauthorized
     },
     max: 8,
     idleTimeoutMillis: 10000,
