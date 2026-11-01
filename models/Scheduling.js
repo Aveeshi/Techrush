@@ -60,6 +60,7 @@ async function ensureSchema() {
         ('A1-115', 'Class'), ('A1-311', 'Class'), ('A1-310', 'Class'),
         ('A1-309', 'Class'),
         ('Computer Seminar Hall', 'Seminar Hall'),
+        ('Auditorium', 'Seminar Hall'),
         ('A2-301', 'Class'), ('A2-304', 'Class'), ('A2-401', 'Class'),
         ('A2-303', 'Lab'), ('A2-302', 'Lab'), ('A2-404', 'Lab'),
         ('A2-405', 'Lab'), ('A2-403', 'Lab'), ('A2-402', 'Lab'),

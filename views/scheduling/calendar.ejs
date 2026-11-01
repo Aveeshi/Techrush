@@ -81,6 +81,7 @@
             <option value="available">Available rooms</option>
             <option value="Class">Classrooms</option>
             <option value="Lab">Labs</option>
+            <option value="Seminar Hall">Seminar halls</option>
           </select>
         </label>
         <div id="selected-day-content" class="calendar-detail-table"></div>
@@ -247,7 +248,9 @@
         var filteredRooms = rooms.filter(function (room) {
           var blocks = blocksForRoom(day, room);
           if (roomFilter.value === 'available') return blocks.length === 0;
-          if (roomFilter.value === 'Class' || roomFilter.value === 'Lab') return room.room_type === roomFilter.value;
+          if (roomFilter.value === 'Class' || roomFilter.value === 'Lab' || roomFilter.value === 'Seminar Hall') {
+            return room.room_type === roomFilter.value;
+          }
           return true;
         });
         var roomRows = filteredRooms.map(function (room) {
