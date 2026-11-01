@@ -14,7 +14,7 @@
 const pool = require('./utils/db');
 const Club = require('./models/Club');
 const Organizer = require('./models/Organizer');
-const EventType = require('./models/EventType');
+const EventType = require('./models/Eventtype');
 const Event = require('./models/Event');
 
 // One demo organizer per club that doesn't already have one.

@@ -2,7 +2,7 @@ const FacultyCoordinator = require('../models/FacultyCoordinator');
 const SemesterReport = require('../models/SemesterReport');
 const Event = require('../models/Event');
 const Club = require('../models/Club');
-const ClubMember = require('../models/ClubMember');
+const ClubMember = require('../models/Clubmember');
 const pool = require('../utils/db');
 
 const facultyController = {

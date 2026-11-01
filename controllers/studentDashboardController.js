@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Club = require('../models/Club');
-const ClubMember = require('../models/ClubMember');
+const ClubMember = require('../models/Clubmember');
 const SemesterReport = require('../models/SemesterReport');
 const FacultyCoordinator = require('../models/FacultyCoordinator');
 const pool = require('../utils/db');

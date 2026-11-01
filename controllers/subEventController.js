@@ -1,11 +1,11 @@
 const QRCode = require('qrcode');
 const SubEvent = require('../models/SubEvent');
-const EventRegistration = require('../models/EventRegistration');
-const ClubMember = require('../models/ClubMember');
+const EventRegistration = require('../models/Eventregistration');
+const ClubMember = require('../models/Clubmember');
 const Team = require('../models/Team');
 const AttendanceLog = require('../models/AttendanceLog');
 const EventHead = require('../models/EventHead');
-const SkillTag = require('../models/SkillTag');
+const SkillTag = require('../models/Skilltag');
 const { sendRegistrationEmail } = require('../utils/mailer');
 
 // A draft sub-event is visible to its own managers (the owning club's

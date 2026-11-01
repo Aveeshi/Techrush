@@ -3,9 +3,9 @@ const Event = require('../models/Event');
 const SubEvent = require('../models/SubEvent');
 const Group = require('../models/Group');
 const Task = require('../models/Task');
-const TaskAssignment = require('../models/TaskAssignment');
+const TaskAssignment = require('../models/Taskassignment');
 const Chat = require('../models/Chat');
-const SkillTag = require('../models/SkillTag');
+const SkillTag = require('../models/Skilltag');
 const { notifyRoleUpdated } = require('./clubEventController');
 
 const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);

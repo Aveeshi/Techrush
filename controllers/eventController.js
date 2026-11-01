@@ -2,12 +2,12 @@ const QRCode = require('qrcode');
 const Event = require('../models/Event');
 const SubEvent = require('../models/SubEvent');
 const EventImage = require('../models/EventImage');
-const EventRegistration = require('../models/EventRegistration');
-const ClubMember = require('../models/ClubMember');
+const EventRegistration = require('../models/Eventregistration');
+const ClubMember = require('../models/Clubmember');
 const Team = require('../models/Team');
 const AttendanceLog = require('../models/AttendanceLog');
 const EventHead = require('../models/EventHead');
-const SkillTag = require('../models/SkillTag');
+const SkillTag = require('../models/Skilltag');
 const { sendRegistrationEmail } = require('../utils/mailer');
 
 // A fresh event starts with zero teams (organizers add their own via
