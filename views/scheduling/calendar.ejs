@@ -92,9 +92,16 @@
               const eventsWithKnownRoom = day.events.filter(event => calendar.rooms.some(candidate => (event.venue || '').toLowerCase().includes(candidate.name.toLowerCase())));
               const events = day.events.filter(event => (event.venue || '').toLowerCase().includes(room.name.toLowerCase()) || !eventsWithKnownRoom.includes(event));
               const manualEvents = day.manualEvents.filter(event => !event.room_name || event.room_name.toLowerCase() === room.name.toLowerCase());
+              const importedSchedule = day.importedSchedule.filter(event => event.room_number.toLowerCase() === room.name.toLowerCase());
               const blocks = timetable.map(block => `${block.class_name} (${block.start_time.slice(0, 5)}–${block.end_time.slice(0, 5)})`)
                 .concat(events.map(event => `${event.title} (event)`))
-                .concat(manualEvents.map(event => `${event.title} (${event.start_time.slice(0, 5)}–${event.end_time.slice(0, 5)})`));
+                .concat(manualEvents.map(event => `${event.title} (${event.start_time.slice(0, 5)}–${event.end_time.slice(0, 5)})`))
+                .concat(importedSchedule.map(event => {
+                  const startMinutes = Number(event.start_time.slice(0, 2)) * 60 + Number(event.start_time.slice(3, 5));
+                  const endMinutes = startMinutes + Number(event.duration_minutes);
+                  const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+                  return `${event.event_name} (${event.start_time.slice(0, 5)}–${endTime})`;
+                }));
             %>
               <tr>
                 <td><%= room.name %></td>
@@ -142,10 +149,10 @@
       <article class="panel p-5">
         <span class="overline">TIMETABLE IMPORT</span>
         <h3>Upload class schedule</h3>
-        <p class="text-xs text-muted mt-2 mb-4">CSV headers: <code>room,class_name,day_of_week,start_time,end_time</code>. Day can be Sunday–Saturday or 0–6.</p>
+        <p class="text-xs text-muted mt-2 mb-4">Upload CSV or Excel with: <code>name of event, room number, date, start day, end day, duration, start time</code>. Multi-day rows reserve the room on every date in the range.</p>
         <form action="/scheduling/timetable/import" method="POST" enctype="multipart/form-data" class="flex gap-2">
-          <input type="file" name="timetable" accept=".csv,text/csv" required class="min-w-0 flex-1 text-xs" />
-          <button class="button button-primary text-xs" type="submit">Import CSV</button>
+          <input type="file" name="timetable" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required class="min-w-0 flex-1 text-xs" />
+          <button class="button button-primary text-xs" type="submit">Import Calendar</button>
         </form>
       </article>
       <article class="panel p-5">

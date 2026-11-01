@@ -33,6 +33,19 @@ async function ensureSchema() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         CHECK (end_time > start_time)
       );
+      CREATE TABLE IF NOT EXISTS schedule_import_items (
+        id BIGSERIAL PRIMARY KEY,
+        event_name TEXT NOT NULL,
+        room_number TEXT NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        duration_minutes INTEGER NOT NULL CHECK (duration_minutes > 0),
+        start_time TIME NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CHECK (end_date >= start_date)
+      );
+      CREATE INDEX IF NOT EXISTS schedule_import_items_dates_idx
+        ON schedule_import_items (start_date, end_date);
       ALTER TABLE manual_schedule_events ADD COLUMN IF NOT EXISTS event_id UUID;
       INSERT INTO campus_rooms (name) VALUES
         ('Auditorium A1-101'), ('Auditorium A1-102'), ('Auditorium A1-103')
@@ -55,7 +68,7 @@ function monthBounds(month) {
 async function getCalendar(month) {
   await ensureSchema();
   const { start, end, year, monthNumber } = monthBounds(month);
-  const [roomsResult, timetableResult, eventsResult, manualEventsResult] = await Promise.all([
+  const [roomsResult, timetableResult, eventsResult, manualEventsResult, importedScheduleResult] = await Promise.all([
     pool.query(`SELECT id, name FROM campus_rooms WHERE active = TRUE ORDER BY name`),
     pool.query(`SELECT room_name, class_name, day_of_week, start_time, end_time
                 FROM timetable_blocks ORDER BY room_name, day_of_week, start_time`),
@@ -77,6 +90,15 @@ async function getCalendar(month) {
        ORDER BY event_date, start_time`,
       [start, end]
     ),
+    pool.query(
+      `SELECT id, event_name, room_number, start_date::text AS start_date,
+              end_date::text AS end_date, duration_minutes,
+              start_time::text AS start_time
+       FROM schedule_import_items
+       WHERE start_date < $2::date AND end_date >= $1::date
+       ORDER BY start_date, start_time, room_number`,
+      [start, end]
+    ),
   ]);
 
   const days = [];
@@ -88,14 +110,18 @@ async function getCalendar(month) {
     const events = eventsResult.rows.filter((event) => event.start_time.toISOString().slice(0, 10) === dateKey);
     const timetable = timetableResult.rows.filter((block) => Number(block.day_of_week) === dayOfWeek);
     const manualEvents = manualEventsResult.rows.filter((event) => String(event.event_date).slice(0, 10) === dateKey);
+    const importedSchedule = importedScheduleResult.rows.filter((item) => (
+      dateKey >= item.start_date.slice(0, 10) && dateKey <= item.end_date.slice(0, 10)
+    ));
     days.push({
       date: dateKey,
       day: dayOfWeek,
       dayNumber: day,
-      busy: events.length > 0 || timetable.length > 0 || manualEvents.length > 0,
+      busy: events.length > 0 || timetable.length > 0 || manualEvents.length > 0 || importedSchedule.length > 0,
       events,
       timetable,
       manualEvents,
+      importedSchedule,
     });
   }
 
@@ -108,6 +134,7 @@ async function getCalendar(month) {
     events: eventsResult.rows,
     manualEvents: manualEventsResult.rows,
     timetable: timetableResult.rows,
+    importedSchedule: importedScheduleResult.rows,
   };
 }
 
@@ -187,4 +214,37 @@ async function addManualEvent({ title, eventDate, roomName, startTime, endTime, 
   }
 }
 
-module.exports = { ensureSchema, getCalendar, addTimetableBlocks, addRoom, addManualEvent };
+async function addImportedScheduleItems(items) {
+  await ensureSchema();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const item of items) {
+      await client.query(
+        `INSERT INTO schedule_import_items
+          (event_name, room_number, start_date, end_date, duration_minutes, start_time)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [item.eventName, item.roomNumber, item.startDate, item.endDate, item.durationMinutes, item.startTime]
+      );
+      await client.query(
+        `INSERT INTO campus_rooms (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`,
+        [item.roomNumber]
+      );
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = {
+  ensureSchema,
+  getCalendar,
+  addTimetableBlocks,
+  addImportedScheduleItems,
+  addRoom,
+  addManualEvent,
+};

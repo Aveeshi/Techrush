@@ -3,7 +3,17 @@ const multer = require('multer');
 const schedulingController = require('../controllers/schedulingController');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, callback) => {
+    const extension = file.originalname.toLowerCase().split('.').pop();
+    if (!['csv', 'xlsx'].includes(extension)) {
+      return callback(new Error('Only .csv and .xlsx calendar files are supported.'));
+    }
+    callback(null, true);
+  },
+});
 
 router.use((req, res, next) => {
   if (!req.isAuthenticated() || !['faculty', 'institutional'].includes(req.user.type)) {

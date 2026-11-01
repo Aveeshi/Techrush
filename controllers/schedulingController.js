@@ -1,20 +1,25 @@
 const Scheduling = require('../models/Scheduling');
+const readXlsxFile = require('read-excel-file/node');
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function parseCsv(text) {
-  return text.split(/\r?\n/).filter(Boolean).map((line) => {
+  return text.split(/\r?\n/).filter((line) => line.trim()).map((line) => {
     const values = [];
     let value = '';
     let quoted = false;
-    for (const char of line) {
-      if (char === '"') quoted = !quoted;
+    for (let index = 0; index < line.length; index += 1) {
+      const char = line[index];
+      if (char === '"' && line[index + 1] === '"') {
+        value += '"';
+        index += 1;
+      } else if (char === '"') quoted = !quoted;
       else if (char === ',' && !quoted) {
-        values.push(value.trim());
+        values.push(value.trim().replace(/^"|"$/g, ''));
         value = '';
       } else value += char;
     }
-    values.push(value.trim());
+    values.push(value.trim().replace(/^"|"$/g, ''));
     return values;
   });
 }
@@ -27,6 +32,85 @@ function parseBlocks(buffer) {
   const indexes = Object.fromEntries(required.map((name) => [name, headers.indexOf(name)]));
   if (Object.values(indexes).some((index) => index < 0)) {
     throw new Error('CSV columns must be: room, class_name, day_of_week, start_time, end_time.');
+  }
+
+  function normalizeHeader(header) {
+    return String(header || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  }
+
+  function parseDateValue(value, label) {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value.toISOString().slice(0, 10);
+    }
+    const text = String(value || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const parsed = new Date(text);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+    throw new Error(`${label} must be a valid date in YYYY-MM-DD format.`);
+  }
+
+  function parseDuration(value) {
+    const text = String(value || '').trim().toLowerCase();
+    if (/^\d+(\.\d+)?$/.test(text)) return Math.round(Number(text) * 60);
+    const clockMatch = text.match(/^(\d+):([0-5]\d)$/);
+    if (clockMatch) return Number(clockMatch[1]) * 60 + Number(clockMatch[2]);
+    const hourMatch = text.match(/^(\d+(?:\.\d+)?)\s*(hours?|hrs?|h)$/);
+    if (hourMatch) return Math.round(Number(hourMatch[1]) * 60);
+    const minuteMatch = text.match(/^(\d+)\s*(minutes?|mins?|m)$/);
+    if (minuteMatch) return Number(minuteMatch[1]);
+    throw new Error('Duration must be hours (for example 3 or 3 hrs) or HH:MM.');
+  }
+
+  function parseStartTime(value) {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return `${String(value.getUTCHours()).padStart(2, '0')}:${String(value.getUTCMinutes()).padStart(2, '0')}`;
+    }
+    if (typeof value === 'number' && value >= 0 && value < 1) {
+      const totalMinutes = Math.round(value * 24 * 60);
+      return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
+    }
+    const text = String(value || '').trim();
+    if (!/^\d{1,2}:\d{2}$/.test(text)) throw new Error('Start time must use HH:MM format.');
+    const [hours, minutes] = text.split(':').map(Number);
+    if (hours > 23 || minutes > 59) throw new Error('Start time must be a valid time.');
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  function parseImportedScheduleRows(rows) {
+    const nonEmptyRows = rows.filter((row) => row.some((value) => String(value ?? '').trim() !== ''));
+    if (nonEmptyRows.length < 2) throw new Error('The calendar file must include a header and at least one event row.');
+    const headers = nonEmptyRows[0].map(normalizeHeader);
+    const required = ['name_of_event', 'room_number', 'date', 'start_day', 'end_day', 'duration', 'start_time'];
+    const indexes = Object.fromEntries(required.map((name) => [name, headers.indexOf(name)]));
+    if (Object.values(indexes).some((index) => index < 0)) {
+      throw new Error('Calendar columns must be: name of event, room number, date, start day, end day, duration, start time.');
+    }
+
+    return nonEmptyRows.slice(1).map((row, index) => {
+      const eventName = String(row[indexes.name_of_event] || '').trim();
+      const roomNumber = String(row[indexes.room_number] || '').trim();
+      const date = parseDateValue(row[indexes.date], `Date on row ${index + 2}`);
+      const startDate = parseDateValue(row[indexes.start_day] || date, `Start day on row ${index + 2}`);
+      const endDate = parseDateValue(row[indexes.end_day] || startDate, `End day on row ${index + 2}`);
+      const durationMinutes = parseDuration(row[indexes.duration]);
+      const startTime = parseStartTime(row[indexes.start_time]);
+      const startMinutes = Number(startTime.slice(0, 2)) * 60 + Number(startTime.slice(3));
+      if (!eventName || !roomNumber || endDate < startDate || durationMinutes <= 0 || startMinutes + durationMinutes > 24 * 60) {
+        throw new Error(`Invalid calendar values on row ${index + 2}.`);
+      }
+      return { eventName, roomNumber, startDate, endDate, durationMinutes, startTime };
+    });
+  }
+
+  async function parseImportedScheduleFile(file) {
+    const extension = file.originalname.toLowerCase().split('.').pop();
+    if (extension === 'xlsx') {
+      return parseImportedScheduleRows(await readXlsxFile(file.buffer));
+    }
+    if (extension === 'csv') {
+      return parseImportedScheduleRows(parseCsv(file.buffer.toString('utf8')));
+    }
+    throw new Error('Choose a .csv or .xlsx calendar file.');
   }
 
   return rows.slice(1).map((row, index) => {
@@ -70,9 +154,9 @@ const schedulingController = {
 
   async importTimetable(req, res, next) {
     try {
-      if (!req.file) throw new Error('Choose a CSV timetable file first.');
-      await Scheduling.addTimetableBlocks(parseBlocks(req.file.buffer));
-      res.redirect('/scheduling?msg=Timetable+imported+successfully');
+      if (!req.file) throw new Error('Choose a CSV or Excel calendar file first.');
+      await Scheduling.addImportedScheduleItems(await parseImportedScheduleFile(req.file));
+      res.redirect('/scheduling?msg=Calendar+schedule+imported+successfully');
     } catch (error) {
       res.redirect(`/scheduling?error=${encodeURIComponent(error.message)}`);
     }
