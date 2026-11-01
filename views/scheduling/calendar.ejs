@@ -75,6 +75,14 @@
           <span id="selected-day-summary" class="badge badge-green">—</span>
         </div>
         <p id="selected-day-intro" class="text-xs text-muted mb-4">Select a day to see available rooms and time slots.</p>
+        <label class="field-label block mb-4">FILTER ROOMS
+          <select id="room-filter" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg">
+            <option value="all">All rooms</option>
+            <option value="available">Available rooms</option>
+            <option value="Class">Classrooms</option>
+            <option value="Lab">Labs</option>
+          </select>
+        </label>
         <div id="selected-day-content" class="calendar-detail-table"></div>
         <form action="/scheduling/rooms" method="POST" class="flex gap-2 mt-5">
           <input name="name" required placeholder="Add room, e.g. A1-104" class="min-w-0 flex-1 text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg" />
@@ -139,6 +147,7 @@
       var selectedDaySummary = document.getElementById('selected-day-summary');
       var selectedDayIntro = document.getElementById('selected-day-intro');
       var selectedDayContent = document.getElementById('selected-day-content');
+      var roomFilter = document.getElementById('room-filter');
       var dayButtons = Array.prototype.slice.call(document.querySelectorAll('[data-calendar-date]'));
       var monthDays = days.reduce(function (lookup, day) {
         lookup[day.date] = day;
@@ -235,7 +244,13 @@
         selectedDateLabel.textContent = new Date(date + 'T00:00:00Z').toLocaleDateString('en-IN', {
           weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'
         });
-        var roomRows = rooms.map(function (room) {
+        var filteredRooms = rooms.filter(function (room) {
+          var blocks = blocksForRoom(day, room);
+          if (roomFilter.value === 'available') return blocks.length === 0;
+          if (roomFilter.value === 'Class' || roomFilter.value === 'Lab') return room.room_type === roomFilter.value;
+          return true;
+        });
+        var roomRows = filteredRooms.map(function (room) {
           var blocks = blocksForRoom(day, room);
           var slots = freeSlots(blocks);
           return '<tr><td><strong>' + escapeHtml(room.name) + '</strong><span class="calendar-slot">' + escapeHtml(room.room_type || 'Class') + '</span></td><td><span class="badge ' + (blocks.length ? 'badge-amber' : 'badge-green') + '">' +
@@ -249,13 +264,17 @@
         var busyRooms = rooms.filter(function (room) { return blocksForRoom(day, room).length; }).length;
         selectedDaySummary.textContent = busyRooms + ' of ' + rooms.length + ' rooms busy';
         selectedDayIntro.textContent = rooms.length ? 'Green time ranges are available for booking. Availability is shown from 08:00 to 20:00.' : 'No rooms have been added yet.';
-        selectedDayContent.innerHTML = rooms.length
+        selectedDayContent.innerHTML = filteredRooms.length
           ? '<table class="availability-table"><thead><tr><th>Room</th><th>Status</th><th>Time slots</th></tr></thead><tbody>' + roomRows + '</tbody></table>'
-          : '<div class="calendar-detail-empty">Add rooms to see daily availability.</div>';
+          : '<div class="calendar-detail-empty">' + (rooms.length ? 'No rooms match this filter.' : 'Add rooms to see daily availability.') + '</div>';
       }
 
       dayButtons.forEach(function (button) {
         button.addEventListener('click', function () { renderDay(button.dataset.calendarDate); });
+      });
+      roomFilter.addEventListener('change', function () {
+        var selectedButton = document.querySelector('[data-calendar-date].is-selected');
+        if (selectedButton) renderDay(selectedButton.dataset.calendarDate);
       });
       renderDay(days.find(function (day) { return day.date === new Date().toISOString().slice(0, 10); })?.date || days[0]?.date);
     })();
