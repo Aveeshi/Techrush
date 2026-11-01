@@ -10,49 +10,10 @@
     }
   </style>
 </head>
-<body class="font-sans text-fg antialiased bg-bg">
+<body class="auth-page font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
   <div class="login-screen">
-    <!-- Left Visual Panel (CampusBuzz Design) -->
-    <div class="login-visual">
-      <div class="brand">
-        <span class="brand-mark"><span>CB</span></span>
-        <span class="brand-word">Campus<span>Buzz</span></span>
-      </div>
-
-      <div class="visual-copy">
-        <span class="badge badge-lime mb-4">THE CAMPUS OPERATING SYSTEM</span>
-        <h1>Every contribution.<br /><span>Credited.</span></h1>
-        <p>One verified, tamper-proof institutional ledger for all co-curricular activities, leadership hours, and accredited milestones beyond the classroom.</p>
-      </div>
-
-      <div class="orb orb-one"></div>
-      <div class="orb orb-two"></div>
-
-      <!-- Floating Achievement Cards -->
-      <div class="floating-card f-one">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span>
-          <small>JUST VERIFIED</small>
-          <strong>Autonomous Sprint · 8.0 hours</strong>
-        </span>
-      </div>
-
-      <div class="floating-card f-two">
-        <span class="avatar">AV</span>
-        <span>
-          <small>4-YEAR DOSSIER</small>
-          <strong>86.0 verified hours</strong>
-        </span>
-      </div>
-
-      <small class="copyright">© <%= new Date().getFullYear() %> CAMPUSBUZZ PROTOCOL · SECURE ACADEMIC RECORDS</small>
-    </div>
-
-    <!-- Right Form Section -->
     <main class="login-form-wrap">
       <a href="/events" class="back-button">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -61,14 +22,16 @@
         Back to events
       </a>
 
-      <div class="login-form">
+      <div class="auth-intro">
         <span class="overline">SECURE PORTAL</span>
-        <h2>Welcome back.</h2>
-        <p>Choose your workspace to continue.</p>
+        <h1>Welcome back.</h1>
+        <p>Choose your portal to continue.</p>
+      </div>
 
-        <!-- Role Selector Switcher (Figma Make App) -->
+      <div class="login-form">
+        <!-- One login entry point with portal selection -->
         <div class="role-picker">
-          <button type="button" class="active" id="role-student" onclick="setRole('student')">
+          <button type="button" class="active" id="role-student" data-role="student">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="8" r="6"></circle>
               <path d="M8.5 13 7 22l5-3 5 3-1.5-9"></path>
@@ -84,8 +47,7 @@
             </i>
           </button>
 
-          <a href="/auth/faculty-login" class="text-decoration-none" style="display:flex;">
-            <button type="button" id="role-faculty" style="width:100%;">
+          <button type="button" id="role-faculty" data-role="faculty">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
@@ -93,11 +55,14 @@
                 <strong>Faculty</strong>
                 <small>Review & approve</small>
               </span>
-            </button>
-          </a>
+              <i id="check-faculty" style="display:none;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </i>
+          </button>
 
-          <a href="/auth/institutional-login" class="text-decoration-none" style="display:flex;">
-            <button type="button" id="role-admin" style="width:100%;">
+          <button type="button" id="role-admin" data-role="institutional">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 21h18M6 21V7l6-4 6 4v14"></path>
               </svg>
@@ -105,16 +70,20 @@
                 <strong>Institution</strong>
                 <small>Audit & oversight</small>
               </span>
-            </button>
-          </a>
+              <i id="check-institutional" style="display:none;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </i>
+          </button>
 
-          <button type="button" id="role-organizer" onclick="setRole('organizer')">
+          <button type="button" id="role-organizer" data-role="organizer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
             </svg>
             <span>
-              <strong>Organizer</strong>
+              <strong>President / Chairperson</strong>
               <small>Club operations</small>
             </span>
             <i id="check-organizer" style="display:none;">
@@ -139,15 +108,15 @@
         <div id="form-student-wrap">
           <form action="/auth/student/login" method="POST">
             <label class="field-label mb-3">
-              INSTITUTIONAL EMAIL
-              <input type="email" name="email" value="<%= oldInput.email || '' %>" placeholder="student@pict.edu" required />
+              STUDENT EMAIL
+              <input type="email" name="email" value="<%= oldInput.email || '' %>" placeholder="student@gmail.com" required />
             </label>
 
             <label class="field-label mb-4">
               PASSWORD
               <div class="password-field">
                 <input type="password" id="student-pass" name="password" placeholder="••••••••" required />
-                <button type="button" onclick="togglePass('student-pass')">SHOW</button>
+                <button type="button" data-toggle-password="student-pass">SHOW</button>
               </div>
             </label>
 
@@ -172,8 +141,11 @@
                 <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
                 <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
               </svg>
-              Institutional Google Account
+              Student Google Account
             </a>
+            <p class="auth-signup-prompt">
+              New student? <a href="/auth/signup">Create your student account →</a>
+            </p>
           </div>
         </div>
 
@@ -181,20 +153,62 @@
         <div id="form-organizer-wrap" style="display:none;">
           <form action="/auth/organizer/login" method="POST">
             <label class="field-label mb-3">
-              ORGANIZER EMAIL
-              <input type="email" name="email" value="<%= oldInput.email || '' %>" placeholder="organizer@pict.edu" required />
+              PRESIDENT / CHAIRPERSON EMAIL
+              <input type="email" name="email" value="<%= oldInput.email || '' %>" placeholder="president@gmail.com" required />
             </label>
 
             <label class="field-label mb-4">
               PASSWORD
               <div class="password-field">
                 <input type="password" id="org-pass" name="password" placeholder="••••••••" required />
-                <button type="button" onclick="togglePass('org-pass')">SHOW</button>
+                <button type="button" data-toggle-password="org-pass">SHOW</button>
               </div>
             </label>
 
             <button type="submit" class="button button-primary w-full">
-              Enter Organizer Hub →
+              Enter Club Hub →
+            </button>
+          </form>
+        </div>
+
+        <div id="form-faculty-wrap" style="display:none;">
+          <form action="/auth/faculty/login" method="POST">
+            <label class="field-label mb-3">
+              FACULTY EMAIL ADDRESS
+              <input type="email" name="email" value="<%= oldInput.email || '' %>" placeholder="faculty@gmail.com" required />
+            </label>
+
+            <label class="field-label mb-4">
+              PASSWORD
+              <div class="password-field">
+                <input type="password" id="faculty-pass" name="password" placeholder="••••••••" required />
+                <button type="button" data-toggle-password="faculty-pass">SHOW</button>
+              </div>
+            </label>
+
+            <button type="submit" class="button button-primary w-full">
+              Authenticate Faculty Desk →
+            </button>
+          </form>
+        </div>
+
+        <div id="form-institutional-wrap" style="display:none;">
+          <form action="/auth/institutional/login" method="POST">
+            <label class="field-label mb-3">
+              ADMINISTRATOR EMAIL
+              <input type="email" name="email" value="<%= oldInput.email || '' %>" placeholder="institution@gmail.com" required />
+            </label>
+
+            <label class="field-label mb-4">
+              MASTER PASSWORD
+              <div class="password-field">
+                <input type="password" id="institutional-pass" name="password" placeholder="••••••••" required />
+                <button type="button" data-toggle-password="institutional-pass">SHOW</button>
+              </div>
+            </label>
+
+            <button type="submit" class="button button-primary w-full">
+              Enter Institutional Hub →
             </button>
           </form>
         </div>
@@ -212,28 +226,16 @@
 
   <script nonce="<%= cspNonce %>">
     function setRole(role) {
-      const btnStudent = document.getElementById('role-student');
-      const btnOrg = document.getElementById('role-organizer');
-      const chkStudent = document.getElementById('check-student');
-      const chkOrg = document.getElementById('check-organizer');
-      const formStudent = document.getElementById('form-student-wrap');
-      const formOrg = document.getElementById('form-organizer-wrap');
+      const roles = ['student', 'organizer', 'faculty', 'institutional'];
+      roles.forEach(function (name) {
+        const button = document.getElementById('role-' + (name === 'institutional' ? 'admin' : name));
+        const check = document.getElementById('check-' + name);
+        const form = document.getElementById('form-' + name + '-wrap');
 
-      if (role === 'organizer') {
-        btnStudent.classList.remove('active');
-        btnOrg.classList.add('active');
-        chkStudent.style.display = 'none';
-        chkOrg.style.display = 'grid';
-        formStudent.style.display = 'none';
-        formOrg.style.display = 'block';
-      } else {
-        btnOrg.classList.remove('active');
-        btnStudent.classList.add('active');
-        chkOrg.style.display = 'none';
-        chkStudent.style.display = 'grid';
-        formOrg.style.display = 'none';
-        formStudent.style.display = 'block';
-      }
+        button.classList.toggle('active', name === role);
+        check.style.display = name === role ? 'grid' : 'none';
+        form.style.display = name === role ? 'block' : 'none';
+      });
     }
 
     function togglePass(id) {
@@ -244,6 +246,20 @@
         el.type = 'password';
       }
     }
+
+    document.querySelectorAll('[data-role]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        setRole(button.dataset.role);
+      });
+    });
+
+    document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        togglePass(button.dataset.togglePassword);
+      });
+    });
+
+    setRole('<%= initialRole || "student" %>');
   </script>
 </body>
 </html>

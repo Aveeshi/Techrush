@@ -138,21 +138,9 @@
           </button>
         </form>
       <% } else { %>
-        <!-- Authentication CTAs -->
-        <div class="flex items-center gap-2">
-          <a href="/auth/login" class="button button-quiet text-xs font-semibold text-decoration-none">
-            Sign In
-          </a>
-          <a href="/auth/faculty-login" class="hidden sm:inline-flex button button-quiet text-xs font-semibold text-decoration-none">
-            Faculty
-          </a>
-          <a href="/auth/institutional-login" class="hidden lg:inline-flex button button-quiet text-xs font-semibold text-decoration-none">
-            Institution
-          </a>
-          <a href="/auth/login" class="button button-primary text-xs font-bold text-decoration-none">
-            Access Hub →
-          </a>
-        </div>
+        <a href="/auth/login" class="button button-primary text-xs font-bold text-decoration-none">
+          Log in →
+        </a>
       <% } %>
     </div>
 
@@ -215,13 +203,7 @@
       </a>
     <% } else { %>
       <a href="/auth/login" class="py-2 text-xs font-semibold text-fg">
-        STUDENT LOGIN
-      </a>
-      <a href="/auth/faculty-login" class="py-2 text-xs font-semibold text-amber-400">
-        FACULTY COORDINATOR LOGIN
-      </a>
-      <a href="/auth/institutional-login" class="py-2 text-xs font-semibold text-blue-400">
-        INSTITUTIONAL ADMIN LOGIN
+        LOG IN TO CAMPUSBUZZ
       </a>
     <% } %>
 

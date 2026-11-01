@@ -28,41 +28,10 @@
     #tab-organizer:checked ~ #organizer-panel { display: block; }
   </style>
 </head>
-<body class="font-sans text-fg antialiased bg-bg">
+<body class="auth-page font-sans text-fg antialiased bg-bg">
   <%- include('../partials/nav') %>
 
   <div class="login-screen">
-    <!-- Left Visual Panel -->
-    <div class="login-visual">
-      <div class="brand">
-        <span class="brand-mark"><span>CB</span></span>
-        <span class="brand-word">Campus<span>Buzz</span></span>
-      </div>
-
-      <div class="visual-copy">
-        <span class="badge badge-lime mb-4">ONBOARDING GATEWAY</span>
-        <h1>Join your institutional<br /><span>Ledger.</span></h1>
-        <p>Register as a student candidate or student club executive to automatically log verified CCA hours, check in to workshops, and generate certified transcripts.</p>
-      </div>
-
-      <div class="orb orb-one"></div>
-      <div class="orb orb-two"></div>
-
-      <!-- Floating Achievement Cards -->
-      <div class="floating-card f-one">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span>
-          <small>ACCREDITATION</small>
-          <strong>Course F023: CCA-I Compliant</strong>
-        </span>
-      </div>
-
-      <small class="copyright">© <%= new Date().getFullYear() %> CAMPUSBUZZ PROTOCOL · PUNE INSTITUTE OF COMPUTER TECHNOLOGY</small>
-    </div>
-
-    <!-- Right Form Section -->
     <main class="login-form-wrap overflow-y-auto">
       <a href="/auth/login" class="back-button">
         <span>Already have an account? Sign In</span>
@@ -107,7 +76,7 @@
 
           <div class="role-tabs flex gap-2 mb-4">
             <label for="tab-student" class="role-btn">STUDENT</label>
-            <label for="tab-organizer" class="role-btn">CLUB ORGANIZER</label>
+            <label for="tab-organizer" class="role-btn">PRESIDENT / CHAIRPERSON</label>
           </div>
 
           <label class="field-label">
@@ -117,7 +86,7 @@
 
           <label class="field-label">
             EMAIL ADDRESS
-            <input type="email" name="email" placeholder="student@pict.edu" value="<%= oldInput.email || '' %>" required />
+            <input type="email" name="email" placeholder="student@gmail.com" value="<%= oldInput.email || '' %>" required />
           </label>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -140,14 +109,27 @@
               </label>
               <label class="field-label">
                 DEPARTMENT
-                <input type="text" name="department" placeholder="CE" value="<%= oldInput.department || '' %>" />
+                <select name="department" required>
+                  <option value="">Select department</option>
+                  <% ['CE', 'ENTC', 'AIDS', 'IT', 'ECE'].forEach(function(department) { %>
+                    <option value="<%= department %>" <%= oldInput.department === department ? 'selected' : '' %>><%= department %></option>
+                  <% }); %>
+                </select>
               </label>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <label class="field-label">
-                ACADEMIC YEAR (1-4)
-                <input type="number" name="year" placeholder="2" min="1" max="6" value="<%= oldInput.year || '' %>" />
+                ACADEMIC YEAR
+                <select name="year" required>
+                  <option value="">Select year</option>
+                  <option value="1" <%= String(oldInput.year) === '1' ? 'selected' : '' %>>1st year</option>
+                  <option value="2" <%= String(oldInput.year) === '2' ? 'selected' : '' %>>2nd year</option>
+                  <option value="3" <%= String(oldInput.year) === '3' ? 'selected' : '' %>>3rd year</option>
+                  <option value="4" <%= String(oldInput.year) === '4' ? 'selected' : '' %>>4th year</option>
+                  <option value="5" <%= String(oldInput.year) === '5' ? 'selected' : '' %>>M.Tech 1st year</option>
+                  <option value="6" <%= String(oldInput.year) === '6' ? 'selected' : '' %>>M.Tech 2nd year</option>
+                </select>
               </label>
               <label class="field-label">
                 PHONE
@@ -174,7 +156,7 @@
             </div>
           </div>
 
-          <!-- Organizer Panel -->
+          <!-- President / Chairperson Panel -->
           <div id="organizer-panel" class="space-y-4 pt-2">
             <label class="field-label">
               WHICH CLUB DO YOU REPRESENT?
