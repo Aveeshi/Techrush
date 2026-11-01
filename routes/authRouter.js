@@ -1,5 +1,6 @@
 const express = require('express');
 const passport = require('passport');
+const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/authController');
 const { makeUploader } = require('../utils/cloudinary');
 const {
@@ -11,6 +12,18 @@ const {
 } = require('../validators/authValidators');
 
 const authRouter = express.Router();
+const loginRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (req, res) => {
+    if (req.accepts('html')) {
+      return res.status(429).send('Too many login attempts. Please try again later.');
+    }
+    return res.status(429).json({ error: 'Too many login attempts. Please try again later.' });
+  },
+});
 
 // Optional profile-photo upload on signup — a student who skips it gets a
 // random default avatar instead (see models/User.js). Organizer signups
@@ -40,10 +53,10 @@ authRouter.get('/institutional-login', authController.institutionalLoginPage);
 authRouter.post('/signup', profilePhotoUpload, runSignupValidation, authController.signup);
 
 // --- Login ---
-authRouter.post('/student/login', studentLoginValidation, authController.studentLogin);
-authRouter.post('/organizer/login', organizerLoginValidation, authController.organizerLogin);
-authRouter.post('/faculty/login', authController.facultyLogin);
-authRouter.post('/institutional/login', authController.institutionalLogin);
+authRouter.post('/student/login', loginRateLimit, studentLoginValidation, authController.studentLogin);
+authRouter.post('/organizer/login', loginRateLimit, organizerLoginValidation, authController.organizerLogin);
+authRouter.post('/faculty/login', loginRateLimit, authController.facultyLogin);
+authRouter.post('/institutional/login', loginRateLimit, authController.institutionalLogin);
 
 // --- Google OAuth (both types — see passport.js for the pending/choose-role flow) ---
 authRouter.get('/google', (req, res, next) => {
