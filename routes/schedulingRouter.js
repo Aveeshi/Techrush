@@ -27,5 +27,7 @@ router.get('/', schedulingController.calendar);
 router.post('/timetable/import', upload.single('timetable'), schedulingController.importTimetable);
 router.post('/rooms', schedulingController.addRoom);
 router.post('/events', schedulingController.addManualEvent);
+router.post('/events/:id/delete', schedulingController.deleteManualEvent);
+router.post('/imports/:id/delete', schedulingController.deleteImportedScheduleItem);
 
 module.exports = router;

@@ -166,6 +166,7 @@ const schedulingController = {
       res.render('scheduling/calendar', {
         user: req.user,
         calendar,
+        currentMonth,
         clubs: clubsResult.rows,
         message: req.query.msg || null,
         error: req.query.error || null,
@@ -210,6 +211,24 @@ const schedulingController = {
         clubId: req.user.type === 'faculty' ? req.user.club_id : String(req.body.clubId || '').trim(),
       });
       res.redirect(`/scheduling?month=${encodeURIComponent(String(req.body.eventDate).slice(0, 7))}&msg=Event+added+to+availability+calendar`);
+    } catch (error) {
+      res.redirect(`/scheduling?error=${encodeURIComponent(error.message)}`);
+    }
+  },
+
+  async deleteManualEvent(req, res, next) {
+    try {
+      await Scheduling.deleteManualEvent(req.params.id);
+      res.redirect(`/scheduling?month=${encodeURIComponent(String(req.query.month || req.body.month || '').slice(0, 7))}&msg=Event+deleted`);
+    } catch (error) {
+      res.redirect(`/scheduling?error=${encodeURIComponent(error.message)}`);
+    }
+  },
+
+  async deleteImportedScheduleItem(req, res, next) {
+    try {
+      await Scheduling.deleteImportedScheduleItem(req.params.id);
+      res.redirect(`/scheduling?month=${encodeURIComponent(String(req.query.month || req.body.month || '').slice(0, 7))}&msg=Imported+event+deleted`);
     } catch (error) {
       res.redirect(`/scheduling?error=${encodeURIComponent(error.message)}`);
     }

@@ -21,6 +21,7 @@
     .calendar-detail-table .availability-table td,
     .calendar-detail-table .availability-table th { vertical-align: top; }
     .calendar-slot { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .calendar-delete-button { margin-left: 5px; border: 0; background: transparent; color: var(--danger, #f87171); cursor: pointer; font-size: 10px; text-decoration: underline; }
     .calendar-slot.is-free { color: var(--lime); }
     .calendar-detail-empty { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 24px 16px; text-align: center; color: var(--muted); }
     @media (max-width: 700px) {
@@ -40,7 +41,7 @@
         <p>Class timetables and planned events are combined here to show when rooms can be scheduled.</p>
       </div>
       <div class="flex items-center gap-2">
-        <a class="button button-quiet text-xs text-decoration-none" href="/scheduling?month=<%= new Date(calendar.month + '-01T00:00:00Z').toISOString().slice(0, 7) %>">This month</a>
+        <a class="button button-quiet text-xs text-decoration-none" href="/scheduling?month=<%= currentMonth %>">This month</a>
         <a class="button button-primary text-xs text-decoration-none" href="/scheduling?month=<%= new Date(Date.UTC(Number(calendar.month.slice(0, 4)), Number(calendar.month.slice(5)) - 2, 1)).toISOString().slice(0, 7) %>">← Previous</a>
         <a class="button button-primary text-xs text-decoration-none" href="/scheduling?month=<%= new Date(Date.UTC(Number(calendar.month.slice(0, 4)), Number(calendar.month.slice(5)), 1)).toISOString().slice(0, 7) %>">Next →</a>
       </div>
@@ -79,6 +80,7 @@
           <select id="room-filter" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg">
             <option value="all">All rooms</option>
             <option value="available">Available rooms</option>
+            <option value="occupied">Occupied rooms</option>
             <option value="Class">Classrooms</option>
             <option value="Lab">Labs</option>
             <option value="Seminar Hall">Seminar halls</option>
@@ -217,20 +219,20 @@
         }).forEach(function (event) {
           var start = isoTimeToMinutes(event.start_time);
           var end = isoTimeToMinutes(event.end_time);
-          if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end });
+          if (start !== null && end !== null && event.event_id) blocks.push({ label: event.title, start: start, end: end, deleteAction: '/scheduling/events/' + event.id + '/delete?month=' + day.date.slice(0, 7) });
         });
         day.manualEvents.filter(function (event) {
           return !event.room_name || normalizeRoomName(event.room_name) === roomName;
         }).forEach(function (event) {
           var start = timeToMinutes(event.start_time);
           var end = timeToMinutes(event.end_time);
-          if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end });
+          if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end, deleteAction: '/scheduling/events/' + event.id + '/delete?month=' + day.date.slice(0, 7) });
         });
         day.importedSchedule.filter(function (event) {
           return normalizeRoomName(event.room_number) === roomName;
         }).forEach(function (event) {
           var start = timeToMinutes(event.start_time);
-          if (start !== null) blocks.push({ label: event.event_name, start: start, end: start + Number(event.duration_minutes) });
+          if (start !== null) blocks.push({ label: event.event_name, start: start, end: start + Number(event.duration_minutes), deleteAction: '/scheduling/imports/' + event.id + '/delete?month=' + day.date.slice(0, 7) });
         });
         return blocks.sort(function (a, b) { return a.start - b.start; });
       }
@@ -248,6 +250,7 @@
         var filteredRooms = rooms.filter(function (room) {
           var blocks = blocksForRoom(day, room);
           if (roomFilter.value === 'available') return blocks.length === 0;
+          if (roomFilter.value === 'occupied') return blocks.length > 0;
           if (roomFilter.value === 'Class' || roomFilter.value === 'Lab' || roomFilter.value === 'Seminar Hall') {
             return room.room_type === roomFilter.value;
           }
@@ -259,7 +262,8 @@
           return '<tr><td><strong>' + escapeHtml(room.name) + '</strong><span class="calendar-slot">' + escapeHtml(room.room_type || 'Class') + '</span></td><td><span class="badge ' + (blocks.length ? 'badge-amber' : 'badge-green') + '">' +
             (blocks.length ? 'BUSY' : 'FREE') + '</span></td><td>' +
             (blocks.length ? blocks.map(function (block) {
-              return '<span class="calendar-slot"><strong>' + escapeHtml(formatTime(block.start) + '–' + formatTime(block.end)) + '</strong> · ' + escapeHtml(block.label) + '</span>';
+              return '<span class="calendar-slot"><strong>' + escapeHtml(formatTime(block.start) + '–' + formatTime(block.end)) + '</strong> · ' + escapeHtml(block.label) +
+                (block.deleteAction ? ' <button type="button" class="calendar-delete-button" data-delete-action="' + escapeHtml(block.deleteAction) + '">Delete</button>' : '') + '</span>';
             }).join('') : '<span class="calendar-slot is-free">Available all day</span>') +
             (slots.length ? '<span class="calendar-slot is-free">Free: ' + escapeHtml(slots.join(', ')) + '</span>' : '') +
             '</td></tr>';
@@ -278,6 +282,15 @@
       roomFilter.addEventListener('change', function () {
         var selectedButton = document.querySelector('[data-calendar-date].is-selected');
         if (selectedButton) renderDay(selectedButton.dataset.calendarDate);
+      });
+      document.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-delete-action]');
+        if (!button || !window.confirm('Delete this calendar event? This cannot be undone.')) return;
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = button.dataset.deleteAction;
+        document.body.appendChild(form);
+        form.requestSubmit();
       });
       renderDay(days.find(function (day) { return day.date === new Date().toISOString().slice(0, 10); })?.date || days[0]?.date);
     })();

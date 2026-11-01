@@ -121,7 +121,7 @@ async function getCalendar(month) {
       [start, end]
     ),
     pool.query(
-      `SELECT id, title, event_date::text AS event_date, room_name, start_time::text AS start_time, end_time::text AS end_time
+      `SELECT id, event_id, title, event_date::text AS event_date, room_name, start_time::text AS start_time, end_time::text AS end_time
        FROM manual_schedule_events
        WHERE event_date >= $1::date AND event_date < $2::date
        ORDER BY event_date, start_time`,
@@ -277,11 +277,41 @@ async function addImportedScheduleItems(items) {
   }
 }
 
+async function deleteManualEvent(id) {
+  await ensureSchema();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `DELETE FROM manual_schedule_events WHERE id = $1 RETURNING event_id`,
+      [id]
+    );
+    if (!result.rows[0]) throw new Error('Calendar event not found.');
+    if (result.rows[0].event_id) {
+      await client.query(`UPDATE events SET status = 'cancelled' WHERE id = $1`, [result.rows[0].event_id]);
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function deleteImportedScheduleItem(id) {
+  await ensureSchema();
+  const result = await pool.query(`DELETE FROM schedule_import_items WHERE id = $1 RETURNING id`, [id]);
+  if (!result.rows[0]) throw new Error('Imported calendar event not found.');
+}
+
 module.exports = {
   ensureSchema,
   getCalendar,
   addTimetableBlocks,
   addImportedScheduleItems,
+  deleteManualEvent,
+  deleteImportedScheduleItem,
   addRoom,
   addManualEvent,
 };
