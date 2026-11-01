@@ -1,6 +1,46 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="csrf-token" content="<%= csrfToken %>" />
 <title><%= typeof title !== 'undefined' ? title : 'CampusBuzz — Campus Activity & Credit Protocol' %></title>
+
+<script>
+  (function () {
+    var token = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (!token) return;
+
+    window.fetch = (function (originalFetch) {
+      return function (input, init) {
+        init = init || {};
+        var requestUrl = typeof input === 'string' ? input : input.url;
+        var url = new URL(requestUrl, window.location.origin);
+        var method = (init.method || (typeof input !== 'string' && input.method) || 'GET').toUpperCase();
+        if (url.origin === window.location.origin && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          var headers = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined));
+          headers.set('X-CSRF-Token', token);
+          init.headers = headers;
+        }
+        return originalFetch(input, init);
+      };
+    })(window.fetch);
+
+    document.addEventListener('submit', function (event) {
+      var form = event.target;
+      if (!(form instanceof HTMLFormElement) || form.method.toLowerCase() !== 'post') return;
+
+      if (!form.querySelector('input[name="_csrf"]')) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = '_csrf';
+        input.value = token;
+        form.appendChild(input);
+      }
+
+      var action = new URL(form.action, window.location.origin);
+      action.searchParams.set('_csrf', token);
+      form.action = action.toString();
+    });
+  })();
+</script>
 
 <!-- Pre-paint theme script to prevent FOUC -->
 <script>

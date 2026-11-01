@@ -1,5 +1,6 @@
 const express=require('express');
 require('dotenv').config();
+const crypto=require('crypto');
 const http=require('http');
 const { Server }=require('socket.io');
 const passport=require("passport");
@@ -96,6 +97,36 @@ app.use(attachUserToLocals);
 app.use(express.static(path.join(rootDir,"public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // needed for the scan page's fetch() POST to /events/:id/checkin
+
+app.use((req, res, next) => {
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  }
+  res.locals.csrfToken = req.session.csrfToken;
+  next();
+});
+
+app.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return next();
+  }
+
+  const submittedToken = req.get('x-csrf-token') || req.body?._csrf || req.query?._csrf;
+  const submittedBuffer = typeof submittedToken === 'string'
+    ? Buffer.from(submittedToken)
+    : null;
+  const expectedBuffer = Buffer.from(req.session.csrfToken);
+  if (submittedBuffer &&
+      submittedBuffer.length === expectedBuffer.length &&
+      crypto.timingSafeEqual(submittedBuffer, expectedBuffer)) {
+    return next();
+  }
+
+  if (req.accepts('html')) {
+    return res.status(403).render('error', { message: 'Invalid CSRF token' });
+  }
+  return res.status(403).json({ error: 'Invalid CSRF token' });
+});
 
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
