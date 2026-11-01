@@ -128,8 +128,8 @@ header .nav-role-badge {
   border: 1px solid var(--line);
   border-radius: 20px;
   background:
-    radial-gradient(circle at 78% 28%, rgba(215, 255, 43, 0.13), transparent 28%),
-    linear-gradient(135deg, var(--surface-2), var(--surface));
+    radial-gradient(circle at 82% 18%, rgba(241, 161, 98, 0.18), transparent 30%),
+    linear-gradient(135deg, #182b36, var(--surface));
 }
 
 .landing-signal-grid {
@@ -194,8 +194,8 @@ header .nav-role-badge {
   height: 7px;
   margin-right: auto;
   border-radius: 50%;
-  background: var(--lime);
-  box-shadow: 0 0 0 5px rgba(215, 255, 43, 0.12), 0 0 18px var(--lime);
+  background: #f1a162;
+  box-shadow: 0 0 0 5px rgba(241, 161, 98, 0.14), 0 0 18px rgba(241, 161, 98, 0.7);
   animation: signal-pulse 2s ease-in-out infinite;
 }
 
@@ -212,7 +212,7 @@ header .nav-role-badge {
   width: 5px;
   height: 24px;
   border-radius: 99px;
-  background: var(--lime);
+  background: #f1a162;
   opacity: 0.7;
   animation: signal-wave 1.2s ease-in-out infinite alternate;
 }
@@ -235,51 +235,79 @@ header .nav-role-badge {
   font-weight: 500;
 }
 
-.landing-principles {
+.landing-links {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  margin-top: 28px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--line);
+  grid-template-columns: minmax(220px, 0.7fr) 1.3fr;
+  gap: 56px;
+  margin-top: 44px;
+  padding: 8px 0 0;
 }
 
-.landing-principles > div {
-  min-height: 132px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 22px;
-  background: var(--surface);
-  transition: background 180ms ease, transform 180ms ease;
+.landing-links-heading h2 {
+  max-width: 260px;
+  margin-top: 10px;
+  font-family: 'Outfit', 'Manrope', sans-serif;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.05em;
 }
 
-.landing-principles > div:hover {
-  background: var(--surface-2);
-  transform: translateY(-2px);
+.landing-link-list {
+  border-top: 1px solid var(--line);
 }
 
-.principle-index {
-  color: var(--lime);
+.landing-link {
+  display: grid;
+  grid-template-columns: 38px 1fr 24px;
+  gap: 16px;
+  align-items: center;
+  min-height: 82px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+  transition: padding 180ms ease, color 180ms ease;
+}
+
+.landing-link:hover {
+  padding-left: 8px;
+  color: #f1a162;
+}
+
+.landing-link-number {
+  color: #6ea8b5;
   font-family: 'DM Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
 }
 
-.landing-principles strong {
+.landing-link strong,
+.landing-link small {
+  display: block;
+}
+
+.landing-link strong {
   font-size: 14px;
+  font-weight: 700;
 }
 
-.landing-principles span:last-child {
-  max-width: 270px;
+.landing-link small {
+  margin-top: 4px;
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.55;
+}
+
+.landing-link-arrow {
+  color: #f1a162;
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.landing-link:hover .landing-link-arrow {
+  transform: translate(2px, -2px);
 }
 
 @keyframes signal-pulse {
-  50% { box-shadow: 0 0 0 9px rgba(215, 255, 43, 0.03), 0 0 22px var(--lime); }
+  50% { box-shadow: 0 0 0 9px rgba(241, 161, 98, 0.03), 0 0 22px rgba(241, 161, 98, 0.7); }
 }
 
 @keyframes signal-wave {
@@ -329,11 +357,12 @@ header .nav-role-badge {
     max-width: none;
   }
 
-  .landing-principles {
+  .landing-links {
     grid-template-columns: 1fr;
+    gap: 24px;
   }
 
-  .landing-principles > div {
-    min-height: 0;
+  .landing-links-heading h2 {
+    max-width: 360px;
   }
 }

@@ -13,23 +13,23 @@
       <div>
         <div class="flex items-center gap-3 mb-6">
           <span class="badge badge-lime">
-            <i></i> PICT AUTONOMOUS CAMPUS PROTOCOL
+            <i></i>             PICT CAMPUS COMMUNITY
           </span>
-          <span class="mono text-xs text-muted">// PROTOCOL V2.4</span>
+          <span class="mono text-xs text-muted">// SPRING 2026</span>
         </div>
 
         <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
-          Every contribution.<br />
-          <span class="text-lime">Credited.</span>
+          Find your place<br />
+          <span class="text-lime">on campus.</span>
         </h1>
 
         <p class="text-muted text-base sm:text-lg leading-relaxed max-w-xl mb-8">
-          One verified, tamper-proof academic ledger for all co-curricular activities, leadership hours, and accredited milestones. Designed for students, faculty conveners, and institutional auditors.
+          See what is happening around campus, join the things that interest you, and keep a record of the work you are proud of.
         </p>
 
         <div class="flex flex-wrap items-center gap-3">
           <a href="/events" class="button button-primary text-sm py-3 px-6 text-decoration-none">
-            Explore Events &amp; Hackathons →
+            Browse the campus calendar →
           </a>
           <% if (!user) { %>
             <a href="/auth/login" class="button button-quiet text-sm py-3 px-6 text-decoration-none">
@@ -119,21 +119,21 @@
     <section class="landing-signal-panel">
       <div class="landing-signal-grid"></div>
       <div class="landing-signal-copy">
-        <span class="overline">ONE CAMPUS. ONE CLEAR RECORD.</span>
-        <h2>Make every hour visible.</h2>
+        <span class="overline">A LITTLE MORE THAN A CALENDAR</span>
+        <h2>There is always something worth showing up for.</h2>
         <p>
-          Discover what is happening, show up with purpose, and keep a verified record of the work that moves campus life forward.
+          From a club meeting to a weekend hackathon, CampusBuzz keeps the details in one place so you can spend less time searching and more time taking part.
         </p>
-        <a href="/events" class="button button-primary text-sm py-3 px-6 text-decoration-none">
-          See what’s happening →
+        <a href="<%= user ? (user.type === 'faculty' ? '/faculty/dashboard' : user.type === 'institutional' ? '/institutional/dashboard' : '/student/dashboard') : '/auth/signup' %>" class="button button-primary text-sm py-3 px-6 text-decoration-none">
+          <%= user ? 'Open my dashboard' : 'Create your profile' %> →
         </a>
       </div>
 
       <div class="landing-signal-status" aria-label="Campus activity status">
         <div class="signal-status-header">
           <span class="signal-dot"></span>
-          <span class="mono text-xs">CAMPUS SIGNAL</span>
-          <span class="mono text-xs text-muted">LIVE</span>
+          <span class="mono text-xs">AROUND CAMPUS</span>
+          <span class="mono text-xs text-muted">THIS WEEK</span>
         </div>
         <div class="signal-wave" aria-hidden="true">
           <span></span><span></span><span></span><span></span><span></span>
@@ -141,29 +141,44 @@
           <span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="signal-status-foot">
-          <span>Events</span>
-          <strong>Discover · Join · Credit</strong>
+          <span>What is next</span>
+          <strong>Meet · Make · Share</strong>
         </div>
       </div>
     </section>
 
-    <div class="landing-principles" aria-label="CampusBuzz principles">
-      <div>
-        <span class="principle-index">01</span>
-        <strong>Find your next thing</strong>
-        <span>Clubs, workshops, competitions, and conversations in one calm feed.</span>
+    <section class="landing-links" aria-label="Explore CampusBuzz">
+      <div class="landing-links-heading">
+        <span class="overline">START WHERE YOU ARE</span>
+        <h2>Make campus work for you.</h2>
       </div>
-      <div>
-        <span class="principle-index">02</span>
-        <strong>Show up together</strong>
-        <span>Register, collaborate, and build momentum with your campus community.</span>
+      <div class="landing-link-list">
+        <a href="/events" class="landing-link">
+          <span class="landing-link-number">01</span>
+          <span>
+            <strong>See what is on</strong>
+            <small>Clubs, workshops, competitions, and more.</small>
+          </span>
+          <span class="landing-link-arrow">↗</span>
+        </a>
+        <a href="<%= user ? '/account' : '/auth/signup' %>" class="landing-link">
+          <span class="landing-link-number">02</span>
+          <span>
+            <strong><%= user ? 'Update your profile' : 'Join the community' %></strong>
+            <small>Keep your interests and campus identity close by.</small>
+          </span>
+          <span class="landing-link-arrow">↗</span>
+        </a>
+        <a href="<%= user ? (user.type === 'student' ? '/student/semester-report' : user.type === 'faculty' ? '/faculty/reports' : user.type === 'institutional' ? '/institutional/dashboard' : '/club') : '/auth/login' %>" class="landing-link">
+          <span class="landing-link-number">03</span>
+          <span>
+            <strong><%= user ? 'Keep track of your work' : 'Already part of it?' %></strong>
+            <small><%= user ? 'Your activity, hours, and campus record in one view.' : 'Sign in to pick up where you left off.' %></small>
+          </span>
+          <span class="landing-link-arrow">↗</span>
+        </a>
       </div>
-      <div>
-        <span class="principle-index">03</span>
-        <strong>Keep the proof</strong>
-        <span>Verified attendance and contributions become part of your academic story.</span>
-      </div>
-    </div>
+    </section>
   </main>
 </body>
 </html>
