@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: summary.student.name + ' — 4-Year Graduation Dossier' }) %>
+  <style>
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; }
+      header, .no-print { display: none !important; }
+      .print-box { border: 2px solid #000000 !important; background: #ffffff !important; color: #000000 !important; }
+      .text-fg, .text-muted, th, td { color: #000000 !important; }
+      .border-line { border-color: #888888 !important; }
+    }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <div class="no-print">
+    <%- include('../partials/nav') %>
+  </div>
+
+  <main class="page max-w-5xl mx-auto pt-6 pb-20">
+    <div class="no-print flex items-center justify-between mb-6">
+      <a href="/student/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1">
+        ← Back to Student Hub
+      </a>
+      <button onclick="window.print()" class="button button-primary text-xs flex items-center gap-1.5">
+        <span>🖨️</span> Print Official Dossier
+      </button>
+    </div>
+
+    <!-- Official Graduation Dossier Card (PICT Format) -->
+    <div class="print-box panel p-8 sm:p-14 border-2 border-line bg-surface mb-8 shadow-2xl relative overflow-hidden">
+      <!-- Header Letterhead -->
+      <div class="text-center border-b-2 border-line pb-6 mb-8">
+        <div class="text-[11px] text-muted tracking-wider uppercase font-semibold">
+          Society for Computer Technology &amp; Research's
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-fg my-1">
+          PUNE INSTITUTE OF COMPUTER TECHNOLOGY
+        </h2>
+        <div class="font-mono text-xs uppercase text-lime tracking-widest mt-1">
+          FOUR-YEAR COMPREHENSIVE GRADUATION TRANSCRIPT &amp; CO-CURRICULAR DOSSIER
+        </div>
+        <p class="text-xs text-muted mt-2 max-w-lg mx-auto">
+          Accredited record of voluntary activity hours, technical projects, and leadership milestones completed during undergraduate tenure.
+        </p>
+      </div>
+
+      <!-- Graduate Bio Section -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 rounded-xl bg-surface-2 border border-line mb-8 text-xs">
+        <div>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">GRADUATE CANDIDATE</span>
+          <strong class="text-fg text-base block mt-0.5"><%= summary.student.name %></strong>
+        </div>
+        <div>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">PRN / ROLL NUMBER</span>
+          <strong class="mono text-fg text-sm block mt-0.5"><%= summary.student.roll_number || 'N/A' %></strong>
+        </div>
+        <div>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">PROGRAM / DISCIPLINE</span>
+          <strong class="text-fg block mt-0.5"><%= summary.student.department || 'Computer Engineering' %> (Class of 2026)</strong>
+        </div>
+        <div>
+          <span class="text-muted block font-mono text-[9px] uppercase tracking-wider">FIRST PRIORITY CLUB</span>
+          <strong class="text-lime block mt-0.5 truncate"><%= summary.priorityClub ? summary.priorityClub.name : 'ACM Student Chapter (PASC)' %></strong>
+        </div>
+      </div>
+
+      <!-- High Level Milestone Strip -->
+      <div class="grid grid-cols-3 gap-4 mb-8 text-center bg-surface-3 p-4 rounded-xl border border-line font-mono">
+        <div>
+          <span class="text-muted block text-[10px] uppercase">CUMULATIVE HOURS</span>
+          <span class="text-2xl font-bold text-lime"><%= summary.totalHours %> hrs</span>
+        </div>
+        <div>
+          <span class="text-muted block text-[10px] uppercase">VERIFIED EVENTS</span>
+          <span class="text-2xl font-bold text-fg"><%= summary.events.length %></span>
+        </div>
+        <div>
+          <span class="text-muted block text-[10px] uppercase">LEADERSHIP POSTS</span>
+          <span class="text-2xl font-bold text-emerald-400"><%= summary.roles.length %></span>
+        </div>
+      </div>
+
+      <!-- Itemized 4-Year Activity Ledger -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <span class="overline text-[10px]">CHRONOLOGICAL ACTIVITY RECORD (ALL SEMESTERS)</span>
+          <span class="badge badge-green font-mono text-[8px]"><%= summary.events.length %> VERIFIED ENTRIES</span>
+        </div>
+
+        <div class="table-wrap border border-line rounded-lg overflow-hidden">
+          <table>
+            <thead>
+              <tr class="bg-surface-3">
+                <th style="width: 40px;">#</th>
+                <th>Event / Activity</th>
+                <th>Host Club</th>
+                <th>Completion Date</th>
+                <th class="text-right">Hours Logged</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (summary.events.length === 0) { %>
+                <tr>
+                  <td colspan="5" class="text-center py-8 text-muted">
+                    No verified events found in the graduation log.
+                  </td>
+                </tr>
+              <% } else { %>
+                <% summary.events.forEach(function(ev, idx) { %>
+                  <tr>
+                    <td class="mono font-bold"><%= idx + 1 %></td>
+                    <td>
+                      <strong class="text-fg text-xs"><%= ev.title %></strong>
+                    </td>
+                    <td>
+                      <span class="badge badge-lime text-[7px]"><%= ev.club_name %></span>
+                    </td>
+                    <td class="mono text-xs text-muted">
+                      <%= ev.event_date ? new Date(ev.event_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Verified' %>
+                    </td>
+                    <td class="mono font-bold text-lime text-right">+<%= parseFloat(ev.credit_hours || 4).toFixed(1) %> hrs</td>
+                  </tr>
+                <% }); %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Signature Endorsement Blocks -->
+      <div class="grid grid-cols-3 gap-6 pt-10 border-t-2 border-line text-center text-xs">
+        <div>
+          <div class="h-12 border-b border-dashed border-line flex items-end justify-center pb-1">
+            <span class="mono text-[11px] text-fg"><%= summary.student.name %></span>
+          </div>
+          <span class="text-[10px] text-muted mt-2 block uppercase tracking-wider">Candidate Verification</span>
+        </div>
+
+        <div>
+          <div class="h-12 border-b border-dashed border-line flex items-end justify-center pb-1">
+            <span class="mono text-[11px] text-lime font-bold">Dr. G. V. Kale</span>
+          </div>
+          <span class="text-[10px] text-muted mt-2 block uppercase tracking-wider">Faculty Convener / Mentor</span>
+        </div>
+
+        <div>
+          <div class="h-12 border-b border-dashed border-line flex items-end justify-center pb-1">
+            <span class="mono text-[11px] text-fg font-bold">Director / Principal</span>
+          </div>
+          <span class="text-[10px] text-muted mt-2 block uppercase tracking-wider">Institutional Seal</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -513,7 +513,7 @@ function notifyRoleUpdated(req, studentId) {
 // middleware (see routes/clubEventRouter.js's eventImageUpload.fields())
 // parses into req.files: `primaryImage` (single, becomes the card
 // thumbnail) and `additionalImages` (the rest of the gallery). Each
-// multer-storage-cloudinary file already has `.path` set to the uploaded
+// Cloudinary upload storage already has `.path` set to the uploaded
 // image's Cloudinary URL — nothing else needs to touch Cloudinary
 // directly. Syncing events.banner_url to the primary image means every
 // existing "show the banner" template (events.ejs, registered-events.ejs,

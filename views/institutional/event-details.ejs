@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Event Attendance Audit — CampusBuzz' }) %>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <%- include('../partials/nav') %>
+
+  <main class="page max-w-5xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/institutional/clubs/<%= club ? club.id : '' %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+        ← Back to <%= club ? club.name : 'Club' %> Dossier
+      </a>
+      <span class="badge badge-green font-mono text-[9px]">
+        <%= attendees.length %> VERIFIED ATTENDEES
+      </span>
+    </div>
+
+    <!-- Event Header -->
+    <div class="panel p-6 sm:p-8 mb-8 shadow-xl">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="badge badge-lime text-[8px]"><%= club ? club.name : 'Club' %></span>
+        <span class="mono text-[10px] text-muted">// OFFICIAL ATTENDANCE AUDIT</span>
+      </div>
+
+      <h1 class="text-2xl sm:text-3xl font-bold text-fg mb-3"><%= event.title %></h1>
+
+      <div class="flex flex-wrap items-center gap-3 text-xs text-muted mb-4">
+        <span>Date: <strong class="text-fg font-mono"><%= new Date(event.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></strong></span>
+        <span>•</span>
+        <span>Venue: <strong class="text-fg"><%= event.venue || 'PICT Campus' %></strong></span>
+        <span>•</span>
+        <span>Credit Hours: <strong class="text-lime font-mono">+<%= parseFloat(event.credit_hours || 4).toFixed(1) %> hrs</strong></span>
+      </div>
+
+      <% if (event.description) { %>
+        <p class="text-xs text-muted leading-relaxed pt-3 border-t border-line whitespace-pre-line"><%= event.description %></p>
+      <% } %>
+    </div>
+
+    <!-- Attendees Table -->
+    <article class="panel mb-8">
+      <div class="panel-head">
+        <div>
+          <span class="overline">ACCREDITED ATTENDANCE ROSTER</span>
+          <h3>Who All Were Present</h3>
+        </div>
+        <span class="badge badge-lime font-mono text-[8px]">GEOFENCED QR VERIFIED</span>
+      </div>
+
+      <% if (attendees.length === 0) { %>
+        <div class="p-12 text-center text-muted text-sm">
+          No students checked into this event.
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th>Roll Number</th>
+                <th>Student Name</th>
+                <th>Institutional Email</th>
+                <th>Department &amp; Year</th>
+                <th>Check-In Timestamp</th>
+                <th class="text-right">Hours Logged</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% attendees.forEach(function(att, idx) { %>
+                <tr>
+                  <td class="mono font-bold"><%= idx + 1 %></td>
+                  <td class="mono font-bold text-fg"><%= att.roll_number || 'N/A' %></td>
+                  <td>
+                    <strong class="text-xs text-fg"><%= att.student_name %></strong>
+                  </td>
+                  <td class="mono text-xs text-muted"><%= att.email %></td>
+                  <td class="text-xs text-muted"><%= att.department || 'CE' %> (Yr <%= att.year || '2' %>)</td>
+                  <td class="mono text-xs text-muted"><%= new Date(att.checked_in_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %></td>
+                  <td class="mono font-bold text-lime text-right">+<%= parseFloat(att.credit_hours || event.credit_hours || 4).toFixed(1) %> hrs</td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </article>
+  </main>
+</body>
+</html>

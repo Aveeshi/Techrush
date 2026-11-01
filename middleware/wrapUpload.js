@@ -6,13 +6,8 @@
 // image, wrong format, etc.), its Node SDK calls back with a PLAIN OBJECT —
 // e.g. { message: 'Invalid image file', name: 'Error', http_code: 400 } —
 // NOT an actual Error instance (verified directly against the installed
-// cloudinary package). multer-storage-cloudinary passes that object
-// straight through to multer, which calls next(err) with it untouched,
-// bypassing the route's own try/catch entirely (the upload middleware runs
-// BEFORE the controller). With no custom error-handling middleware in
-// app.js, Express's default handler falls back to `err.stack || err.toString()`
-// — a plain object has no .stack, and String({}) is literally "[object
-// Object]", which is exactly what a user sees on a failed upload.
+// cloudinary package). The upload middleware can pass that object through
+// to Express, so normalize it before downstream error handling.
 function wrapUpload(uploadMiddleware) {
   return (req, res, next) => {
     uploadMiddleware(req, res, (err) => {

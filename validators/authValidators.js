@@ -15,6 +15,12 @@ const nameCheck = check('name')
 
 const emailCheck = check('email')
   .isEmail().withMessage('Please enter a valid email')
+  .custom((value) => {
+    if (!/@gmail\.com$/i.test(value)) {
+      throw new Error('Please use a Gmail address');
+    }
+    return true;
+  })
   .normalizeEmail();
 
 const passwordCheck = check('password')

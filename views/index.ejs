@@ -1,87 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: "Clubbing — Run your event like a command center" }) %>
-  <style>
-    .stat-card {
-      transition: border-color .15s ease, background-color .15s ease;
-    }
-    .stat-card:hover {
-      border-color: #d7ff2b55;
-      background-color: #ffffff05;
-    }
-  </style>
+  <%- include('partials/head', { title: "CampusBuzz — Institutional Campus Activity & Credit Protocol" }) %>
 </head>
-<body class="font-sans text-fg antialiased">
-
+<body class="landing-page font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <!-- HERO -->
-  <main class="max-w-[1400px] mx-auto px-8 pt-20 pb-16">
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-16 items-start">
-
+  <!-- HERO SECTION -->
+  <main class="page pt-12 pb-24">
+    <div class="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 items-center mb-16">
       <!-- LEFT: COPY -->
       <div>
         <div class="flex items-center gap-3 mb-6">
-          <span class="w-6 h-px bg-lime"></span>
-          <span class="font-mono text-xs tracking-[0.2em] text-lime">001 — EVENT OPS OS</span>
+          <span class="badge badge-lime">
+            <i></i>             PICT CAMPUS COMMUNITY
+          </span>
+          <span class="mono text-xs text-muted">// SPRING 2026</span>
         </div>
 
-        <h1 class="font-display text-5xl sm:text-6xl lg:text-[64px] leading-[1.05] tracking-tight mb-8">
-          Got an event?<br />
-          <span class="text-lime">We're here to help</span> organize!
+        <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
+          Find your place<br />
+          <span class="text-lime">on campus.</span>
         </h1>
 
-        <p class="text-muted text-lg leading-relaxed max-w-xl mb-10">
-          Ditch the spreadsheets and WhatsApp groups. Clubbing gives organizers,
-          volunteers, and attendees a shared brain — QR check-ins, live analytics,
-          task boards, and AI predictions in one place.
+        <p class="text-muted text-base sm:text-lg leading-relaxed max-w-xl mb-8">
+          See what is happening around campus, join the things that interest you, and keep a record of the work you are proud of.
         </p>
 
-        <div class="flex flex-wrap items-center gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <a href="#explore" class="button button-primary text-sm py-3 px-6 text-decoration-none">
+            See how it works →
+          </a>
           <% if (!user) { %>
-            <a href="/auth/signup" class="btn-lime inline-flex items-center gap-2 bg-lime text-black font-semibold px-6 py-3.5 rounded-md">
-              Signup
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M5 12h14M13 5l7 7-7 7"/>
-              </svg>
+            <a href="/auth/login" class="button button-quiet text-sm py-3 px-6 text-decoration-none">
+              Sign In to Portal
+            </a>
+          <% } else { %>
+            <a href="<%= user.type === 'faculty' ? '/faculty/dashboard' : user.type === 'institutional' ? '/institutional/dashboard' : '/student/dashboard' %>"
+               class="button button-quiet text-sm py-3 px-6 text-decoration-none">
+              My Console (<%= user.type.toUpperCase() %>)
             </a>
           <% } %>
-          <a href="/events" class="btn-outline inline-flex items-center gap-2 border border-line font-semibold px-6 py-3.5 rounded-md">
-            Browse events
-          </a>
         </div>
       </div>
 
-      <!-- RIGHT: STATS -->
-      <div class="grid grid-cols-2 gap-4 w-full">
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">CLUBS</span>
-          <div class="font-display text-3xl text-lime mt-3">128</div>
-          <p class="text-muted text-sm mt-2">number of clubs</p>
-        </div>
+      <!-- RIGHT: STATS GRID -->
+      <div class="grid grid-cols-2 gap-4">
+        <article class="metric featured">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21h18M6 21V7l6-4 6 4v14"></path>
+              </svg>
+            </span>
+            <span class="badge badge-lime">REGISTERED</span>
+          </div>
+          <p>CAMPUS CLUBS</p>
+          <h2>08 <small>Autonomous</small></h2>
+          <div class="metric-foot">
+            <span>PICT Technical & Cultural</span>
+          </div>
+        </article>
 
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">EVENTS</span>
-          <div class="font-display text-3xl text-lime mt-3">642</div>
-          <p class="text-muted text-sm mt-2">number of events</p>
-        </div>
+        <article class="metric">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"></circle>
+                <polyline points="12 7 12 12 15 14"></polyline>
+              </svg>
+            </span>
+            <span class="trend font-mono">+18.4%</span>
+          </div>
+          <p>VERIFIED HOURS</p>
+          <h2>1,420 <small>hrs</small></h2>
+          <div class="metric-foot">
+            <span>Credited to transcripts</span>
+          </div>
+        </article>
 
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">PEOPLE</span>
-          <div class="font-display text-3xl text-lime mt-3">14.2k</div>
-          <p class="text-muted text-sm mt-2">number of participants</p>
-        </div>
+        <article class="metric">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="6"></circle>
+                <path d="M8.5 13 7 22l5-3 5 3-1.5-9"></path>
+              </svg>
+            </span>
+            <span class="badge badge-green">NAAC A++</span>
+          </div>
+          <p>AUDIT LEDGER</p>
+          <h2>100% <small>Locked</small></h2>
+          <div class="metric-foot">
+            <span>Cryptographic sign-off</span>
+          </div>
+        </article>
 
-        <div class="stat-card border border-line rounded-lg p-6">
-          <span class="font-mono text-[11px] tracking-[0.2em] text-muted">CREW</span>
-          <div class="font-display text-3xl text-lime mt-3">890</div>
-          <p class="text-muted text-sm mt-2">number of volunteers</p>
-        </div>
+        <article class="metric">
+          <div class="metric-top">
+            <span class="metric-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <span class="trend font-mono">LIVE NODE</span>
+          </div>
+          <p>ACTIVE STUDENTS</p>
+          <h2>3,200+</h2>
+          <div class="metric-foot">
+            <span>Enrolled engineers</span>
+          </div>
+        </article>
       </div>
-
     </div>
-  </main>
 
+    <!-- VALUE STRIP -->
+    <section class="landing-signal-panel">
+      <div class="landing-signal-grid"></div>
+      <div class="landing-signal-copy">
+        <span class="overline">A LITTLE MORE THAN A CALENDAR</span>
+        <h2>There is always something worth showing up for.</h2>
+        <p>
+          From a club meeting to a weekend hackathon, CampusBuzz keeps the details in one place so you can spend less time searching and more time taking part.
+        </p>
+        <a href="<%= user ? (user.type === 'faculty' ? '/faculty/dashboard' : user.type === 'institutional' ? '/institutional/dashboard' : '/student/dashboard') : '/auth/signup' %>" class="button button-primary text-sm py-3 px-6 text-decoration-none">
+          <%= user ? 'Open my dashboard' : 'Create your profile' %> →
+        </a>
+      </div>
+
+      <div class="landing-signal-status" aria-label="Campus activity status">
+        <div class="signal-status-header">
+          <span class="signal-dot"></span>
+          <span class="mono text-xs">AROUND CAMPUS</span>
+          <span class="mono text-xs text-muted">THIS WEEK</span>
+        </div>
+        <div class="signal-wave" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="signal-status-foot">
+          <span>What is next</span>
+          <strong>Meet · Make · Share</strong>
+        </div>
+      </div>
+    </section>
+
+    <section id="explore" class="landing-links" aria-label="Explore CampusBuzz">
+      <div class="landing-links-heading">
+        <span class="overline">START WHERE YOU ARE</span>
+        <h2>Make campus work for you.</h2>
+      </div>
+      <div class="landing-link-list">
+        <a href="/events" class="landing-link">
+          <span class="landing-link-number">01</span>
+          <span>
+            <strong>See what is on</strong>
+            <small>Clubs, workshops, competitions, and more.</small>
+          </span>
+          <span class="landing-link-arrow">↗</span>
+        </a>
+        <a href="<%= user ? '/account' : '/auth/signup' %>" class="landing-link">
+          <span class="landing-link-number">02</span>
+          <span>
+            <strong><%= user ? 'Update your profile' : 'Join the community' %></strong>
+            <small>Keep your interests and campus identity close by.</small>
+          </span>
+          <span class="landing-link-arrow">↗</span>
+        </a>
+        <a href="<%= user ? (user.type === 'student' ? '/student/semester-report' : user.type === 'faculty' ? '/faculty/reports' : user.type === 'institutional' ? '/institutional/dashboard' : '/club') : '/auth/login' %>" class="landing-link">
+          <span class="landing-link-number">03</span>
+          <span>
+            <strong><%= user ? 'Keep track of your work' : 'Already part of it?' %></strong>
+            <small><%= user ? 'Your activity, hours, and campus record in one view.' : 'Sign in to pick up where you left off.' %></small>
+          </span>
+          <span class="landing-link-arrow">↗</span>
+        </a>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

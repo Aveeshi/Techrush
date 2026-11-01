@@ -1,6 +1,5 @@
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -11,7 +10,7 @@ cloudinary.config({
 /*
   Shared upload plumbing for every image the app accepts from a browser
   form (event banners/galleries, student profile photos) — one
-  CloudinaryStorage engine, parameterized by folder, reused by whichever
+  Cloudinary upload-stream engine, parameterized by folder, reused by whichever
   multer instance a route needs. Uploads stream straight to Cloudinary;
   nothing ever touches local disk, and the DB only ever stores the
   resulting secure_url (see models/EventImage.js, User.updatePhoto).
@@ -30,15 +29,31 @@ cloudinary.config({
 // photos before they ever reach Cloudinary — the upload throws, and
 // nothing downstream (DB row, docx embed) ever happens.
 function makeUploader(folder, { allowedFormats = null, format } = {}) {
-  const storage = new CloudinaryStorage({
-    cloudinary,
-    params: {
-      folder: `techrush/${folder}`,
-      ...(allowedFormats ? { allowed_formats: allowedFormats } : {}),
-      ...(format ? { format } : {}),
-      transformation: [{ width: 1600, height: 1600, crop: 'limit' }],
+  const params = {
+    folder: `techrush/${folder}`,
+    ...(allowedFormats ? { allowed_formats: allowedFormats } : {}),
+    ...(format ? { format } : {}),
+    transformation: [{ width: 1600, height: 1600, crop: 'limit' }],
+  };
+  const storage = {
+    _handleFile(req, file, callback) {
+      const uploadStream = cloudinary.uploader.upload_stream(params, (error, result) => {
+        if (error) return callback(error);
+        callback(null, {
+          path: result.secure_url,
+          secure_url: result.secure_url,
+          public_id: result.public_id,
+          bytes: result.bytes,
+          format: result.format,
+        });
+      });
+      file.stream.on('error', callback);
+      file.stream.pipe(uploadStream);
     },
-  });
+    _removeFile(req, file, callback) {
+      callback(null);
+    },
+  };
   return multer({ storage, limits: { fileSize: 8 * 1024 * 1024 } });
 }
 

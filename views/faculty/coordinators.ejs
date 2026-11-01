@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Student Coordinators Management — CampusBuzz' }) %>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <%- include('../partials/nav') %>
+
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/faculty/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Faculty Desk
+      </a>
+      <span class="badge badge-lime font-mono text-[9px]">ORGANIZATIONAL CADRE</span>
+    </div>
+
+    <!-- Header -->
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline text-lime">// STUDENT COORDINATION &amp; DELEGATION</span>
+        <h1>Student Coordinators Management</h1>
+        <p>Faculty In-Charge can officially appoint student coordinators for operational leadership, events, or student record inspection authority.</p>
+      </div>
+
+      <div class="date-tile">
+        <strong><%= studentCoordinators.length %></strong>
+        <small>LEADS</small>
+      </div>
+    </section>
+
+    <% if (message) { %>
+      <div class="panel p-4 mb-6 bg-lime/10 border border-lime/40 text-lime text-xs flex items-center gap-2">
+        <span class="font-bold">✓</span> <%= message %>
+      </div>
+    <% } %>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Assignment Form Panel -->
+      <div class="lg:col-span-1 panel p-6 h-fit bg-surface-2 border border-line">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <span class="overline text-lime">// APPOINT COORDINATOR</span>
+          <h3 class="text-sm font-bold text-fg">Assign Leadership Mandate</h3>
+        </div>
+
+        <form action="/faculty/coordinators/assign" method="POST" class="space-y-4">
+          <label class="field-label">
+            SELECT CLUB MEMBER
+            <select name="studentId" class="bg-surface border border-line text-xs py-2.5" required>
+              <option value="">-- Choose a student member --</option>
+              <% clubMembers.forEach(function(m) { %>
+                <option value="<%= m.id %>">
+                  <%= m.name %> (<%= m.roll_number || 'N/A' %> - <%= m.department || 'Eng' %>)
+                </option>
+              <% }); %>
+            </select>
+          </label>
+
+          <label class="field-label">
+            ROLE TITLE / DESIGNATION
+            <input type="text" name="roleTitle" placeholder="e.g. Lead Coordinator / Technical Head"
+                   value="Student Coordinator" class="bg-surface border border-line text-xs" required />
+          </label>
+
+          <label class="field-label">
+            ASSIGNED TASK / MANDATE
+            <textarea name="taskDescription" rows="3" placeholder="Describe operational duties assigned by Faculty In-Charge..."
+                      class="bg-surface border border-line text-xs"></textarea>
+          </label>
+
+          <div class="p-3 rounded-xl bg-surface border border-line flex items-start gap-2.5 text-xs">
+            <input type="checkbox" name="canInspectRecords" id="canInspect" value="true" checked class="mt-0.5 accent-lime" />
+            <label for="canInspect" class="text-xs text-muted leading-snug cursor-pointer">
+              Grant authority to inspect student activity records and attendance logs under this club (Accreditation Requirement 7).
+            </label>
+          </div>
+
+          <button type="submit" class="button button-primary w-full text-xs py-3 font-bold">
+            Assign Coordinator Mandate →
+          </button>
+        </form>
+      </div>
+
+      <!-- Appointed Coordinators List -->
+      <div class="lg:col-span-2 panel overflow-hidden">
+        <div class="panel-head">
+          <div>
+            <span class="overline">// ACTIVE ROSTER</span>
+            <h3 class="text-base font-bold text-fg">Active Student Coordinators (<%= club ? club.name : 'PASC' %>)</h3>
+          </div>
+          <span class="badge badge-green font-mono text-[9px]"><%= studentCoordinators.length %> Appointed</span>
+        </div>
+
+        <% if (studentCoordinators.length === 0) { %>
+          <div class="p-12 text-center text-muted text-xs">
+            No student coordinators assigned yet. Use the form to appoint coordinators from the member directory.
+          </div>
+        <% } else { %>
+          <div class="divide-y divide-line">
+            <% studentCoordinators.forEach(function(sc) { %>
+              <div class="p-6 bg-surface hover:bg-surface-2 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <div class="avatar-lg bg-surface-3 border border-line rounded-xl flex items-center justify-center font-bold text-lime shrink-0">
+                    <%= sc.student_name.slice(0, 2).toUpperCase() %>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <h4 class="font-bold text-sm text-fg"><%= sc.student_name %></h4>
+                      <span class="badge badge-lime text-[8px] font-mono"><%= sc.role_title %></span>
+                    </div>
+                    <div class="text-xs text-muted">
+                      Roll: <strong class="text-fg mono"><%= sc.roll_number || '41151' %></strong> • <%= sc.department || 'CE' %> (Yr <%= sc.year || '4' %>) • <span class="mono"><%= sc.student_email %></span>
+                    </div>
+                    <% if (sc.task_description) { %>
+                      <div class="text-xs text-muted mt-2 bg-surface-3 p-2.5 rounded-lg border border-line">
+                        <strong class="text-lime font-mono text-[9px]">MANDATE:</strong> <%= sc.task_description %>
+                      </div>
+                    <% } %>
+                    <div class="text-[10px] font-mono text-muted mt-2 flex items-center gap-2">
+                      <span>Appointed on <%= new Date(sc.created_at).toLocaleDateString() %></span>
+                      <% if (sc.can_inspect_records) { %>
+                        <span>•</span>
+                        <span class="text-green font-bold">✓ Record Inspection Permitted</span>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                  <form action="/faculty/coordinators/<%= sc.student_id %>/remove" method="POST" onsubmit="return confirm('Revoke coordinator role for this student?');">
+                    <button type="submit" class="button button-quiet text-[9px] text-red-400 hover:text-red-300 border-red-500/20 py-1.5 px-3">
+                      Revoke Role
+                    </button>
+                  </form>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

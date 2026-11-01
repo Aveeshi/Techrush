@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Institutional Command Center Login — CampusBuzz' }) %>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <%- include('../partials/nav') %>
+
+  <div class="login-screen">
+    <!-- Left Visual Panel (CampusBuzz Design) -->
+    <div class="login-visual">
+      <div class="brand">
+        <span class="brand-mark"><span>CB</span></span>
+        <span class="brand-word">Campus<span>Buzz</span></span>
+      </div>
+
+      <div class="visual-copy">
+        <span class="badge badge-lime mb-4">INSTITUTIONAL AUDIT NODE</span>
+        <h1>Campus-Wide Oversight &<br /><span>Ecosystem Audit.</span></h1>
+        <p>Complete cross-club transparency, student participation rosters, verified faculty coordinators, and NAAC/NBA co-curricular compliance tracking.</p>
+      </div>
+
+      <div class="orb orb-one"></div>
+      <div class="orb orb-two"></div>
+
+      <div class="floating-card f-one">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 21h18M6 21V7l6-4 6 4v14"></path>
+        </svg>
+        <span>
+          <small>INSTITUTIONAL OVERSIGHT</small>
+          <strong>All 8 Autonomous Student Clubs</strong>
+        </span>
+      </div>
+
+      <div class="floating-card f-two">
+        <span class="avatar">IA</span>
+        <span>
+          <small>ACCREDITATION READY</small>
+          <strong>Full Participant Ledgers &amp; Hours</strong>
+        </span>
+      </div>
+
+      <small class="copyright">© <%= new Date().getFullYear() %> CAMPUSBUZZ PROTOCOL · DIRECTORATE OF STUDENT WELFARE</small>
+    </div>
+
+    <!-- Right Form Section -->
+    <main class="login-form-wrap">
+      <a href="/auth/login" class="back-button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+        Back to Student Login
+      </a>
+
+      <div class="login-form">
+        <span class="overline">ADMINISTRATIVE MASTER CONSOLE</span>
+        <h2>Institutional Admin</h2>
+        <p>Enter master credentials for institutional transparency and audit.</p>
+
+        <% if (errors && errors.length > 0) { %>
+          <div class="badge badge-red mb-4 p-3 w-full justify-start text-xs rounded-lg">
+            <ul class="list-disc list-inside space-y-0.5">
+              <% errors.forEach(function(error) { %>
+                <li><%= error %></li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <form action="/auth/institutional/login" method="POST">
+          <label class="field-label mb-3">
+            ADMINISTRATOR EMAIL
+            <input type="email" name="email" value="<%= oldInput.email || '' %>" placeholder="institution@gmail.com" required />
+          </label>
+
+          <label class="field-label mb-4">
+            MASTER PASSWORD
+            <div class="password-field">
+              <input type="password" id="admin-pass" name="password" placeholder="••••••••" required />
+              <button type="button" onclick="togglePass('admin-pass')">SHOW</button>
+            </div>
+          </label>
+
+          <button type="submit" class="button button-primary w-full">
+            Enter Institutional Hub →
+          </button>
+        </form>
+
+        <div class="mt-6 p-3.5 rounded-xl border border-line bg-surface-2 text-xs space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-muted">Master Admin:</span>
+            <code class="mono text-lime bg-surface px-1.5 py-0.5 rounded text-[10px]">institution@pict.edu</code>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-muted">Default Password:</span>
+            <code class="mono text-fg bg-surface px-1.5 py-0.5 rounded text-[10px]">admin123</code>
+          </div>
+        </div>
+
+        <p class="secure">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Autonomous Institutional Node · Multi-tenant verification
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <script nonce="<%= cspNonce %>">
+    function togglePass(id) {
+      const el = document.getElementById(id);
+      el.type = el.type === 'password' ? 'text' : 'password';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Campus Availability Calendar — CampusBuzz' }) %>
+  <style>
+    .availability-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+    .calendar-day { min-height: 92px; border: 1px solid var(--line); border-radius: 10px; padding: 9px; background: var(--surface); }
+    .calendar-day[aria-current="date"] { outline: 2px solid var(--lime); outline-offset: 1px; }
+    .calendar-day.is-selected { box-shadow: 0 0 0 2px var(--lime); }
+    .calendar-day.is-busy { background: color-mix(in srgb, var(--amber) 8%, var(--surface)); border-color: color-mix(in srgb, var(--amber) 35%, var(--line)); }
+    .calendar-day.is-empty { opacity: .35; background: transparent; }
+    .calendar-day-number { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; }
+    .calendar-day-status { margin-top: 20px; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .calendar-day.is-busy .calendar-day-status { color: var(--amber); }
+    .availability-table { width: 100%; border-collapse: collapse; }
+    .availability-table th, .availability-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; font-size: 12px; }
+    .availability-table th { color: var(--muted); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+    .availability-table td:first-child { font-weight: 700; }
+    .calendar-detail-table { max-height: 470px; overflow-y: auto; }
+    .calendar-detail-table .availability-table { min-width: 520px; }
+    .calendar-detail-table .availability-table td,
+    .calendar-detail-table .availability-table th { vertical-align: top; }
+    .calendar-slot { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .calendar-delete-button { margin-left: 5px; border: 0; background: transparent; color: var(--danger, #f87171); cursor: pointer; font-size: 10px; text-decoration: underline; }
+    .calendar-slot.is-free { color: var(--lime); }
+    .calendar-detail-empty { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 24px 16px; text-align: center; color: var(--muted); }
+    @media (max-width: 700px) {
+      .calendar-day { min-height: 64px; padding: 7px; }
+      .calendar-day-status { margin-top: 10px; font-size: 8px; }
+      .calendar-day-status span { display: none; }
+    }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <%- include('../partials/nav') %>
+  <main class="page">
+    <section class="welcome-row">
+      <div>
+        <span class="overline">// CAMPUS SPACE PLANNER</span>
+        <h1>Availability calendar.</h1>
+        <p>Class timetables and planned events are combined here to show when rooms can be scheduled.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a class="button button-quiet text-xs text-decoration-none" href="/scheduling?month=<%= currentMonth %>">This month</a>
+        <a class="button button-primary text-xs text-decoration-none" href="/scheduling?month=<%= new Date(Date.UTC(Number(calendar.month.slice(0, 4)), Number(calendar.month.slice(5)) - 2, 1)).toISOString().slice(0, 7) %>">← Previous</a>
+        <a class="button button-primary text-xs text-decoration-none" href="/scheduling?month=<%= new Date(Date.UTC(Number(calendar.month.slice(0, 4)), Number(calendar.month.slice(5)), 1)).toISOString().slice(0, 7) %>">Next →</a>
+      </div>
+    </section>
+
+    <% if (message) { %><div class="panel p-3 mb-5 text-xs text-lime"><%= message %></div><% } %>
+    <% if (error) { %><div class="panel p-3 mb-5 text-xs text-red-300"><%= error %></div><% } %>
+
+    <section class="grid grid-cols-1 lg:grid-cols-[1.35fr_.85fr] gap-6 mb-6">
+      <article class="panel p-5">
+        <div class="panel-head mb-4">
+          <div><span class="overline">MONTH OVERVIEW</span><h3><%= calendar.monthLabel %></h3></div>
+          <div class="flex gap-3 text-[10px] text-muted"><span><i class="inline-block w-2 h-2 rounded-full bg-lime mr-1"></i>Free</span><span><i class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"></i>Busy</span></div>
+        </div>
+        <div class="grid grid-cols-7 gap-1 mb-2 text-[9px] uppercase tracking-wider text-muted text-center">
+          <% ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => { %><span><%= day %></span><% }); %>
+        </div>
+        <div class="availability-calendar">
+          <% for (let i = 0; i < calendar.firstDay; i += 1) { %><div class="calendar-day is-empty"></div><% } %>
+          <% calendar.days.forEach(day => { %>
+            <button type="button" class="calendar-day text-decoration-none text-left <%= day.busy ? 'is-busy' : '' %>" data-calendar-date="<%= day.date %>" aria-label="Show room availability for <%= day.date %>">
+              <span class="calendar-day-number"><%= day.dayNumber %></span>
+              <div class="calendar-day-status"><span><%= day.busy ? 'Busy' : 'Free' %></span></div>
+            </button>
+          <% }); %>
+        </div>
+      </article>
+
+      <article class="panel p-5" id="calendar-details" aria-live="polite">
+        <div class="panel-head mb-4">
+          <div><span class="overline">SELECTED DAY</span><h3 id="selected-date-label">Choose a date</h3></div>
+          <span id="selected-day-summary" class="badge badge-green">—</span>
+        </div>
+        <p id="selected-day-intro" class="text-xs text-muted mb-4">Select a day to see available rooms and time slots.</p>
+        <label class="field-label block mb-4">FILTER ROOMS
+          <select id="room-filter" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg">
+            <option value="all">All rooms</option>
+            <option value="available">Available rooms</option>
+            <option value="occupied">Occupied rooms</option>
+            <option value="Class">Classrooms</option>
+            <option value="Lab">Labs</option>
+            <option value="Seminar Hall">Seminar halls</option>
+          </select>
+        </label>
+        <div id="selected-day-content" class="calendar-detail-table"></div>
+        <form action="/scheduling/rooms" method="POST" class="flex gap-2 mt-5">
+          <input name="name" required placeholder="Add room, e.g. A1-104" class="min-w-0 flex-1 text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg" />
+          <button class="button button-quiet text-xs" type="submit">Add room</button>
+        </form>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <article class="panel p-5">
+        <span class="overline">MANUAL EVENT PLAN</span>
+        <h3>Add an event to the calendar</h3>
+        <p class="text-xs text-muted mt-2 mb-4">Choose any date in the month and reserve a room. Leave the room unassigned to mark every room unavailable.</p>
+        <form action="/scheduling/events" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="field-label sm:col-span-2">EVENT TITLE
+            <input name="title" required maxlength="160" placeholder="e.g. ACM workshop" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg" />
+          </label>
+          <label class="field-label sm:col-span-2">STUDENT-FACING CLUB
+            <select name="clubId" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg">
+              <% clubs.forEach(club => { %><option value="<%= club.id %>"><%= club.name %></option><% }); %>
+            </select>
+          </label>
+          <label class="field-label">DATE
+            <input type="date" name="eventDate" required value="<%= calendar.month %>-01" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg" />
+          </label>
+          <label class="field-label">ROOM
+            <select name="roomName" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg">
+              <option value="">All rooms / not assigned</option>
+              <% calendar.rooms.forEach(room => { %><option value="<%= room.name %>"><%= room.name %></option><% }); %>
+            </select>
+          </label>
+          <label class="field-label">START TIME
+            <input type="time" name="startTime" required value="09:00" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg" />
+          </label>
+          <label class="field-label">END TIME
+            <input type="time" name="endTime" required value="10:00" class="mt-1 w-full text-xs px-3 py-2 bg-surface-2 border border-line rounded-lg" />
+          </label>
+          <button class="button button-primary text-xs sm:col-span-2" type="submit">Add Event &amp; Block Availability →</button>
+        </form>
+      </article>
+      <article class="panel p-5">
+        <span class="overline">TIMETABLE IMPORT</span>
+        <h3>Upload class schedule</h3>
+        <p class="text-xs text-muted mt-2 mb-4">Upload CSV or Excel with: <code>name of event, room number, date, start day, end day, duration, start time</code>. Multi-day rows reserve the room on every date in the range.</p>
+        <form action="/scheduling/timetable/import" method="POST" enctype="multipart/form-data" class="flex gap-2">
+          <input type="file" name="timetable" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required class="min-w-0 flex-1 text-xs" />
+          <button class="button button-primary text-xs" type="submit">Import Calendar</button>
+        </form>
+      </article>
+      <article class="panel p-5">
+        <span class="overline">PLANNED EVENTS</span>
+        <h3><%= calendar.events.length + calendar.manualEvents.length %> event blocks this month</h3>
+        <p class="text-xs text-muted mt-2">Existing club events and manually planned events are included. Room-level plans block only their selected room; unassigned plans block every room.</p>
+      </article>
+    </section>
+  </main>
+  <script nonce="<%= cspNonce %>">
+    (function () {
+      var days = <%- JSON.stringify(calendar.days).replace(/</g, '\\u003c') %>;
+      var rooms = <%- JSON.stringify(calendar.rooms).replace(/</g, '\\u003c') %>;
+      var selectedDateLabel = document.getElementById('selected-date-label');
+      var selectedDaySummary = document.getElementById('selected-day-summary');
+      var selectedDayIntro = document.getElementById('selected-day-intro');
+      var selectedDayContent = document.getElementById('selected-day-content');
+      var roomFilter = document.getElementById('room-filter');
+      var dayButtons = Array.prototype.slice.call(document.querySelectorAll('[data-calendar-date]'));
+      var monthDays = days.reduce(function (lookup, day) {
+        lookup[day.date] = day;
+        return lookup;
+      }, {});
+
+      function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"']/g, function (character) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character];
+        });
+      }
+
+      function timeToMinutes(value) {
+        var match = String(value || '').slice(0, 5).match(/^(\d{2}):(\d{2})$/);
+        return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+      }
+
+      function isoTimeToMinutes(value) {
+        var date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date.getHours() * 60 + date.getMinutes();
+      }
+
+      function formatTime(minutes) {
+        return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
+      }
+
+      function normalizeRoomName(value) {
+        return String(value || '').toLowerCase().replace(/[\s-]+/g, '');
+      }
+
+      function freeSlots(blocks) {
+        var startOfDay = 8 * 60;
+        var endOfDay = 20 * 60;
+        var occupied = blocks.map(function (block) {
+          return { start: Math.max(startOfDay, block.start), end: Math.min(endOfDay, block.end) };
+        }).filter(function (block) {
+          return block.end > block.start;
+        }).sort(function (a, b) { return a.start - b.start; });
+        var slots = [];
+        var cursor = startOfDay;
+        occupied.forEach(function (block) {
+          if (block.start > cursor) slots.push(formatTime(cursor) + '–' + formatTime(block.start));
+          cursor = Math.max(cursor, block.end);
+        });
+        if (cursor < endOfDay) slots.push(formatTime(cursor) + '–' + formatTime(endOfDay));
+        return slots;
+      }
+
+      function blocksForRoom(day, room) {
+        var roomName = normalizeRoomName(room.name);
+        var blocks = [];
+        day.timetable.filter(function (block) {
+          return normalizeRoomName(block.room_name) === roomName;
+        }).forEach(function (block) {
+          var start = timeToMinutes(block.start_time);
+          var end = timeToMinutes(block.end_time);
+          if (start !== null && end !== null) blocks.push({ label: block.class_name, start: start, end: end });
+        });
+        var knownEventRooms = day.events.filter(function (event) {
+          return rooms.some(function (candidate) {
+            return normalizeRoomName(event.venue).includes(normalizeRoomName(candidate.name));
+          });
+        });
+        day.events.filter(function (event) {
+          return normalizeRoomName(event.venue).includes(roomName) || !knownEventRooms.includes(event);
+        }).forEach(function (event) {
+          var start = isoTimeToMinutes(event.start_time);
+          var end = isoTimeToMinutes(event.end_time);
+          if (start !== null && end !== null && event.event_id) blocks.push({ label: event.title, start: start, end: end, deleteAction: '/scheduling/events/' + event.id + '/delete?month=' + day.date.slice(0, 7) });
+        });
+        day.manualEvents.filter(function (event) {
+          return !event.room_name || normalizeRoomName(event.room_name) === roomName;
+        }).forEach(function (event) {
+          var start = timeToMinutes(event.start_time);
+          var end = timeToMinutes(event.end_time);
+          if (start !== null && end !== null) blocks.push({ label: event.title, start: start, end: end, deleteAction: '/scheduling/events/' + event.id + '/delete?month=' + day.date.slice(0, 7) });
+        });
+        day.importedSchedule.filter(function (event) {
+          return normalizeRoomName(event.room_number) === roomName;
+        }).forEach(function (event) {
+          var start = timeToMinutes(event.start_time);
+          if (start !== null) blocks.push({ label: event.event_name, start: start, end: start + Number(event.duration_minutes), deleteAction: '/scheduling/imports/' + event.id + '/delete?month=' + day.date.slice(0, 7) });
+        });
+        return blocks.sort(function (a, b) { return a.start - b.start; });
+      }
+
+      function renderDay(date) {
+        var day = monthDays[date];
+        if (!day) return;
+        dayButtons.forEach(function (button) {
+          button.classList.toggle('is-selected', button.dataset.calendarDate === date);
+          button.setAttribute('aria-current', button.dataset.calendarDate === date ? 'date' : 'false');
+        });
+        selectedDateLabel.textContent = new Date(date + 'T00:00:00Z').toLocaleDateString('en-IN', {
+          weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'
+        });
+        var filteredRooms = rooms.filter(function (room) {
+          var blocks = blocksForRoom(day, room);
+          if (roomFilter.value === 'available') return blocks.length === 0;
+          if (roomFilter.value === 'occupied') return blocks.length > 0;
+          if (roomFilter.value === 'Class' || roomFilter.value === 'Lab' || roomFilter.value === 'Seminar Hall') {
+            return room.room_type === roomFilter.value;
+          }
+          return true;
+        });
+        var roomRows = filteredRooms.map(function (room) {
+          var blocks = blocksForRoom(day, room);
+          var slots = freeSlots(blocks);
+          return '<tr><td><strong>' + escapeHtml(room.name) + '</strong><span class="calendar-slot">' + escapeHtml(room.room_type || 'Class') + '</span></td><td><span class="badge ' + (blocks.length ? 'badge-amber' : 'badge-green') + '">' +
+            (blocks.length ? 'BUSY' : 'FREE') + '</span></td><td>' +
+            (blocks.length ? blocks.map(function (block) {
+              return '<span class="calendar-slot"><strong>' + escapeHtml(formatTime(block.start) + '–' + formatTime(block.end)) + '</strong> · ' + escapeHtml(block.label) +
+                (block.deleteAction ? ' <button type="button" class="calendar-delete-button" data-delete-action="' + escapeHtml(block.deleteAction) + '">Delete</button>' : '') + '</span>';
+            }).join('') : '<span class="calendar-slot is-free">Available all day</span>') +
+            (slots.length ? '<span class="calendar-slot is-free">Free: ' + escapeHtml(slots.join(', ')) + '</span>' : '') +
+            '</td></tr>';
+        }).join('');
+        var busyRooms = rooms.filter(function (room) { return blocksForRoom(day, room).length; }).length;
+        selectedDaySummary.textContent = busyRooms + ' of ' + rooms.length + ' rooms busy';
+        selectedDayIntro.textContent = rooms.length ? 'Green time ranges are available for booking. Availability is shown from 08:00 to 20:00.' : 'No rooms have been added yet.';
+        selectedDayContent.innerHTML = filteredRooms.length
+          ? '<table class="availability-table"><thead><tr><th>Room</th><th>Status</th><th>Time slots</th></tr></thead><tbody>' + roomRows + '</tbody></table>'
+          : '<div class="calendar-detail-empty">' + (rooms.length ? 'No rooms match this filter.' : 'Add rooms to see daily availability.') + '</div>';
+      }
+
+      dayButtons.forEach(function (button) {
+        button.addEventListener('click', function () { renderDay(button.dataset.calendarDate); });
+      });
+      roomFilter.addEventListener('change', function () {
+        var selectedButton = document.querySelector('[data-calendar-date].is-selected');
+        if (selectedButton) renderDay(selectedButton.dataset.calendarDate);
+      });
+      document.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-delete-action]');
+        if (!button || !window.confirm('Delete this calendar event? This cannot be undone.')) return;
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = button.dataset.deleteAction;
+        document.body.appendChild(form);
+        form.requestSubmit();
+      });
+      renderDay(days.find(function (day) { return day.date === new Date().toISOString().slice(0, 10); })?.date || days[0]?.date);
+    })();
+  </script>
+</body>
+</html>

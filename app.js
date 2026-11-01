@@ -1,5 +1,7 @@
 const express=require('express');
 require('dotenv').config();
+const crypto=require('crypto');
+const helmet=require('helmet');
 const http=require('http');
 const { Server }=require('socket.io');
 const passport=require("passport");
@@ -21,10 +23,12 @@ const studentRouter=require("./routes/studentRouter.js");
 const organizerRouter=require("./routes/organizerRouter.js");
 const clubEventRouter=require("./routes/clubEventRouter.js");
 const logbookRouter=require("./routes/logbookRouter.js");
+const studentDashboardRouter=require("./routes/studentDashboardRouter.js");
+const facultyRouter=require("./routes/facultyRouter.js");
+const institutionalRouter=require("./routes/institutionalRouter.js");
+const schedulingRouter=require("./routes/schedulingRouter.js");
 const registerChatSocket=require('./sockets/chatSocket.js');
-// const errorController=require("./controller/errors.js");
 
-const { title } = require('process');
 const session=require("express-session");
 const pgSession=require('connect-pg-simple')(session);
 const db=require('./utils/db.js');
@@ -38,6 +42,46 @@ const app=express();
 app.set('trust proxy', 1);
 app.set('view engine','ejs');
 app.set('views','views');
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+app.use((req, res, next) => {
+  const cspNonce = crypto.randomBytes(16).toString('base64');
+  res.locals.cspNonce = cspNonce;
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${cspNonce}' https://cdn.tailwindcss.com 'unsafe-eval'`,
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com data:",
+      "img-src 'self' data: https:",
+      "connect-src 'self' https: wss: ws:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join('; '),
+  );
+  next();
+});
+
+const isProduction = process.env.NODE_ENV === 'production';
+const sessionSecret = process.env.SESSION_SECRET;
+if (isProduction && !sessionSecret) {
+  throw new Error('SESSION_SECRET must be set in production');
+}
+
+app.use((req, res, next) => {
+    res.locals.user = null;
+    res.locals.isLoggedIn = false;
+    res.locals.isEventHead = false;
+    res.locals.isTeamHead = false;
+    res.locals.theme = null;
+    next();
+});
 
 app.use((req,res,next)=>{
     console.log(req.url,req.method);
@@ -47,46 +91,71 @@ app.use((req,res,next)=>{
 // Pulled into a variable (rather than inlined into app.use()) so the exact
 // same session middleware instance can also run in front of Socket.IO's
 // handshake below — one session store, shared by HTTP and websocket alike.
+const sessionStore = process.env.DATABASE_URL
+  ? new pgSession({
+      pool: db,
+      tableName: 'session',
+      createTableIfMissing: true,
+    })
+  : new session.MemoryStore();
+
 const sessionMiddleware=session({
-    store: new pgSession({
-        pool:db,
-        tableName:'session',
-        createTableIfMissing:true
-    }),
-    secret: process.env.SESSION_SECRET,
+    store: sessionStore,
+    secret: sessionSecret || 'development-only-session-secret',
     resave:false,
     saveUninitialized:true,
     cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
     }
 });
 app.use(sessionMiddleware);
 
-app.use((req,res,next)=>{
-    req.isLoggedIn=req.session.isLoggedIn;
-    res.locals.isLoggedIn = req.isLoggedIn;
-    res.locals.user = req.session.user ;
-    next();
-});
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(cookieParser());
 app.use(attachUserToLocals);
 
 
 app.use(express.static(path.join(rootDir,"public")));
-// app.use('/uploads', express.static(path.join(rootDir, 'uploads')));
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // needed for the scan page's fetch() POST to /events/:id/checkin
 
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-// app.use("/organizer",);
-// app.use("/auth",);
-
 app.use((req, res, next) => {
-  res.locals.user = req.user || null;
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  }
+  res.locals.csrfToken = req.session.csrfToken;
   next();
 });
+
+app.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return next();
+  }
+
+  const submittedToken = req.get('x-csrf-token') || req.body?._csrf || req.query?._csrf;
+  const submittedBuffer = typeof submittedToken === 'string'
+    ? Buffer.from(submittedToken)
+    : null;
+  const expectedBuffer = Buffer.from(req.session.csrfToken);
+  if (submittedBuffer &&
+      submittedBuffer.length === expectedBuffer.length &&
+      crypto.timingSafeEqual(submittedBuffer, expectedBuffer)) {
+    return next();
+  }
+
+  if (req.accepts('html')) {
+    return res.status(403).render('error', { message: 'Invalid CSRF token' });
+  }
+  return res.status(403).json({ error: 'Invalid CSRF token' });
+});
+
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 
 // Nav-badge flags — cheap existence lookups, students only. Also exposed
 // as JSON at GET /auth/me-roles (authController.meRoles) so the nav's
@@ -107,7 +176,10 @@ app.use(async (req, res, next) => {
     res.locals.isTeamHead = isTeamHead;
     next();
   } catch (err) {
-    next(err);
+    console.warn('Role check error (fallback to false):', err.message);
+    res.locals.isEventHead = false;
+    res.locals.isTeamHead = false;
+    next();
   }
 });
 
@@ -117,7 +189,6 @@ app.use(async (req, res, next) => {
 // ('dark'/'light'), or undefined if the visitor never toggled yet (the
 // pre-paint inline script in head.ejs falls back to prefers-color-scheme
 // in that case).
-app.use(cookieParser());
 app.use((req, res, next) => {
   res.locals.theme = req.cookies?.theme || null;
   next();
@@ -141,28 +212,16 @@ app.use('/teams', teamRouter);
 app.use('/club', organizerRouter);
 app.use('/club-events', clubEventRouter);
 app.use('/logbook', logbookRouter);
+app.use('/student', studentDashboardRouter);
+app.use('/faculty', facultyRouter);
+app.use('/institutional', institutionalRouter);
+app.use('/scheduling', schedulingRouter);
 app.use('/', studentRouter);
 app.use("/",(req,res)=>{
     res.render('index');
 });
-// app.use(errorController.pageNotFound);
 
-// Final catch-all error handler — MUST be registered last (4-arg
-// signature is what makes Express treat this as an error handler at all)
-// and MUST come after every router above, so every next(err) anywhere in
-// the app ends up here instead of Express's own default handler.
-//
-// Why this exists: Express's built-in default error handler renders
-// `err.stack || err.toString()`. That's fine for a real Error (has a
-// stack), but some of our dependencies (notably Cloudinary's Node SDK —
-// see middleware/wrapUpload.js) reject with a PLAIN OBJECT instead of an
-// Error. A plain object has no .stack, and String({}) is literally
-// "[object Object]" — which is exactly what used to render to the user on
-// a failed image upload, with zero indication of what actually broke.
-// wrapUpload.js normalizes upload errors at the source; this handler is
-// the backstop for anything else (a thrown non-Error from a library we
-// don't control, a rejected promise we didn't wrap, etc.) so the failure
-// mode is always a readable message, never that string.
+// Final catch-all error handler
 app.use((err, req, res, next) => {
   const message = err instanceof Error ? err.message : (err && err.message) || 'Unexpected error';
   console.error('Unhandled error:', err);
@@ -174,9 +233,7 @@ app.use((err, req, res, next) => {
 });
 
 
-// Socket.IO needs the raw http.Server (not the express app) so it can
-// upgrade the same port's connections to websockets — app.listen() below
-// is replaced with server.listen() for this reason.
+// Socket.IO
 const server=http.createServer(app);
 const io=new Server(server);
 

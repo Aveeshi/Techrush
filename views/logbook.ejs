@@ -1,78 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: 'Activity Logbook' }) %>
+  <%- include('partials/head', { title: 'CCA Activity Logbook — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-3xl mx-auto px-8 pt-16 pb-20">
-    <div class="flex items-center gap-3 mb-6">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// ACTIVITY LOGBOOK</span>
+  <main class="page max-w-4xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/student/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← Back to Student Hub
+      </a>
+      <span class="badge badge-lime text-[9px] font-mono">F023 LOGBOOK SYSTEM</span>
     </div>
-    <h1 class="font-display text-4xl mb-3">Generate Logbook</h1>
-    <p class="text-muted leading-relaxed mb-10">
-      Builds a CCA Activity Logbook (.docx) from your verified task hours and
-      checked-in events, for one club at a time.
-    </p>
+
+    <!-- Title Row -->
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline">// ACCREDITED COURSEWARE ARTIFACT</span>
+        <h1>Generate Activity Logbook</h1>
+        <p>Build an official CCA Activity Logbook (.docx) from your verified task hours and checked-in sessions.</p>
+      </div>
+    </section>
 
     <% if (uploaded) { %>
-      <div class="border border-lime/40 bg-lime/5 text-lime px-4 py-3 rounded-md mb-8 text-sm">
-        Photo(s) uploaded.
+      <div class="panel p-4 mb-6 bg-lime/10 border border-lime/40 text-lime text-xs flex items-center gap-2">
+        <span class="font-bold">✓</span> Photo(s) uploaded successfully.
       </div>
     <% } %>
     <% if (removed) { %>
-      <div class="border border-line bg-panel text-muted px-4 py-3 rounded-md mb-8 text-sm">
-        Photo removed.
+      <div class="panel p-4 mb-6 bg-surface-2 border border-line text-muted text-xs flex items-center gap-2">
+        <span>🗑️</span> Photo removed.
       </div>
     <% } %>
 
     <% if (eligibleClubs.length === 0) { %>
-      <div class="border border-line rounded-lg p-6 text-muted text-sm">
-        No club you're a member of has turned on logbook generation yet.
-        Ask your club's organizer to enable it from their Club dashboard.
-      </div>
+      <article class="panel p-10 text-center text-muted">
+        <p class="text-sm mb-3">No club you are enrolled in has enabled logbook generation yet.</p>
+        <span class="text-xs text-faint">Contact your Student Coordinator or Faculty In-Charge to enable document compilation.</span>
+      </article>
     <% } else { %>
-      <!-- Club picker -->
-      <div class="border border-line rounded-lg p-6 mb-10">
-        <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-4">SELECT A CLUB</h2>
-        <div class="flex flex-wrap gap-2">
+      <!-- Club Picker Panel -->
+      <div class="panel p-6 mb-8">
+        <div class="panel-head px-0 pt-0 pb-4 mb-4">
+          <span class="overline">SELECT ACCREDITED CLUB</span>
+          <span class="badge badge-neutral text-[9px]"><%= eligibleClubs.length %> Available</span>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
           <% eligibleClubs.forEach(function(c) { %>
-            <a
-              href="/logbook?club=<%= c.id %>"
-              class="<%= selectedClub && selectedClub.id === c.id ? 'btn-lime bg-lime text-black' : 'btn-outline border border-line text-fg' %> font-semibold px-4 py-2 rounded-md text-sm"
-            ><%= c.name %></a>
+            <a href="/logbook?club=<%= c.id %>"
+               class="<%= selectedClub && selectedClub.id === c.id ? 'button button-primary' : 'button button-quiet' %> text-xs text-decoration-none">
+              <%= c.name %>
+            </a>
           <% }); %>
         </div>
       </div>
 
       <% if (selectedClub) { %>
-        <!-- Upload photos -->
-        <div class="border border-line rounded-lg p-6 mb-10">
-          <h2 class="font-mono text-xs tracking-[0.15em] text-muted mb-1">PHOTOS FOR <%= selectedClub.name.toUpperCase() %></h2>
-          <p class="text-muted text-sm mb-4">
-            Optional — every photo you upload here gets appended to the end
-            of the generated document. Any image format works.
+        <!-- Upload Photos Panel -->
+        <div class="panel p-6 mb-8">
+          <div class="panel-head px-0 pt-0 pb-4 mb-3">
+            <div>
+              <span class="overline">// EVIDENCE ATTACHMENTS</span>
+              <h3 class="text-base font-bold text-fg">Photos &amp; Geo-Tagged Evidence for <%= selectedClub.name %></h3>
+            </div>
+            <span class="badge badge-lime text-[9px]"><%= images.length %> ATTACHED</span>
+          </div>
+
+          <p class="text-xs text-muted mb-5 leading-relaxed">
+            Attach high-resolution event photographs or task artifacts. These will be appended as formal verification annexures to your downloaded logbook dossier.
           </p>
-          <form action="/logbook/images" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+
+          <form action="/logbook/images" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3 mb-6">
             <input type="hidden" name="clubId" value="<%= selectedClub.id %>" />
-            <input type="file" name="images" accept="image/*" multiple
-                   class="text-sm text-muted file:mr-3 file:py-2 file:px-4 file:rounded-md file:border file:border-line file:bg-panel file:text-fg file:text-sm file:font-medium file:cursor-pointer" />
-            <button type="submit" class="btn-outline border border-line font-semibold px-5 py-2.5 rounded-md text-sm">
-              Upload
+            <input type="file" name="images" accept="image/*" multiple required
+                   class="text-xs text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-line file:bg-surface-2 file:text-fg file:text-xs file:font-semibold file:cursor-pointer" />
+            <button type="submit" class="button button-quiet text-xs">
+              Upload Evidence Files
             </button>
           </form>
 
           <% if (images.length > 0) { %>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-line">
               <% images.forEach(function(img) { %>
-                <div class="relative group">
-                  <img src="<%= img.url %>" alt="" class="w-full h-28 object-cover rounded-md border border-line" />
-                  <form action="/logbook/images/<%= img.id %>/delete" method="POST" class="absolute top-1 right-1">
+                <div class="relative group rounded-xl overflow-hidden border border-line bg-surface-2 h-32">
+                  <img src="<%= img.url %>" alt="Attached evidence" class="w-full h-full object-cover" />
+                  <form action="/logbook/images/<%= img.id %>/delete" method="POST" class="absolute top-2 right-2">
                     <input type="hidden" name="clubId" value="<%= selectedClub.id %>" />
                     <button type="submit" title="Remove"
-                            class="bg-black/70 text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            class="bg-black/80 hover:bg-red-500 text-white text-xs rounded-lg w-7 h-7 flex items-center justify-center transition-colors">
                       ✕
                     </button>
                   </form>
@@ -82,13 +98,19 @@
           <% } %>
         </div>
 
-        <!-- Generate -->
-        <a
-          href="/logbook/generate?club=<%= selectedClub.id %>"
-          class="btn-lime bg-lime text-black font-semibold px-6 py-3 rounded-md text-sm inline-block"
-        >
-          Generate Logbook (.docx)
-        </a>
+        <!-- Generate Action -->
+        <div class="panel p-6 bg-surface-2 border border-line flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <span class="badge badge-green text-[8px] mb-1">READY TO EXPORT</span>
+            <h4 class="text-sm font-bold text-fg">Download Complete Activity Dossier</h4>
+            <p class="text-xs text-muted">Includes verified event records, credit calculations, student credentials, and attached photos.</p>
+          </div>
+
+          <a href="/logbook/generate?club=<%= selectedClub.id %>"
+             class="button button-primary text-xs py-3 px-6 text-decoration-none">
+            📄 Generate Logbook (.docx) →
+          </a>
+        </div>
       <% } %>
     <% } %>
   </main>

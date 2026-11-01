@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: student.name + ' — Member Contributions Dossier' }) %>
+  <style>
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; font-size: 11px !important; }
+      header, .no-print, nav { display: none !important; }
+      .page { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      .panel { background: #ffffff !important; border: 1px solid #cccccc !important; color: #000000 !important; }
+      table { border-collapse: collapse !important; width: 100% !important; }
+      th, td { border: 1px solid #e0e0e0 !important; color: #000000 !important; padding: 6px 10px !important; }
+      .text-fg, .text-muted, .mono { color: #000000 !important; }
+      .badge { border: 1px solid #666666 !important; color: #000000 !important; background: transparent !important; }
+      .text-lime { color: #000000 !important; font-weight: bold !important; }
+    }
+  </style>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <div class="no-print">
+    <%- include('../partials/nav') %>
+  </div>
+
+  <main class="page max-w-5xl mx-auto pt-8 pb-20">
+    <!-- Breadcrumb & Actions -->
+    <div class="no-print mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <a href="/institutional/clubs/<%= club.id %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+          ← Back to <%= club.name %> Roster
+        </a>
+        <span class="text-line">•</span>
+        <a href="/institutional/dashboard" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+          Institutional Directory
+        </a>
+      </div>
+      <button onclick="window.print()" class="button button-quiet text-xs font-bold flex items-center gap-2">
+        <span>🖨️</span> Print Member Dossier
+      </button>
+    </div>
+
+    <!-- Student & Club Identity Header -->
+    <div class="panel p-6 sm:p-8 mb-8 border border-line shadow-xl bg-surface">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-5">
+          <div class="w-16 h-16 rounded-2xl bg-surface-2 border border-line flex items-center justify-center text-xl font-bold mono text-lime shadow-inner">
+            <%= student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() %>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="overline text-[9px]">// MEMBER CONTRIBUTION AUDIT</span>
+              <% if (student.coordinator_role) { %>
+                <span class="badge badge-lime text-[8px] font-mono"><%= student.coordinator_role %></span>
+              <% } else { %>
+                <span class="badge badge-green text-[8px] font-mono">ACTIVE MEMBER</span>
+              <% } %>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-fg mt-0.5"><%= student.name %></h1>
+            <p class="text-xs text-muted mt-1">
+              Roll No: <strong class="text-fg mono"><%= student.roll_number || 'N/A' %></strong> • 
+              Branch: <span class="text-fg"><%= student.department || 'CE' %> (Year <%= student.year || '2' %>)</span> • 
+              Email: <span class="mono text-muted"><%= student.email %></span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Club Affiliation Tag -->
+        <div class="border-t md:border-t-0 md:border-l border-line pt-4 md:pt-0 md:pl-6 text-left md:text-right">
+          <span class="text-muted block text-[10px] font-mono uppercase">ORGANIZATION</span>
+          <strong class="text-base text-lime block"><%= club.name %></strong>
+          <span class="text-[10px] text-muted mono">
+            Member Since: <%= student.club_joined_at ? new Date(student.club_joined_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '2025' %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Member KPI Metrics Bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+        <span class="text-muted block text-[10px] font-mono uppercase">HOURS CREDITED</span>
+        <span class="text-2xl sm:text-3xl font-black text-lime mono">+<%= totalHours.toFixed(1) %></span>
+        <span class="text-[9px] text-muted block mt-0.5">Club Activities</span>
+      </div>
+
+      <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+        <span class="text-muted block text-[10px] font-mono uppercase">EVENTS ATTENDED</span>
+        <span class="text-2xl sm:text-3xl font-black text-fg mono"><%= attendedEvents.length %></span>
+        <span class="text-[9px] text-muted block mt-0.5">Verified Geofenced</span>
+      </div>
+
+      <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+        <span class="text-muted block text-[10px] font-mono uppercase">VOLUNTEER TEAMS</span>
+        <span class="text-2xl sm:text-3xl font-black text-emerald-400 mono"><%= volunteerTeams.length %></span>
+        <span class="text-[9px] text-muted block mt-0.5">Track / Committee</span>
+      </div>
+
+      <div class="p-4 rounded-xl bg-surface-2 border border-line text-center">
+        <span class="text-muted block text-[10px] font-mono uppercase">SEMESTER REPORTS</span>
+        <span class="text-2xl sm:text-3xl font-black text-amber-400 mono"><%= semesterReports.length %></span>
+        <span class="text-[9px] text-muted block mt-0.5">Institutional Submissions</span>
+      </div>
+    </div>
+
+    <!-- 1. Itemized Event Attendance History -->
+    <article class="panel mb-8">
+      <div class="panel-head">
+        <div>
+          <span class="overline">VERIFIED ACTIVITY ATTENDANCE</span>
+          <h3>Events Attended in <%= club.name %></h3>
+        </div>
+        <span class="badge badge-lime font-mono text-[9px]">GEOFENCED QR AUDIT</span>
+      </div>
+
+      <% if (attendedEvents.length === 0) { %>
+        <div class="p-8 text-center text-muted text-xs">
+          No attended event records found for this student under <%= club.name %>.
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="w-full text-xs">
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th>Activity Title</th>
+                <th>Date</th>
+                <th>Venue</th>
+                <th>Check-In Timestamp</th>
+                <th class="text-right">Hours Granted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% attendedEvents.forEach(function(ev, idx) { %>
+                <tr>
+                  <td class="mono font-bold text-muted"><%= idx + 1 %></td>
+                  <td>
+                    <strong class="text-fg text-xs block"><%= ev.title %></strong>
+                    <span class="text-[10px] text-muted mono">Type: <%= ev.registration_type || 'attendee' %></span>
+                  </td>
+                  <td class="mono text-muted text-[11px]">
+                    <%= new Date(ev.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                  </td>
+                  <td class="text-muted"><%= ev.venue || 'PICT Campus' %></td>
+                  <td class="mono text-muted text-[11px]">
+                    ✓ <%= new Date(ev.checked_in_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %>
+                  </td>
+                  <td class="mono font-bold text-lime text-right">+<%= parseFloat(ev.credit_hours || 4).toFixed(1) %> hrs</td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </article>
+
+    <!-- 2. Volunteer Teams & Task Assignments (if any) -->
+    <article class="panel mb-8">
+      <div class="panel-head">
+        <div>
+          <span class="overline">VOLUNTEER COMMITMENT</span>
+          <h3>Teams &amp; Event Operations</h3>
+        </div>
+        <span class="badge badge-green font-mono text-[9px]"><%= volunteerTeams.length %> APPOINTMENTS</span>
+      </div>
+
+      <% if (volunteerTeams.length === 0) { %>
+        <div class="p-6 text-center text-muted text-xs">
+          This member has not been assigned to any volunteer teams yet.
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="w-full text-xs">
+            <thead>
+              <tr>
+                <th>Team Name</th>
+                <th>Associated Event</th>
+                <th>Assigned Role</th>
+                <th>Joined At</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% volunteerTeams.forEach(function(t) { %>
+                <tr>
+                  <td><strong class="text-fg"><%= t.team_name %></strong></td>
+                  <td class="text-muted"><%= t.event_title || 'General Club Operations' %></td>
+                  <td>
+                    <span class="badge <%= t.role === 'Team Head' ? 'badge-lime' : 'badge-green' %> text-[8px] font-mono">
+                      <%= t.role %>
+                    </span>
+                  </td>
+                  <td class="mono text-muted text-[11px]">
+                    <%= new Date(t.joined_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </article>
+
+    <!-- 3. Semester Report Submissions -->
+    <article class="panel mb-8">
+      <div class="panel-head">
+        <div>
+          <span class="overline">CURRICULAR REPORT SUBMISSIONS</span>
+          <h3>Institutional Semester Reports</h3>
+        </div>
+        <span class="badge badge-amber font-mono text-[9px]">ACCREDITATION RECORDS</span>
+      </div>
+
+      <% if (semesterReports.length === 0) { %>
+        <div class="p-6 text-center text-muted text-xs">
+          No formal semester reports submitted yet by this student.
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="w-full text-xs">
+            <thead>
+              <tr>
+                <th>Academic Year</th>
+                <th>Semester</th>
+                <th>Hours Claimed</th>
+                <th>Status</th>
+                <th>Verified By</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% semesterReports.forEach(function(sr) { %>
+                <tr>
+                  <td class="mono font-bold text-fg"><%= sr.academic_year %></td>
+                  <td class="mono text-muted">Semester <%= sr.semester %></td>
+                  <td class="mono font-bold text-lime">+<%= parseFloat(sr.total_hours || 0).toFixed(1) %> hrs</td>
+                  <td>
+                    <span class="badge <%= sr.status === 'verified' ? 'badge-green' : 'badge-amber' %> font-mono text-[8px]">
+                      <%= sr.status.toUpperCase() %>
+                    </span>
+                  </td>
+                  <td class="text-muted text-[11px]">
+                    <%= sr.faculty_name || 'Dr. G. V. Kale' %>
+                  </td>
+                  <td class="text-right">
+                    <a href="/institutional/reports/<%= sr.id %>" class="button button-quiet text-[11px] py-1 px-3 text-decoration-none hover:text-lime">
+                      View Official Report →
+                    </a>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </article>
+  </main>
+</body>
+</html>

@@ -1,72 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: 'Upcoming Events' }) %>
+  <%- include('partials/head', { title: 'Upcoming Events — CampusBuzz Protocol' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
-    <div class="flex items-center gap-3 mb-6">
-      <span class="w-6 h-px bg-lime"></span>
-      <span class="font-mono text-xs tracking-[0.2em] text-lime">// PUBLIC · EVENT INDEX</span>
-    </div>
-    <h1 class="font-display text-5xl mb-8">Upcoming events</h1>
+  <main class="page">
+    <!-- Header Section (CampusBuzz UI Design) -->
+    <section class="welcome-row mb-8">
+      <div>
+        <span class="overline">// PUBLIC ACTIVITY LEDGER &amp; SPRINT CALENDAR</span>
+        <h1>Upcoming Events</h1>
+        <p>Explore technical hackathons, SIG workshops, guest lectures, and institutional milestones.</p>
+      </div>
 
-    <form action="/events" method="GET" class="mb-10 max-w-md">
-      <input
-        type="text"
-        name="q"
-        value="<%= q %>"
-        placeholder="Search by title, venue, or club…"
-        class="w-full px-4 py-3 bg-panel border border-line rounded-md text-fg placeholder-muted focus:outline-none focus:border-lime"
-      />
-    </form>
+      <div class="inline-tools">
+        <form action="/events" method="GET" class="search" style="width: 280px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-4-4"></path>
+          </svg>
+          <input
+            type="text"
+            name="q"
+            value="<%= q %>"
+            placeholder="Search events, clubs, venues..."
+          />
+        </form>
+      </div>
+    </section>
+
+    <!-- Filter Pills / Categories -->
+    <div class="flex items-center gap-2 mb-8 overflow-x-auto pb-2">
+      <a href="/events" class="badge badge-lime text-xs px-3 py-1.5 text-decoration-none">
+        All Events
+      </a>
+      <a href="/events?q=ACM" class="badge badge-neutral text-xs px-3 py-1.5 hover:text-fg text-decoration-none">
+        ACM Student Chapter (PASC)
+      </a>
+      <a href="/events?q=SIG" class="badge badge-neutral text-xs px-3 py-1.5 hover:text-fg text-decoration-none">
+        Special Interest Groups (SIG)
+      </a>
+      <a href="/events?q=Speaker" class="badge badge-neutral text-xs px-3 py-1.5 hover:text-fg text-decoration-none">
+        Speaker Sessions
+      </a>
+      <a href="/events?q=Ideathon" class="badge badge-neutral text-xs px-3 py-1.5 hover:text-fg text-decoration-none">
+        Hackathons &amp; Ideathons
+      </a>
+    </div>
 
     <% if (events.length === 0) { %>
-      <p class="text-muted"><%= q ? `No events match "${q}".` : 'No events published yet — check back soon.' %></p>
-    <% } %>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <% events.forEach(function(event) { %>
-        <a href="/events/<%= event.id %>" class="event-card relative block border border-line rounded-lg overflow-hidden">
-          <% if (event.hasSubEvents) { %>
-            <span class="absolute top-3 right-3 z-10 inline-block font-mono text-[10px] tracking-[0.1em] text-black bg-lime rounded px-2 py-1">
-              FLAGSHIP EVENT
-            </span>
-          <% } %>
-          <div class="h-44 bg-panel">
-            <% if (event.banner_url) { %>
-              <img src="<%= event.banner_url %>" alt="" class="w-full h-full object-cover" />
-            <% } %>
-          </div>
-          <div class="p-6">
-            <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-              <%= (event.event_type_name || 'EVENT').toUpperCase() %>
-            </span>
-            <h3 class="font-display text-xl mb-1"><%= event.title %></h3>
-            <p class="text-muted text-sm mb-4"><%= event.club_name %></p>
-
-            <div class="space-y-1.5 text-sm text-muted mb-5">
-              <div class="flex items-center gap-2">
-                <span class="font-mono">📅</span>
-                <%= new Date(event.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %>
-              </div>
-              <% if (event.venue) { %>
-                <div class="flex items-center gap-2">
-                  <span class="font-mono">📍</span>
-                  <%= event.venue %>
+      <article class="panel p-12 text-center text-muted">
+        <p class="text-base mb-3"><%= q ? `No events match "${q}".` : 'No upcoming events published yet — check back soon.' %></p>
+        <a href="/events" class="button button-quiet text-xs text-decoration-none">Clear search filters</a>
+      </article>
+    <% } else { %>
+      <!-- Event Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% events.forEach(function(event, idx) { %>
+          <% 
+            const evDate = new Date(event.start_time);
+            const dayNum = String(evDate.getDate()).padStart(2, '0');
+            const monthStr = evDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+          %>
+          <article class="panel flex flex-col justify-between overflow-hidden group hover:border-lime/40 transition-all">
+            <!-- Event Banner or Visual Texture -->
+            <div class="h-44 bg-surface-2 relative overflow-hidden border-b border-line">
+              <% if (event.banner_url) { %>
+                <img src="<%= event.banner_url %>" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              <% } else { %>
+                <div class="w-full h-full flex flex-col justify-center items-center p-6 bg-gradient-to-br from-surface-3 via-surface-2 to-surface">
+                  <span class="text-2xl mb-1">⚡</span>
+                  <span class="font-mono text-[10px] text-muted tracking-widest uppercase">CAMPUSBUZZ VERIFIED</span>
                 </div>
               <% } %>
+
+              <!-- Date Badge Tile on Top-Left -->
+              <div class="date-tile absolute top-3 left-3 shadow-lg">
+                <strong><%= dayNum %></strong>
+                <small><%= monthStr %></small>
+              </div>
+
+              <!-- Credit Hours Badge on Top-Right -->
+              <div class="absolute top-3 right-3">
+                <span class="badge badge-green font-mono font-bold text-[9px] shadow-lg">
+                  +<%= parseFloat(event.credit_hours || 4).toFixed(1) %> HRS
+                </span>
+              </div>
             </div>
 
-            <span class="font-mono text-xs tracking-[0.1em] text-lime">
-              VIEW &amp; REGISTER →
-            </span>
-          </div>
-        </a>
-      <% }); %>
-    </div>
+            <!-- Content Area -->
+            <div class="p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="badge badge-lime text-[8px] truncate max-w-[200px]">
+                    <%= event.club_name || 'STUDENT CLUB' %>
+                  </span>
+                  <span class="mono text-[10px] text-muted">
+                    <%= (event.event_type_name || 'WORKSHOP').toUpperCase() %>
+                  </span>
+                </div>
+
+                <h3 class="text-base font-bold text-fg mb-2 leading-snug group-hover:text-lime transition-colors">
+                  <a href="/events/<%= event.id %>" class="text-decoration-none">
+                    <%= event.title %>
+                  </a>
+                </h3>
+
+                <p class="text-xs text-muted line-clamp-2 mb-4 leading-relaxed">
+                  <%= event.description ? event.description.slice(0, 110) + '...' : 'Interactive session organized for campus students.' %>
+                </p>
+              </div>
+
+              <div>
+                <div class="border-t border-line pt-3 mb-4 space-y-1.5 text-xs text-muted">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-lime">📍</span>
+                    <span class="truncate"><%= event.venue || 'PICT Campus' %></span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-lime">🕒</span>
+                    <span class="mono text-[11px]">
+                      <%= evDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %>
+                    </span>
+                  </div>
+                </div>
+
+                <a href="/events/<%= event.id %>" class="button button-quiet w-full text-center text-xs font-bold text-decoration-none group-hover:border-lime group-hover:text-lime transition-colors">
+                  View Session Details &amp; Register →
+                </a>
+              </div>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
   </main>
 </body>
 </html>

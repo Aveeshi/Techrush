@@ -1,50 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head', { title: event.title + ' · Teams' }) %>
+  <%- include('partials/head', { title: event.title + ' · Volunteer Squads — CampusBuzz' }) %>
 </head>
-<body class="font-sans text-fg antialiased">
+<body class="font-sans text-fg antialiased bg-bg">
   <%- include('partials/nav') %>
 
-  <main class="max-w-[1400px] mx-auto px-8 pt-16 pb-20">
-    <a href="<%= backUrl %>" class="text-muted text-xs font-mono tracking-[0.1em] hover:text-fg transition-colors">← MY EVENTS &amp; TEAMS</a>
+  <main class="page max-w-6xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="<%= backUrl %>" class="text-xs font-mono text-muted hover:text-fg text-decoration-none flex items-center gap-1.5">
+        ← BACK TO MY EVENTS &amp; TEAMS
+      </a>
+      <span class="badge badge-lime font-mono text-[9px]">SQUAD DIRECTORY</span>
+    </div>
 
-    <div class="mt-6 mb-12">
-      <div class="flex items-center gap-3 mb-6">
-        <span class="w-6 h-px bg-lime"></span>
-        <span class="font-mono text-xs tracking-[0.2em] text-lime">// STUDENT · VOLUNTEER</span>
+    <!-- Header Section -->
+    <div class="welcome-row mb-8">
+      <div>
+        <span class="overline text-lime">// STUDENT VOLUNTEER CADRE</span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-fg my-1"><%= event.title %></h1>
+        <p class="text-xs text-muted">
+          You are enrolled on <%= teams.length %> volunteer team<%= teams.length === 1 ? '' : 's' %> for this event.
+          <% if (manageTeamsUrl) { %>
+            · <a href="<%= manageTeamsUrl %>" class="text-lime hover:underline text-decoration-none">Manage Team Roster →</a>
+          <% } %>
+        </p>
       </div>
-      <h1 class="font-display text-5xl mb-2"><%= event.title %></h1>
-      <p class="text-muted">
-        You're on <%= teams.length %> team<%= teams.length === 1 ? '' : 's' %> for this event.
-        <% if (manageTeamsUrl) { %>
-          <a href="<%= manageTeamsUrl %>" class="text-lime hover:underline">Manage teams →</a>
-        <% } %>
-      </p>
+
+      <div class="date-tile">
+        <strong><%= teams.length %></strong>
+        <small>SQUADS</small>
+      </div>
     </div>
 
     <% if (teams.length === 0) { %>
-      <p class="text-muted">You're not volunteering on any team for this event.</p>
+      <article class="panel p-10 text-center text-muted text-xs">
+        You are not currently volunteering on any squad for this event.
+      </article>
+    <% } else { %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% teams.forEach(function(team) { %>
+          <article class="panel p-6 flex flex-col justify-between hover:border-lime/40 transition-colors">
+            <div>
+              <span class="badge badge-lime text-[8px] font-mono mb-3">SQUAD</span>
+              <h3 class="text-lg font-bold text-fg mb-2"><%= team.name %></h3>
+
+              <% if (team.description) { %>
+                <p class="text-xs text-muted mb-4 leading-relaxed line-clamp-3"><%= team.description %></p>
+              <% } %>
+            </div>
+
+            <div class="pt-4 border-t border-line mt-4">
+              <a href="/teams/<%= team.id %>" class="button button-quiet w-full text-center text-xs font-bold text-decoration-none">
+                Open Team Workspace →
+              </a>
+            </div>
+          </article>
+        <% }); %>
+      </div>
     <% } %>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <% teams.forEach(function(team) { %>
-        <a href="/teams/<%= team.id %>" class="event-card block border border-line rounded-lg p-6">
-          <span class="inline-block font-mono text-[11px] tracking-[0.15em] text-lime border border-lime rounded px-2 py-1 mb-4">
-            TEAM
-          </span>
-          <h3 class="font-display text-xl mb-1"><%= team.name %></h3>
-
-          <% if (team.description) { %>
-            <p class="text-sm text-muted mb-5 line-clamp-2"><%= team.description %></p>
-          <% } %>
-
-          <span class="font-mono text-xs tracking-[0.1em] text-lime">
-            OPEN TEAM →
-          </span>
-        </a>
-      <% }); %>
-    </div>
   </main>
 </body>
 </html>

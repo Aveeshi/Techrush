@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Verify Student Report — CampusBuzz' }) %>
+</head>
+<body class="font-sans text-fg antialiased bg-bg">
+  <%- include('../partials/nav') %>
+
+  <main class="page max-w-4xl mx-auto pt-8 pb-20">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/faculty/reports" class="text-xs font-mono text-muted hover:text-fg text-decoration-none">
+        ← Back to All Reports
+      </a>
+      <span class="badge <%= report.status === 'approved' ? 'badge-green' : report.status === 'pending' ? 'badge-amber' : report.status === 'rejected' ? 'badge-red' : 'badge-neutral' %> font-mono text-[9px]">
+        STATUS: <%= report.status.toUpperCase() %>
+      </span>
+    </div>
+
+    <!-- Student Bio Card -->
+    <div class="panel p-6 sm:p-8 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <span class="avatar avatar-lg">
+          <%= (report.student_name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() %>
+        </span>
+        <div>
+          <span class="overline text-[9px]">// STUDENT CANDIDATE VERIFICATION</span>
+          <h1 class="text-2xl font-bold text-fg my-0.5"><%= report.student_name %></h1>
+          <div class="text-xs text-muted flex items-center gap-2 mt-1">
+            <span>Roll: <strong class="mono text-fg"><%= report.roll_number || 'N/A' %></strong></span>
+            <span>•</span>
+            <span>Dept: <strong class="text-fg"><%= report.department || 'CE' %></strong></span>
+            <span>•</span>
+            <span>Year: <strong class="text-fg"><%= report.student_year || '2' %></strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sm:text-right border-t sm:border-t-0 sm:border-l border-line pt-4 sm:pt-0 sm:pl-6">
+        <span class="overline text-[9px]">SEMESTER TRANSCRIPT</span>
+        <div class="text-lg font-bold text-fg">Semester <%= report.semester %> (<%= report.academic_year %>)</div>
+        <div class="mono text-xs text-lime font-bold mt-1">Claimed: <%= parseFloat(report.total_hours || 0).toFixed(1) %> hrs</div>
+      </div>
+    </div>
+
+    <!-- Itemized Events in this Report -->
+    <article class="panel mb-8 overflow-hidden">
+      <div class="panel-head">
+        <div>
+          <span class="overline">ATTENDANCE LOG</span>
+          <h3>Itemized Events &amp; Hours Claim</h3>
+        </div>
+        <span class="badge badge-lime text-[8px]"><%= report.club_name %></span>
+      </div>
+
+      <% 
+        const repData = typeof report.report_data === 'string' ? JSON.parse(report.report_data) : (report.report_data || {});
+        const eventsList = repData.events || [];
+      %>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th>Event Title</th>
+              <th>Date</th>
+              <th>Venue</th>
+              <th class="text-right">Credit Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (eventsList.length === 0) { %>
+              <tr>
+                <td colspan="5" class="text-center py-8 text-muted">
+                  No individual event check-ins bundled in this report.
+                </td>
+              </tr>
+            <% } else { %>
+              <% eventsList.forEach(function(e, i) { %>
+                <tr>
+                  <td class="mono font-bold"><%= i + 1 %></td>
+                  <td>
+                    <strong class="text-fg text-xs"><%= e.title %></strong>
+                  </td>
+                  <td class="mono text-xs text-muted">
+                    <%= e.date ? new Date(e.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Verified' %>
+                  </td>
+                  <td class="text-xs text-muted"><%= e.venue || 'PICT Campus' %></td>
+                  <td class="mono font-bold text-lime text-right">+<%= parseFloat(e.creditHours || 4).toFixed(1) %> hrs</td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+          <tfoot>
+            <tr class="bg-surface-3 border-t border-line font-bold">
+              <td colspan="4" class="text-right text-xs uppercase font-mono text-muted py-3">TOTAL CLAIMED HOURS:</td>
+              <td class="mono font-bold text-lime text-right text-sm py-3"><%= parseFloat(report.total_hours || 0).toFixed(1) %> hrs</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </article>
+
+    <!-- Faculty Decision Controls (Requirement 4 & 5) -->
+    <article class="panel p-6 sm:p-8 bg-surface-2 border border-line">
+      <div class="mb-4">
+        <span class="overline text-[10px]">FACULTY ACTION DESK</span>
+        <h3 class="text-lg font-bold text-fg">Sanction or Request Revision</h3>
+        <p class="text-xs text-muted mt-1">
+          Review the student's claimed co-curricular hours. Approving this report commits the credits permanently into their transcript.
+        </p>
+      </div>
+
+      <form action="/faculty/reports/<%= report.id %>/verify" method="POST" class="space-y-4">
+        <label class="field-label">
+          FACULTY REVIEW REMARKS / FEEDBACK
+          <textarea name="remarks" placeholder="Provide feedback or reasons if requesting re-verification or rejecting..."><%= report.fc_remarks || '' %></textarea>
+        </label>
+
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+          <!-- 1. Approve (Tick) -->
+          <button type="submit" name="action" value="approve" class="button button-green text-xs font-bold py-2.5 px-5 flex items-center gap-1.5">
+            <span>✓</span> Approve &amp; Commit Credits
+          </button>
+
+          <!-- 2. Send Back (Re-verification) -->
+          <button type="submit" name="action" value="reverification" class="button button-amber text-xs font-bold py-2.5 px-5 flex items-center gap-1.5">
+            <span>↺</span> Send Back for Re-verification
+          </button>
+
+          <!-- 3. Reject (Cross) -->
+          <button type="submit" name="action" value="reject" class="button button-danger text-xs font-bold py-2.5 px-5 flex items-center gap-1.5">
+            <span>✕</span> Reject Report
+          </button>
+        </div>
+      </form>
+    </article>
+  </main>
+</body>
+</html>
