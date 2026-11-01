@@ -232,6 +232,62 @@ body {
   padding-right: 36px;
 }
 
+.signup-skills {
+  margin-top: 8px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
+}
+
+.signup-skills .overline {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.signup-skills-help {
+  margin: -4px 0 14px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.signup-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.signup-skill-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.signup-skill-option:hover,
+.signup-skill-option:has(input:checked) {
+  border-color: var(--lime);
+  background: color-mix(in srgb, var(--lime) 16%, var(--surface));
+  color: var(--text);
+}
+
+.signup-skill-option input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--lime);
+}
+
 h1,
 h2,
 h3,
